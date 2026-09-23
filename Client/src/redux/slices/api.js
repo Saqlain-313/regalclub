@@ -1,8 +1,8 @@
 // api.js
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:9099/api";
-// const API_BASE_URL = "/api";
+// const API_BASE_URL = "http://localhost:9099/api";
+const API_BASE_URL = "/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -103,7 +103,7 @@ api.interceptors.response.use(
 // HOST
 // =====================================================
 
-const host = "http://localhost:9099";
-// const host = "/";
+// const host = "http://localhost:9099";
+const host = "/";
 
 export { api, host };
