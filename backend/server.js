@@ -124,7 +124,7 @@ const allowedOrigins = [
   "http://127.0.0.1:5175",
   "http://127.0.0.1:5176",
   "http://127.0.0.1:5177",
-  "https://topxbet.live",
+  "https://regalclub.live",
 ];
 
 const io = new Server(server, {
