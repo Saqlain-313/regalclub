@@ -160,78 +160,161 @@ const transfercredit = async (req, res) => {
 const launchGame = async (req, res) => {
   try {
     const { gameId } = req.body;
-    console.log("LAUNCH GAME REQUEST 👉", { gameId });
+
+    console.log("========================================");
+    console.log("LAUNCH GAME REQUEST");
+    console.log("gameId:", gameId);
+    console.log("========================================");
+
     if (!gameId) {
-      return res
-        .status(400)
-        .json({ status: false, message: "gameId required" });
+      return res.status(400).json({
+        status: false,
+        message: "gameId required",
+      });
     }
 
-    const user = await AuthModel.findById(req.user._id);
-    // console.log("USER FOUND 👉", user);
+    // ==============================
+    // FIND USER
+    // ==============================
+    const user = await AuthModel.findById(req.user._id).lean();
+
     if (!user) {
-      return res.status(400).json({ status: false, message: "Invalid user" });
+      return res.status(400).json({
+        status: false,
+        message: "Invalid user",
+      });
     }
 
-    const playerid = String(user.mobile).trim();
+    const playerid = String(user.mobile || "").trim();
 
-    console.log("USER credit BEFORE LAUNCH 👉",playerid);
+    if (!playerid) {
+      return res.status(400).json({
+        status: false,
+        message: "User mobile/playerid not found",
+      });
+    }
 
-    // auto-create safety
-    // const userbalnace = await axios.post(`${apiUrl}/Userbalance?key=${key}`, {
-    //   playerid,
-    //   key,
-    // },{
-    //   headers: {
-    //   "Content-Type": "application/json",
-    //   "x-domain": "cd regalclub.live"
-    //  }
-    // });
+    // ==============================
+    // SAFE NUMBERS
+    // ==============================
+    const credit = Number(user.credit || 0);
+    const exposure = Number(user.exposure || 0);
 
-    // console.log("USER credit RESPONSE 👉", userbalnace);
+    if (!Number.isFinite(credit) || !Number.isFinite(exposure)) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid credit/exposure value",
+        data: {
+          credit: user.credit,
+          exposure: user.exposure,
+        },
+      });
+    }
 
+    const openingBalance = credit - exposure;
 
+    if (!Number.isFinite(openingBalance)) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid opening balance",
+      });
+    }
 
-    console.log("Player Data:", {
+    console.log("PLAYER DATA 👉", {
       playerid,
       uid: gameId,
-      opening_balance: user.credit - user.exposure,
+      credit,
+      exposure,
+      opening_balance: openingBalance,
       key,
     });
-    const response = await axios.post(
-      launchUrl,
-      {
-        playerid,
-        uid: gameId,
-        opening_balance: user.credit - user.exposure,
-        key,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-domain": "cd regalclub.live",
+
+    // ==============================
+    // LAUNCH GAME
+    // ==============================
+    let response;
+
+    try {
+      response = await axios.post(
+        launchUrl,
+        {
+          playerid,
+          uid: gameId,
+          opening_balance: openingBalance,
+          key,
         },
-      },
-    );
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-domain": "cd regalclub.live",
+          },
 
-    // console.log("LAUNCH GAME RESPONSE 👉", response);
+          timeout: 30000,
+        }
+      );
+    } catch (apiError) {
+      console.error(
+        "LAUNCH API ERROR 👉",
+        apiError.response?.data || apiError.message
+      );
 
-    if (response.data?.status === true) {
-      await AuthModel.updateOne({ _id: user._id }, { $set: { credit: 0 } });
+      return res.status(apiError.response?.status || 500).json({
+        status: false,
+        message: "Launch API error",
+        error:
+          apiError.response?.data || {
+            message: apiError.message,
+          },
+      });
+    }
 
-      return res.json({
-        status: true,
-        message: "Game launched successfully",
+    console.log("LAUNCH API RESPONSE 👉", response.data);
+
+    // ==============================
+    // CHECK API RESPONSE
+    // ==============================
+    if (response.data?.status !== true) {
+      return res.status(400).json({
+        status: false,
+        message: "Game launch failed",
         data: response.data,
       });
     }
 
-    return res.status(500).json({
-      status: false,
-      message: "Game launch failed",
+    // ==============================
+    // LOCAL WALLET UPDATE
+    // ONLY CREDIT IS UPDATED
+    // ==============================
+    const updatedUser = await AuthModel.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          credit: 0,
+        },
+      },
+      {
+        new: true,
+        runValidators: false,
+      }
+    ).lean();
+
+    console.log("LOCAL USER AFTER LAUNCH 👉", {
+      userId: user._id,
+      credit: updatedUser?.credit,
+      exposure: updatedUser?.exposure,
+    });
+
+    // ==============================
+    // SUCCESS
+    // ==============================
+    return res.status(200).json({
+      status: true,
+      message: "Game launched successfully",
       data: response.data,
     });
   } catch (error) {
+    console.error("LAUNCH GAME ERROR 👉", error);
+
     return res.status(500).json({
       status: false,
       message: "Launch error",
