@@ -229,6 +229,116 @@ app.use(cookieParser());
 // NO CACHE FOR API
 // =====================================================
 
+const userDistPath = path.resolve(__dirname, "../Client/dist");
+const adminDistPath = path.resolve(__dirname, "../ADMIN/dist");
+
+console.log("======================================");
+console.log("[FRONTEND] Client dist:", userDistPath);
+console.log("[FRONTEND] Admin dist :", adminDistPath);
+console.log("======================================");
+
+// -----------------------------------------------------
+// USER / CLIENT STATIC FILES
+// -----------------------------------------------------
+
+app.use(
+  express.static(userDistPath, {
+    index: false,
+    fallthrough: true,
+    maxAge: "1d",
+  }),
+);
+
+// -----------------------------------------------------
+// ADMIN STATIC FILES
+// -----------------------------------------------------
+
+app.use(
+  "/admin",
+  express.static(adminDistPath, {
+    index: false,
+    fallthrough: true,
+    maxAge: "1d",
+  }),
+);
+
+// -----------------------------------------------------
+// ADMIN ROOT
+// -----------------------------------------------------
+
+app.get("/admin", (req, res) => {
+  const indexPath = path.join(adminDistPath, "index.html");
+
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error("[ADMIN] index.html error:", err);
+      if (!res.headersSent) {
+        res.status(500).send("Admin frontend not found");
+      }
+    }
+  });
+});
+
+// -----------------------------------------------------
+// ADMIN SPA FALLBACK
+// -----------------------------------------------------
+// Do not return index.html for missing asset files.
+
+app.get("/admin/{*path}", (req, res, next) => {
+  if (
+    req.path.startsWith("/admin/assets/") ||
+    req.path.match(
+      /^\/admin\/.*\.(js|css|map|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot)$/i,
+    )
+  ) {
+    return next();
+  }
+
+  const indexPath = path.join(adminDistPath, "index.html");
+
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error("[ADMIN] SPA fallback error:", err);
+      if (!res.headersSent) {
+        res.status(500).send("Admin frontend not found");
+      }
+    }
+  });
+});
+
+// -----------------------------------------------------
+// USER / CLIENT SPA FALLBACK
+// -----------------------------------------------------
+// Do not return index.html for missing static assets.
+
+app.get("/{*path}", (req, res, next) => {
+  // Never let frontend SPA fallback handle API routes.
+  if (req.path.startsWith("/api/") || req.path === "/api") {
+    return next();
+  }
+
+  // Never return index.html for a missing static asset.
+  if (
+    req.path.startsWith("/assets/") ||
+    req.path.match(
+      /\.(js|css|map|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot)$/i,
+    )
+  ) {
+    return next();
+  }
+
+  const indexPath = path.join(userDistPath, "index.html");
+
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error("[CLIENT] SPA fallback error:", err);
+      if (!res.headersSent) {
+        res.status(500).send("Client frontend not found");
+      }
+    }
+  });
+});
+
 app.use("/api", (req, res, next) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
   res.set("Pragma", "no-cache");
@@ -378,115 +488,7 @@ app.get("/api/health", (req, res) => {
 // Build files must physically exist at these paths on production.
 // =====================================================
 
-const userDistPath = path.resolve(__dirname, "../Client/dist");
-const adminDistPath = path.resolve(__dirname, "../ADMIN/dist");
 
-console.log("======================================");
-console.log("[FRONTEND] Client dist:", userDistPath);
-console.log("[FRONTEND] Admin dist :", adminDistPath);
-console.log("======================================");
-
-// -----------------------------------------------------
-// USER / CLIENT STATIC FILES
-// -----------------------------------------------------
-
-app.use(
-  express.static(userDistPath, {
-    index: false,
-    fallthrough: true,
-    maxAge: "1d",
-  }),
-);
-
-// -----------------------------------------------------
-// ADMIN STATIC FILES
-// -----------------------------------------------------
-
-app.use(
-  "/admin",
-  express.static(adminDistPath, {
-    index: false,
-    fallthrough: true,
-    maxAge: "1d",
-  }),
-);
-
-// -----------------------------------------------------
-// ADMIN ROOT
-// -----------------------------------------------------
-
-app.get("/admin", (req, res) => {
-  const indexPath = path.join(adminDistPath, "index.html");
-
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error("[ADMIN] index.html error:", err);
-      if (!res.headersSent) {
-        res.status(500).send("Admin frontend not found");
-      }
-    }
-  });
-});
-
-// -----------------------------------------------------
-// ADMIN SPA FALLBACK
-// -----------------------------------------------------
-// Do not return index.html for missing asset files.
-
-app.get("/admin/{*path}", (req, res, next) => {
-  if (
-    req.path.startsWith("/admin/assets/") ||
-    req.path.match(
-      /^\/admin\/.*\.(js|css|map|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot)$/i,
-    )
-  ) {
-    return next();
-  }
-
-  const indexPath = path.join(adminDistPath, "index.html");
-
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error("[ADMIN] SPA fallback error:", err);
-      if (!res.headersSent) {
-        res.status(500).send("Admin frontend not found");
-      }
-    }
-  });
-});
-
-// -----------------------------------------------------
-// USER / CLIENT SPA FALLBACK
-// -----------------------------------------------------
-// Do not return index.html for missing static assets.
-
-app.get("/{*path}", (req, res, next) => {
-  // Never let frontend SPA fallback handle API routes.
-  if (req.path.startsWith("/api/") || req.path === "/api") {
-    return next();
-  }
-
-  // Never return index.html for a missing static asset.
-  if (
-    req.path.startsWith("/assets/") ||
-    req.path.match(
-      /\.(js|css|map|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot)$/i,
-    )
-  ) {
-    return next();
-  }
-
-  const indexPath = path.join(userDistPath, "index.html");
-
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error("[CLIENT] SPA fallback error:", err);
-      if (!res.headersSent) {
-        res.status(500).send("Client frontend not found");
-      }
-    }
-  });
-});
 
 // =====================================================
 // 404 API HANDLER
