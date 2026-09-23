@@ -8,7 +8,7 @@ const AuthModel = require("../../models/authmodel");
 const apiUrl = "https://www.api-doc.space/api";
 const launchUrl = "https://www.api-doc.space/api/launch-game";
 // const launchUrl = "http://localhost:8000/api/launch-game";
-const key = "5HXuVkACXHtu04Y7SgBL";
+const key = "lham1f1pSAoAViS0BK7e";
 // const key = "3aqSD5NzX8sKj2MG2CkNS6mqerzJywUW";
 
 /* =========================
@@ -23,7 +23,7 @@ const checkcredit = async (req, res) => {
         .json({ status: false, message: "playerid required" });
     }
 
-    const response = await axios.post(`${apiUrl}/Usercredit`, {
+    const response = await axios.post(`${apiUrl}/Userbalance`, {
       playerid,
       key,
     });
@@ -62,7 +62,7 @@ const transfercredit = async (req, res) => {
 
     /* 2️⃣ Get credit from Zapcore */
     const balRes = await axios.post(
-      `${apiUrl}/Usercredit?playerid=${playerid}&key=${key}`,
+      `${apiUrl}/Userbalance?playerid=${playerid}&key=${key}`,
       {
         playerid,
         key,
@@ -70,7 +70,7 @@ const transfercredit = async (req, res) => {
       {
         headers: {
           "Content-Type": "application/json",
-          "x-domain": "topxbet.live",
+          "x-domain": "cd regalclub.live",
         },
       },
     );
@@ -97,12 +97,12 @@ const transfercredit = async (req, res) => {
         {
           playerid,
           key,
-          opening_credit: -zapcredit,
+          opening_balance: -zapcredit,
         },
         {
           headers: {
             "Content-Type": "application/json",
-            "x-domain": "topxbet.live",
+            "x-domain": "cd regalclub.live",
           },
         },
       );
@@ -160,7 +160,7 @@ const transfercredit = async (req, res) => {
 const launchGame = async (req, res) => {
   try {
     const { gameId } = req.body;
-    // console.log("LAUNCH GAME REQUEST 👉", { gameId });
+    console.log("LAUNCH GAME REQUEST 👉", { gameId });
     if (!gameId) {
       return res
         .status(400)
@@ -175,33 +175,41 @@ const launchGame = async (req, res) => {
 
     const playerid = String(user.mobile).trim();
 
-    // console.log("USER credit BEFORE LAUNCH 👉",playerid);
+    console.log("USER credit BEFORE LAUNCH 👉",playerid);
 
     // auto-create safety
-    // const userbalnace = await axios.post(`${apiUrl}/Usercredit?key=${key}`, {
+    // const userbalnace = await axios.post(`${apiUrl}/Userbalance?key=${key}`, {
     //   playerid,
     //   key,
     // },{
     //   headers: {
     //   "Content-Type": "application/json",
-    //   "x-domain": "topxbet.live"
+    //   "x-domain": "cd regalclub.live"
     //  }
     // });
 
     // console.log("USER credit RESPONSE 👉", userbalnace);
 
+
+
+    console.log("Player Data:", {
+      playerid,
+      uid: gameId,
+      opening_balance: user.credit - user.exposure,
+      key,
+    });
     const response = await axios.post(
       launchUrl,
       {
         playerid,
         uid: gameId,
-        opening_credit: user.credit - user.exposure,
+        opening_balance: user.credit - user.exposure,
         key,
       },
       {
         headers: {
           "Content-Type": "application/json",
-          "x-domain": "topxbet.live",
+          "x-domain": "cd regalclub.live",
         },
       },
     );
@@ -326,7 +334,7 @@ const gameHistory = async (req, res) => {
       {
         headers: {
           "Content-Type": "application/json",
-          "x-domain": "topxbet.live",
+          "x-domain": "cd regalclub.live",
         },
       },
     );
