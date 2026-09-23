@@ -1,5 +1,5 @@
 const axios = require("axios");
-const AuthModel = require("../../models/usermodel");
+const AuthModel = require("../../models/authmodel");
 
 /**
  * 🔴 LIVE ENVIRONMENT ONLY
