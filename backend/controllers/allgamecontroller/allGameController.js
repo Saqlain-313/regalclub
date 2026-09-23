@@ -11,65 +11,6 @@ const launchUrl = "https://www.api-doc.space/api/launch-game";
 const key = "lham1f1pSAoAViS0BK7e";
 // const key = "3aqSD5NzX8sKj2MG2CkNS6mqerzJywUW";
 
-/* =========================
-   HELPERS
-========================= */
-
-const zapHeaders = {
-  "Content-Type": "application/json",
-  "x-domain": "regalclub.live",
-};
-
-/**
- * Retry helper for transient MongoDB-style conflicts on the provider side.
- * Retries only when the error message contains "would create a conflict".
- */
-const axiosRetry = async (fn, retries = 2, baseDelay = 400) => {
-  let lastErr;
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      const msg =
-        err.response?.data?.error?.error?.message ||
-        err.response?.data?.error?.message ||
-        err.response?.data?.message ||
-        "";
-      const isConflict = /would create a conflict/i.test(msg);
-
-      if (!isConflict || i === retries) throw err;
-
-      const delay = baseDelay * (i + 1);
-      console.warn(
-        `⚠️ [axiosRetry] conflict detected, retry ${i + 1}/${retries} in ${delay}ms → ${msg}`
-      );
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
-  throw lastErr;
-};
-
-/**
- * Ensure the player exists on the Zapcore side.
- * Safe to call repeatedly — Zapcore auto-creates on Userbalance.
- */
-const ensureZapPlayer = async (playerid) => {
-  try {
-    const res = await axios.post(
-      `${apiUrl}/Userbalance`,
-      { playerid, key },
-      { headers: zapHeaders }
-    );
-    return res.data;
-  } catch (err) {
-    console.warn(
-      "⚠️ [ensureZapPlayer] failed:",
-      err.response?.data || err.message
-    );
-    return null;
-  }
-};
 
 /* =========================
    CHECK BALANCE (AUTO CREATE USER)
@@ -78,16 +19,13 @@ const checkBalance = async (req, res) => {
   try {
     const playerid = String(req.body.playerid || "").trim();
     if (!playerid) {
-      return res
-        .status(400)
-        .json({ status: false, message: "playerid required" });
+      return res.status(400).json({ status: false, message: "playerid required" });
     }
 
-    const response = await axios.post(
-      `${apiUrl}/Userbalance`,
-      { playerid, key },
-      { headers: zapHeaders }
-    );
+    const response = await axios.post(`${apiUrl}/Userbalance`, {
+      playerid,
+      key,
+    });
 
     console.log("CHECK BALANCE RESPONSE 👉", response.data);
 
@@ -122,49 +60,66 @@ const transferBalance = async (req, res) => {
     const playerid = String(user.mobile).trim();
 
     /* 2️⃣ Get balance from Zapcore */
-    const balRes = await axios.post(
-      `${apiUrl}/Userbalance?playerid=${playerid}&key=${key}`,
-      { playerid, key },
-      { headers: zapHeaders }
-    );
+    const balRes = await axios.post(`${apiUrl}/Userbalance?playerid=${playerid}&key=${key}`,
+      {
+      playerid,
+      key,
+    },{
+      headers: {
+      "Content-Type": "application/json",
+      "x-domain": "regalclub.live"
+     }
+    });
+
+    // console.log("ZAPCORE BALANCE RESPONSE 👉", balRes.data);
 
     const zapBalance = Number(balRes.data?.Balance || 0);
     console.log("ZAPCORE BALANCE 👉", zapBalance);
 
     /* 3️⃣ IF–ELSE CONDITION */
     if (!isNaN(zapBalance) && zapBalance > 0) {
-      /* 4️⃣ Add balance to local wallet (atomic $inc only — no $set on same field) */
+
+      /* 4️⃣ Add balance to local wallet */
       const updatedUser = await AuthModel.findByIdAndUpdate(
         user._id,
-        { $inc: { credit: zapBalance + (user.exposure || 0) } },
+        { $inc: { credit: zapBalance + user.exposure } },
         { new: true }
       );
 
-      /* 5️⃣ Reset Zapcore balance */
-      let resetRes;
-      try {
-        resetRes = await axios.post(
-          `${apiUrl}/Setbalance?playerid=${playerid}&key=${key}`,
-          {
-            playerid,
-            key,
-            opening_balance: -zapBalance,
-          },
-          { headers: zapHeaders }
-        );
-      } catch (err) {
-        resetRes = { data: { status: false } };
-        console.error(
-          "SETBALANCE ERROR 👉",
-          err.response?.data || err.message
-        );
-      }
+      // console.log("LOCAL WALLET UPDATED 👉", updatedUser);
 
-      /* 6️⃣ Rollback if reset fails — atomic $inc (never $set+$inc together) */
+      /* 5️⃣ Reset Zapcore balance */
+      const resetRes = await axios.post(`${apiUrl}/Setbalance?playerid=${playerid}&key=${key}`, {
+        playerid,
+        key,
+        opening_balance: -zapBalance,
+      },
+    {
+      headers: {
+      "Content-Type": "application/json",
+      "x-domain": "regalclub.live"
+      }
+     });
+
+      // console.log("ZAPCORE BALANCE RESET RESPONSE 👉", resetRes.data);
+
+      /* 6️⃣ Rollback if reset fails */
       if (resetRes.data?.status !== true) {
         await AuthModel.updateOne(
           { _id: user._id },
-          { $inc: { credit: -(zapBalance + (user.exposure || 0)) } }
+          [
+            {
+              $set: {
+                credit: {
+                  $cond: [
+                    { $gte: ["$credit", zapBalance] },
+                    { $subtract: ["$credit", zapBalance] },
+                    0,
+                  ],
+                },
+              },
+            },
+          ]
         );
 
         return res.status(500).json({
@@ -180,6 +135,7 @@ const transferBalance = async (req, res) => {
         transferredAmount: zapBalance,
         currentBalance: updatedUser.credit,
       });
+
     } else {
       /* ❌ NO BALANCE */
       return res.status(200).json({
@@ -187,6 +143,7 @@ const transferBalance = async (req, res) => {
         message: "No balance to transfer",
       });
     }
+
   } catch (error) {
     return res.status(500).json({
       status: false,
@@ -196,62 +153,60 @@ const transferBalance = async (req, res) => {
   }
 };
 
+
+
 /* =========================
    LAUNCH GAME (LOCAL → ZAP)
 ========================= */
 const launchGame = async (req, res) => {
-  let lockedUserId = null;
-
   try {
     const { gameId } = req.body;
+    // console.log("LAUNCH GAME REQUEST 👉", { gameId });
     if (!gameId) {
-      return res
-        .status(400)
-        .json({ status: false, message: "gameId required" });
+      return res.status(400).json({ status: false, message: "gameId required" });
     }
 
     const user = await AuthModel.findById(req.user._id);
+    // console.log("USER FOUND 👉", user);
     if (!user) {
       return res.status(400).json({ status: false, message: "Invalid user" });
     }
 
-    /* 🛡️ ATOMIC LOCK — only one launch per user at a time */
-    const locked = await AuthModel.findOneAndUpdate(
-      { _id: user._id, launching: { $ne: true } },
-      { $set: { launching: true } },
-      { new: true }
-    );
+    const playerid = String(user.mobile).trim();
 
-    if (!locked) {
-      return res.status(429).json({
-        status: false,
-        message: "Launch already in progress, please wait",
-      });
-    }
+    // console.log("USER BALANCE BEFORE LAUNCH 👉",playerid);
 
-    lockedUserId = locked._id;
-    const playerid = String(locked.mobile).trim();
+    // auto-create safety
+    // const userbalnace = await axios.post(`${apiUrl}/Userbalance?key=${key}`, {
+    //   playerid,
+    //   key,
+    // },{
+    //   headers: {
+    //   "Content-Type": "application/json",
+    //   "x-domain": "regalclub.live"
+    //  }
+    // });
 
-    /* ✅ Step 1: ensure player exists on provider side */
-    await ensureZapPlayer(playerid);
+    // console.log("USER BALANCE RESPONSE 👉", userbalnace);
 
-    /* ✅ Step 2: launch with retry on transient conflicts */
-    const response = await axiosRetry(() =>
-      axios.post(
-        launchUrl,
-        {
-          playerid,
-          uid: gameId,
-          opening_balance: (locked.credit || 0) - (locked.exposure || 0),
-          key,
-        },
-        { headers: zapHeaders }
-      )
-    );
+
+    const response = await axios.post(launchUrl, {
+      playerid,
+      uid: gameId,
+      opening_balance: user.credit - user.exposure,
+      key,
+    },{
+    headers: {
+    "Content-Type": "application/json",
+    "x-domain": "regalclub.live"
+   }
+    });
+
+    // console.log("LAUNCH GAME RESPONSE 👉", response);
 
     if (response.data?.status === true) {
       await AuthModel.updateOne(
-        { _id: locked._id },
+        { _id: user._id },
         { $set: { credit: 0 } }
       );
 
@@ -268,30 +223,11 @@ const launchGame = async (req, res) => {
       data: response.data,
     });
   } catch (error) {
-    console.error("LAUNCH ERROR →", {
-      playerid: String(req.user?.mobile || "").trim(),
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message,
-    });
-
     return res.status(500).json({
       status: false,
       message: "Launch error",
       error: error.response?.data || error.message,
     });
-  } finally {
-    /* 🔓 Always release the lock */
-    if (lockedUserId) {
-      try {
-        await AuthModel.updateOne(
-          { _id: lockedUserId },
-          { $set: { launching: false } }
-        );
-      } catch (e) {
-        console.error("LOCK RELEASE ERROR 👉", e.message);
-      }
-    }
   }
 };
 
@@ -309,6 +245,7 @@ const getgamedetails = async (req, res) => {
     return res.status(500).json({ status: false, error: err.message });
   }
 };
+
 
 const gameProvider = async (req, res) => {
   try {
@@ -375,19 +312,21 @@ const gameHistory = async (req, res) => {
   try {
     const playerid = String(req.user.mobile).trim();
 
-    const { page = 1, size = 2000, from_date, to_date } = req.query;
+     const { page = 1, size = 2000,from_date,to_date } = req.query;
     const response = await axios.post(
-      `${apiUrl}/history?page=${page}&size=${size}`,
-      {
+      `${apiUrl}/history?page=${page}&size=${size}`,{
         key,
         playerid,
         page,
         limit: size,
         from_date,
         to_date,
-      },
-      { headers: zapHeaders }
-    );
+      },{
+        headers: {
+          "Content-Type": "application/json",
+          "x-domain": "regalclub.live"
+        }
+      });
 
     return res.json({
       data: response.data,
@@ -395,7 +334,7 @@ const gameHistory = async (req, res) => {
       status: true,
     });
   } catch (err) {
-    console.error("GAME HISTORY ERROR 👉", err.response?.data || err.message);
+    console.error("GAME HISTORY ERROR 👉", err);
     return res.status(500).json({ status: false, error: err.message });
   }
 };
