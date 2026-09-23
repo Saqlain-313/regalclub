@@ -67,14 +67,14 @@ const transferBalance = async (req, res) => {
     },{
       headers: {
       "Content-Type": "application/json",
-      "x-domain": "matchadda.vip"
+      "x-domain": "regalclub.live"
      }
     });
 
     // console.log("ZAPCORE BALANCE RESPONSE 👉", balRes.data);
 
     const zapBalance = Number(balRes.data?.Balance || 0);
-    // console.log("ZAPCORE BALANCE 👉", zapBalance);
+    console.log("ZAPCORE BALANCE 👉", zapBalance);
 
     /* 3️⃣ IF–ELSE CONDITION */
     if (!isNaN(zapBalance) && zapBalance > 0) {
@@ -97,7 +97,7 @@ const transferBalance = async (req, res) => {
     {
       headers: {
       "Content-Type": "application/json",
-      "x-domain": "matchadda.vip"
+      "x-domain": "regalclub.live"
       }
      });
 
@@ -183,7 +183,7 @@ const launchGame = async (req, res) => {
     // },{
     //   headers: {
     //   "Content-Type": "application/json",
-    //   "x-domain": "matchadda.vip"
+    //   "x-domain": "regalclub.live"
     //  }
     // });
 
@@ -198,7 +198,7 @@ const launchGame = async (req, res) => {
     },{
     headers: {
     "Content-Type": "application/json",
-    "x-domain": "matchadda.vip"
+    "x-domain": "regalclub.live"
    }
     });
 
@@ -324,7 +324,7 @@ const gameHistory = async (req, res) => {
       },{
         headers: {
           "Content-Type": "application/json",
-          "x-domain": "matchadda.vip"
+          "x-domain": "regalclub.live"
         }
       });
 
