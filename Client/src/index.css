@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== GLOBAL SCROLLBAR HIDE ===== */
+
+/* For Chrome, Safari, Edge */
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+/* For Internet Explorer / Edge Legacy */
+* {
+  -ms-overflow-style: none !important;
+}
+
+/* Alternative: Body par direct */
+body {
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* HTML par bhi */
+html {
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Agar kisi specific container mein bhi chahiye toh */
+.scroll-container {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow: auto !important;
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.dark-bg {
+  background-color: #1c0f2b !important;
+}

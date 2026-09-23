@@ -1,0 +1,11 @@
+const express = require("express");
+const router = express.Router();
+const c = require("../controllers/tradebetController");
+const { protect } = require("../middleware/authMiddleware");
+router.post("/placeBet", protect, c.placeBet);
+router.get("/checkwhichUserIsWinner", protect, c.checkwhichUserIsWinner);
+router.get("/get-periodid", c.getTrade);
+router.get("/bets-history", protect, c.getBetsByUserId);
+router.get("/pending-history", protect, c.getPendingTrades);
+router.get("/get-trades", protect, c.createTrade);
+module.exports = router;

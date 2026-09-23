@@ -1,0 +1,40 @@
+// models/Subordinate.js
+const mongoose = require('mongoose');
+
+const subordinateSchema = new mongoose.Schema(
+  {
+    mobile: {
+      type: String,
+      required: true,
+    },
+    bonusby: {
+      type: String,
+      required: true,
+    },
+    type: {
+      type: String,
+      default: 'bet commission',
+    },
+    commission: {
+      type: Number,
+      default: 0,
+    },
+    amount: {
+      type: Number,
+      default: 0,
+    },
+    level: {
+      type: Number,
+      default: 0,
+    },
+    date: {
+      type: String,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+module.exports = mongoose.model('subordinates', subordinateSchema);

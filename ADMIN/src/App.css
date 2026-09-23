@@ -1,0 +1,74 @@
+html,
+body,
+#root {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* src/index.css or src/App.css */
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes shimmer-slow {
+  0% {
+    transform: translateX(-100%) rotate(0deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(0deg);
+  }
+}
+
+@keyframes pulse-skeleton {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-shimmer-slow {
+  animation: shimmer-slow 4s infinite;
+}
+
+.animate-pulse-skeleton {
+  animation: pulse-skeleton 1.5s ease-in-out infinite;
+  background-size: 200% 100%;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* 3D Card Hover Effects */
+.hover\:rotate-y-3:hover {
+  transform: rotateY(3deg);
+}
+
+/* Glassmorphism Effects */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-effect-dark {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
