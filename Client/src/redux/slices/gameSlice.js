@@ -9,7 +9,7 @@ export const checkGamecredit = createAsyncThunk(
   "game/checkcredit",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await api.get("/game/credit/transfer", {
+      const { data } = await api.get("/game/balance/transfer", {
         withCredentials: true,
       });
       return data; // ✅ FIXED
