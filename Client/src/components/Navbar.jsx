@@ -281,7 +281,7 @@ const Navbar = ({ children }) => {
               <div className="relative">
                 {isCollapsed ? (
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75)] flex items-center justify-center">
-                    <span className="text-white font-black text-lg">T</span>
+                    <span className="text-white font-black text-lg">R</span>
                   </div>
                 ) : (
                   <WinzoxLogo className="h-52" />

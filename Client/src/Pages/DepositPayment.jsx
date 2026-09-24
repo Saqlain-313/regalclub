@@ -5,12 +5,10 @@ import {
   Copy,
   CreditCard,
   FileText,
-  Image as ImageIcon,
   Landmark,
   Loader2,
   QrCode,
   ShieldCheck,
-  Upload,
   Wallet,
   XCircle,
 } from "lucide-react";
@@ -39,17 +37,13 @@ const DepositPayment = () => {
   const amount = location.state?.amount;
 
   const [transactionId, setTransactionId] = useState("");
-  const [screenshot, setScreenshot] = useState(null);
-  const [preview, setPreview] = useState("");
 
   const [touched, setTouched] = useState({
     transactionId: false,
-    screenshot: false,
   });
 
   const [errors, setErrors] = useState({
     transactionId: "",
-    screenshot: "",
   });
 
   // TopX Purple gradient
@@ -116,24 +110,6 @@ const DepositPayment = () => {
     return "";
   };
 
-  const validateScreenshot = (file) => {
-    if (!file) {
-      return "Please upload a screenshot";
-    }
-
-    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-
-    if (!validTypes.includes(file.type)) {
-      return "Please upload a valid image (PNG, JPG, JPEG, WEBP)";
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      return "Image size must be less than 5MB";
-    }
-
-    return "";
-  };
-
   // ---------------------------------------------------------
   // Blur handlers
   // ---------------------------------------------------------
@@ -147,13 +123,6 @@ const DepositPayment = () => {
       setErrors((prev) => ({
         ...prev,
         transactionId: validateTransactionId(transactionId),
-      }));
-    }
-
-    if (field === "screenshot") {
-      setErrors((prev) => ({
-        ...prev,
-        screenshot: validateScreenshot(screenshot),
       }));
     }
   };
@@ -172,59 +141,6 @@ const DepositPayment = () => {
         transactionId: validateTransactionId(value),
       }));
     }
-  };
-
-  // ---------------------------------------------------------
-  // Screenshot
-  // ---------------------------------------------------------
-  const handleImage = (e) => {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    const validationError = validateScreenshot(file);
-
-    setScreenshot(file);
-
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-
-    setPreview(objectUrl);
-
-    setTouched((prev) => ({
-      ...prev,
-      screenshot: true,
-    }));
-
-    setErrors((prev) => ({
-      ...prev,
-      screenshot: validationError,
-    }));
-  };
-
-  // ---------------------------------------------------------
-  // Remove screenshot
-  // ---------------------------------------------------------
-  const removeScreenshot = () => {
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-
-    setScreenshot(null);
-    setPreview("");
-
-    setTouched((prev) => ({
-      ...prev,
-      screenshot: false,
-    }));
-
-    setErrors((prev) => ({
-      ...prev,
-      screenshot: "",
-    }));
   };
 
   // ---------------------------------------------------------
@@ -324,19 +240,15 @@ const DepositPayment = () => {
 
     const transactionError = validateTransactionId(transactionId);
 
-    const screenshotError = validateScreenshot(screenshot);
-
     setTouched({
       transactionId: true,
-      screenshot: true,
     });
 
     setErrors({
       transactionId: transactionError,
-      screenshot: screenshotError,
     });
 
-    if (transactionError || screenshotError) {
+    if (transactionError) {
       showErrorToast(
         "Incomplete Form",
         "Please fix all errors before submitting",
@@ -352,8 +264,6 @@ const DepositPayment = () => {
     form.append("methodType", selectedMethod?.type || "");
 
     form.append("methodTitle", selectedMethod?.title || "");
-
-    form.append("screenshot", screenshot);
 
     dispatch(createDeposit(form));
   };
@@ -615,77 +525,6 @@ const DepositPayment = () => {
                 <p className="mt-1.5 text-[11px] text-red-400 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.transactionId}
-                </p>
-              )}
-            </div>
-
-            {/* Screenshot */}
-            <div className="mt-5">
-              <label className="flex items-center gap-1 text-xs font-medium text-gray-300 mb-1.5">
-                <ImageIcon className="w-3 h-3 text-[#B45CFF]" />
-                Upload Screenshot
-              </label>
-
-              <div className="relative">
-                <div
-                  className={`rounded-xl px-4 py-5 text-center border border-dashed transition ${
-                    touched.screenshot && errors.screenshot
-                      ? "border-red-500/50 bg-red-500/5"
-                      : touched.screenshot && preview
-                        ? "border-[#00E676]/50 bg-[#00E676]/5"
-                        : "border-[#2a1b3d] hover:border-[#B45CFF]/50 bg-[#12061C]"
-                  }`}
-                >
-                  {preview ? (
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={preview}
-                        alt="Payment screenshot preview"
-                        className="w-14 h-14 object-cover rounded-lg border border-[#2a1b3d]"
-                      />
-
-                      <div className="flex-1 text-left">
-                        <div className="flex items-center gap-1 text-xs text-[#00E676] font-medium">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Uploaded
-                        </div>
-
-                        <button
-                          type="button"
-                          className="text-[11px] text-[#B45CFF] hover:text-[#C77AFF] font-medium underline mt-0.5"
-                          onClick={removeScreenshot}
-                        >
-                          Remove & re-upload
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5 text-[#B45CFF] mx-auto mb-1.5" />
-
-                      <p className="text-xs text-gray-400">
-                        Click to upload or drag & drop
-                      </p>
-
-                      <p className="text-[10px] text-gray-500 mt-0.5">
-                        PNG, JPG, JPEG, WEBP · Max 5MB
-                      </p>
-                    </>
-                  )}
-
-                  <input
-                    type="file"
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    onChange={handleImage}
-                    accept="image/png,image/jpeg,image/jpg,image/webp"
-                  />
-                </div>
-              </div>
-
-              {touched.screenshot && errors.screenshot && (
-                <p className="mt-1.5 text-[11px] text-red-400 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.screenshot}
                 </p>
               )}
             </div>
