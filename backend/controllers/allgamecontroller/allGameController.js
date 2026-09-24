@@ -414,4 +414,4 @@ module.exports = {
   gameListByGameType,
   gameListByGameTypeAndProvider,
   gameHistory,
-};
+}
