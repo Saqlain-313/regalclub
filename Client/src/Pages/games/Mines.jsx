@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { FaCrown, FaSpinner } from "react-icons/fa";
-import { GiMineExplosion } from "react-icons/gi";
 import { MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 
+import { GiMineExplosion } from "react-icons/gi";
 import GamePlayModal from "../../components/GamePlayModal";
 import {
   clearGameUrl,
@@ -87,7 +87,7 @@ const Minesgame = () => {
     <>
       <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
         {/* HEADER — compact */}
-        <div className="mx-auto mb-4 sm:mb-6">
+        <div className="mx-auto mb-4 sm:mb-6 sm:hidden md:block">
           <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
             <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
               <GiMineExplosion className="text-white text-lg sm:text-xl" />
@@ -100,7 +100,7 @@ const Minesgame = () => {
         </div>
 
         {/* GRID */}
-        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+        <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 sm:-mt-4">
           {minesGames.map((game) => (
             <div
               key={game.id}

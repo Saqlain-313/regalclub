@@ -130,7 +130,7 @@ const ChickenGames = () => {
               <GiChicken className="text-white text-lg sm:text-xl" />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-white">
-              Chicken Games
+              Recomended Games
             </h1>
           </div>
           <p className="text-gray-400 text-xs sm:text-sm">
@@ -139,7 +139,7 @@ const ChickenGames = () => {
         </div>
 
         {/* GRID: 1 col mobile, 2 cols tablet, 3 cols desktop */}
-        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+        <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 sm:-mt-4">
           {chickenGames.map((game) => (
             <div
               key={game.game_uid}

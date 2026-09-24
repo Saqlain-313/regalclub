@@ -1,7 +1,6 @@
 import CountriesSection from "../components/CountriesSection";
 import FeatureBar from "../components/FeatureBar";
 import Herosection from "../components/Herosection";
-import PopularGames from "../components/PopularGames";
 import StatsSection2 from "../components/StatsSection2";
 import TopWinners from "../components/TopWinners";
 import Footer from "../Pages/Footer";
@@ -22,9 +21,10 @@ const Homme = () => {
       <PopularGamesCards />
 
       {/* Games Sections */}
-      <AviatorGames />
+
       <ChickenGames />
       <MinesPage />
+      <AviatorGames />
       <CasinoSlotGames
         isHome={true}
         limit={6}
@@ -33,7 +33,7 @@ const Homme = () => {
       />
 
       <Slotgame />
-      <PopularGames />
+      {/* <PopularGames /> */}
 
       {/* Other Sections */}
       <FeatureBar />
