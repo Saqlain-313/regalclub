@@ -5,7 +5,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { showErrorToast, showSuccessToast } from "../hooks/toast";
 import { clearError, login } from "../redux/slices/authSlice";
 
-const HERO_IMAGE = "https://i.ibb.co/DffFKgD0/imagepng1.png";
+const HERO_IMAGE =
+  "https://i.ibb.co/1t9xywcJ/Whats-App-Image-2026-09-23-at-16-22-36-removebg-preview.png";
 
 const Login = () => {
   const navigate = useNavigate();
