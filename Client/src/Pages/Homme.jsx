@@ -1,4 +1,3 @@
-import CasinoSlotGames from "../components/CasinoSlotGames";
 import CountriesSection from "../components/CountriesSection";
 import FeatureBar from "../components/FeatureBar";
 import Herosection from "../components/Herosection";
@@ -6,44 +5,43 @@ import PopularGames from "../components/PopularGames";
 import StatsSection2 from "../components/StatsSection2";
 import TopWinners from "../components/TopWinners";
 import Footer from "../Pages/Footer";
-import AviatorSection from "./games/AviatorSection";
-import CasinoSection from "./games/CasinoSection";
-// import ChickenGamesSection from "./games/ChickenGamesSection";
-import AviatorGames from "./games/AviatorGames";
-import BingoSection from "./games/BingoSection";
-import CrashGames from "./games/CrashGames";
-import DesiKhel from "./games/DesiKhel";
-import RecommendedGames from "./games/RecommendedGames";
-import TopGames from "./games/TopGames";
-import TrendingGames from "./games/TrendingGames";
+
+import AviatorGames from "../Pages/games/AviatorGames.jsx";
+import CasinoSlotGames from "../Pages/games/CasinoGames.jsx";
+import ChickenGames from "../Pages/games/ChickenGames.jsx";
+import MinesPage from "../Pages/games/Mines.jsx";
+import Slotgame from "../Pages/games/Slotgame.jsx";
+
+import MarketDetailedResults from "../Pages/MarketDetailedResults.jsx";
+import MinesGame from "../Pages/MinesGame.jsx";
+
 import PopularGamesCards from "./PopularGamesCards";
 
 const Homme = () => {
   return (
     <main className="pb-11 md:pb-0">
       <Herosection />
-      {/* <StatsSection /> */}
+
       <PopularGamesCards />
-      <CasinoSlotGames />
-      <div className="pl-5">
-        <AviatorGames />
-      </div>
-      <RecommendedGames />
-      <AviatorSection />
-      <BingoSection />
-      <TrendingGames />
-      <DesiKhel />
-      <TopGames />
-      <CrashGames />
-      {/* <ChickenGamesSection /> */}
-      <CasinoSection />
-      {/* <PublicBidResults /> */}
+
       <PopularGames />
-      {/* <PowerballPublicResult /> */}
+
+      {/* Games Sections */}
+      <AviatorGames />
+      <CasinoSlotGames />
+      <ChickenGames />
+      <MinesPage />
+      <Slotgame />
+
+      {/* Other Sections */}
       <FeatureBar />
+
       <TopWinners />
+
       <StatsSection2 />
+
       <CountriesSection />
+
       <Footer />
     </main>
   );
