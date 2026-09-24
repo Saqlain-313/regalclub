@@ -1,9 +1,18 @@
 // src/App.jsx
 
 import { useDispatch, useSelector } from "react-redux";
-import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import {
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
-import { useEffect, useLayoutEffect } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from "react";
 
 // ========================================
 // Common Components
@@ -57,18 +66,24 @@ import MatkaMarkets from "./Pages/user/Markets.jsx";
 import PlaceBid from "./Pages/user/PlaceBid.jsx";
 import MatkaResults from "./Pages/user/Results.jsx";
 
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// ========================================
+// Other Components / Games
+// ========================================
 import ChangePassword from "./components/ChangePassword.jsx";
 import GamePlayModal from "./components/GamePlayModal.jsx";
+
 import AviatorGames from "./Pages/games/AviatorGames.jsx";
 import CasinoSlotGames from "./Pages/games/CasinoGames.jsx";
 import ChickenGames from "./Pages/games/ChickenGames.jsx";
 import MinesPage from "./Pages/games/Mines.jsx";
 import Slotgame from "./Pages/games/Slotgame.jsx";
+
 import MarketDetailedResults from "./Pages/MarketDetailedResults.jsx";
 import MinesGame from "./Pages/MinesGame.jsx";
 
+// ========================================
+// Game Category Pages
+// ========================================
 import AviatorPage from "./Pages/games/GamesPages/AviatorPage.jsx";
 import BingoPage from "./Pages/games/GamesPages/BingoPage.jsx";
 import ChickenGamesPage from "./Pages/games/GamesPages/ChickenGamesPage.jsx";
@@ -77,13 +92,35 @@ import DesiKhelPage from "./Pages/games/GamesPages/DesiKhelPage.jsx";
 import RecommendedPage from "./Pages/games/GamesPages/RecommendedPage.jsx";
 import TopGamesPage from "./Pages/games/GamesPages/TopGamesPage.jsx";
 import TrendingPage from "./Pages/games/GamesPages/TrendingPage.jsx";
-import PowerballpublickResults from "./Pages/PowerballpublickResults.jsx";
-import Wingo from "./Pages/wingo/Wingo.jsx";
-import { getProfile, logout } from "./redux/slices/authSlice.js";
-import "./styles/premium-toast.css";
 
 // ========================================
-// Scroll To Top
+// Other Pages
+// ========================================
+import PowerballpublickResults from "./Pages/PowerballpublickResults.jsx";
+import Wingo from "./Pages/wingo/Wingo.jsx";
+
+// ========================================
+// Redux
+// ========================================
+import { getProfile, logout } from "./redux/slices/authSlice.js";
+
+import {
+  checkGamecredit,
+  clearGameUrl,
+  resetGameState,
+} from "./redux/slices/gameSlice";
+
+// ========================================
+// Toast
+// ========================================
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+import "./styles/premium-toast.css";
+
+
+// ========================================
+// SCROLL TO TOP
 // ========================================
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -99,8 +136,9 @@ function ScrollToTop() {
   return null;
 }
 
+
 // ========================================
-// Country Powerhit Redirect
+// COUNTRY POWERHIT REDIRECT
 // /powerhit -> user's country
 // ========================================
 function CountryPowerhitRedirect() {
@@ -118,7 +156,6 @@ function CountryPowerhitRedirect() {
 
     // ========================================
     // COUNTRY MAPPING
-    // FULL COUNTRY NAME USE HOGA
     // ========================================
     const countryRoutes = {
       IN: "india",
@@ -172,37 +209,152 @@ function CountryPowerhitRedirect() {
   return null;
 }
 
+
 // ========================================
-// App
+// GAME ROUTE CHECKER
+//
+// In routes ko game routes maana jayega:
+//
+// /game/:gameId
+// /aviator
+// /chicken
+// /casino
+// /slots
+// ========================================
+const isGameRoute = (path) => {
+  return (
+    path.startsWith("/game/") ||
+    path === "/aviator" ||
+    path === "/chicken" ||
+    path === "/casino" ||
+    path === "/slots"
+  );
+};
+
+
+// ========================================
+// APP
 // ========================================
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { isAuthenticated, profileLoaded, isProfileLoading, user } =
-    useSelector((state) => state.auth);
+  // ========================================
+  // CURRENT LOCATION
+  // ========================================
+  const location = useLocation();
+
+  // ========================================
+  // PREVIOUS ROUTE
+  // ========================================
+  const previousPathRef = useRef(location.pathname);
+
+  const {
+    isAuthenticated,
+    profileLoaded,
+    isProfileLoading,
+    user,
+  } = useSelector((state) => state.auth);
+
 
   // ========================================
   // GET USER PROFILE
   // ========================================
   useEffect(() => {
-    if (isAuthenticated && !profileLoaded && !isProfileLoading) {
+    if (
+      isAuthenticated &&
+      !profileLoaded &&
+      !isProfileLoading
+    ) {
       dispatch(getProfile());
     }
-  }, [isAuthenticated, profileLoaded, isProfileLoading, dispatch]);
+  }, [
+    isAuthenticated,
+    profileLoaded,
+    isProfileLoading,
+    dispatch,
+  ]);
+
+
+  // ========================================
+  // REFRESH GAME BALANCE
+  //
+  // User:
+  //
+  // /game/123
+  //     ↓
+  // BACK
+  //     ↓
+  // /casino
+  //
+  // OR
+  //
+  // /casino
+  //     ↓
+  // BACK
+  //     ↓
+  // /
+  //
+  // Tab game state clear hoga aur balance
+  // refresh hoga.
+  //
+  // IMPORTANT:
+  // Game route -> Game route par API call nahi hogi.
+  // ========================================
+  useEffect(() => {
+    const previousPath = previousPathRef.current;
+    const currentPath = location.pathname;
+
+    const wasGameRoute = isGameRoute(previousPath);
+    const isCurrentGameRoute = isGameRoute(currentPath);
+
+    // ========================================
+    // USER GAME SECTION SE BAHAR AA GAYA
+    // ========================================
+    if (wasGameRoute && !isCurrentGameRoute) {
+      console.log(
+        "🎮 User exited game:",
+        previousPath,
+        "→",
+        currentPath
+      );
+
+      // ========================================
+      // CLEAR GAME URL
+      // ========================================
+      dispatch(clearGameUrl());
+
+      // ========================================
+      // RESET GAME STATE
+      // ========================================
+      dispatch(resetGameState());
+
+      // ========================================
+      // GET LATEST GAME BALANCE
+      // ========================================
+      if (isAuthenticated) {
+        dispatch(checkGamecredit());
+      }
+    }
+
+    // ========================================
+    // CURRENT ROUTE SAVE
+    // ========================================
+    previousPathRef.current = currentPath;
+  }, [
+    location.pathname,
+    dispatch,
+    isAuthenticated,
+  ]);
+
 
   // ========================================
   // ADMIN PROTECTION
-  //
-  // Agar user ka role admin hai:
-  // 1. Redux logout
-  // 2. adminToken remove
-  // 3. user token remove
-  // 4. storage clear
-  // 5. login page par redirect
   // ========================================
   useEffect(() => {
-    const role = user?.role ? String(user.role).trim().toLowerCase() : "";
+    const role = user?.role
+      ? String(user.role).trim().toLowerCase()
+      : "";
 
     if (role !== "admin") {
       return;
@@ -232,42 +384,63 @@ function App() {
     dispatch(logout());
 
     // ========================================
-    // REDIRECT TO USER LOGIN
+    // REDIRECT
     // ========================================
     navigate("/login", {
       replace: true,
     });
-  }, [user, dispatch, navigate]);
+  }, [
+    user,
+    dispatch,
+    navigate,
+  ]);
 
+
+  // ========================================
+  // RENDER
+  // ========================================
   return (
     <>
-      <>
-        {/* baaki existing App content / routes */}
-        <ToastContainer position="top-center" newestOnTop limit={3} />
-      </>
+      <ToastContainer
+        position="top-center"
+        newestOnTop
+        limit={3}
+      />
+
       <ScrollToTop />
 
       <AppInitializer>
         <Navbar>
+
           <Routes>
+
             {/* ========================================
                 PUBLIC ROUTES
             ======================================== */}
 
-            <Route path="/" element={<Homme />} />
+            <Route
+              path="/"
+              element={<Homme />}
+            />
 
-            <Route path="/login" element={<Login />} />
+            <Route
+              path="/login"
+              element={<Login />}
+            />
 
-            <Route path="/register" element={<Register />} />
+            <Route
+              path="/register"
+              element={<Register />}
+            />
 
             <Route
               path="/powerball-results"
               element={<PowerballpublickResults />}
             />
 
+
             {/* ========================================
                 POWERHIT DEFAULT REDIRECT
-                /powerhit -> user's country
             ======================================== */}
 
             <Route
@@ -278,6 +451,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
 
             {/* ========================================
                 POWERBALL RESULT
@@ -292,11 +466,11 @@ function App() {
               }
             />
 
+
             {/* ========================================
-                COUNTRY-WISE POWERHIT
+                COUNTRY POWERHIT
             ======================================== */}
 
-            {/* INDIA */}
             <Route
               path="/india/powerhit"
               element={
@@ -306,7 +480,6 @@ function App() {
               }
             />
 
-            {/* AUSTRALIA */}
             <Route
               path="/australia/powerhit"
               element={
@@ -316,7 +489,6 @@ function App() {
               }
             />
 
-            {/* PAKISTAN */}
             <Route
               path="/pakistan/powerhit"
               element={
@@ -326,7 +498,6 @@ function App() {
               }
             />
 
-            {/* CANADA */}
             <Route
               path="/canada/powerhit"
               element={
@@ -336,7 +507,6 @@ function App() {
               }
             />
 
-            {/* NEPAL */}
             <Route
               path="/nepal/powerhit"
               element={
@@ -346,7 +516,6 @@ function App() {
               }
             />
 
-            {/* UAE */}
             <Route
               path="/uae/powerhit"
               element={
@@ -356,11 +525,11 @@ function App() {
               }
             />
 
+
             {/* ========================================
-                COUNTRY-WISE POWERHIT HISTORY
+                INDIA HISTORY
             ======================================== */}
 
-            {/* INDIA */}
             <Route
               path="/india/powerhit/history"
               element={
@@ -378,6 +547,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+
+            {/* ========================================
+                GAME LIST
+            ======================================== */}
 
             <Route
               path="/casino"
@@ -406,17 +580,56 @@ function App() {
               }
             />
 
-            {/* Game Category Pages */}
-            <Route path="/games/recommended" element={<RecommendedPage />} />
-            <Route path="/games/trending" element={<TrendingPage />} />
-            <Route path="/games/desi-khel" element={<DesiKhelPage />} />
-            <Route path="/games/top" element={<TopGamesPage />} />
-            <Route path="/games/crash" element={<CrashGamesPage />} />
-            <Route path="/games/chicken" element={<ChickenGamesPage />} />
-            <Route path="/games/aviator" element={<AviatorPage />} />
-            <Route path="/games/bingo" element={<BingoPage />} />
 
-            {/* Game Play - PRIVATE */}
+            {/* ========================================
+                GAME CATEGORY
+            ======================================== */}
+
+            <Route
+              path="/games/recommended"
+              element={<RecommendedPage />}
+            />
+
+            <Route
+              path="/games/trending"
+              element={<TrendingPage />}
+            />
+
+            <Route
+              path="/games/desi-khel"
+              element={<DesiKhelPage />}
+            />
+
+            <Route
+              path="/games/top"
+              element={<TopGamesPage />}
+            />
+
+            <Route
+              path="/games/crash"
+              element={<CrashGamesPage />}
+            />
+
+            <Route
+              path="/games/chicken"
+              element={<ChickenGamesPage />}
+            />
+
+            <Route
+              path="/games/aviator"
+              element={<AviatorPage />}
+            />
+
+            <Route
+              path="/games/bingo"
+              element={<BingoPage />}
+            />
+
+
+            {/* ========================================
+                GAME PLAY
+            ======================================== */}
+
             <Route
               path="/game/:gameId"
               element={
@@ -426,7 +639,11 @@ function App() {
               }
             />
 
-            {/* Slot Games - PRIVATE */}
+
+            {/* ========================================
+                SLOT GAMES
+            ======================================== */}
+
             <Route
               path="/slots"
               element={
@@ -436,7 +653,11 @@ function App() {
               }
             />
 
-            {/* Mines - PRIVATE */}
+
+            {/* ========================================
+                MINES
+            ======================================== */}
+
             <Route
               path="/minis"
               element={
@@ -446,7 +667,11 @@ function App() {
               }
             />
 
-            {/* AUSTRALIA */}
+
+            {/* ========================================
+                AUSTRALIA HISTORY
+            ======================================== */}
+
             <Route
               path="/australia/powerhit/history"
               element={
@@ -465,7 +690,11 @@ function App() {
               }
             />
 
-            {/* PAKISTAN */}
+
+            {/* ========================================
+                PAKISTAN HISTORY
+            ======================================== */}
+
             <Route
               path="/pakistan/powerhit/history"
               element={
@@ -484,7 +713,11 @@ function App() {
               }
             />
 
-            {/* CANADA */}
+
+            {/* ========================================
+                CANADA HISTORY
+            ======================================== */}
+
             <Route
               path="/canada/powerhit/history"
               element={
@@ -503,7 +736,11 @@ function App() {
               }
             />
 
-            {/* NEPAL */}
+
+            {/* ========================================
+                NEPAL HISTORY
+            ======================================== */}
+
             <Route
               path="/nepal/powerhit/history"
               element={
@@ -522,7 +759,11 @@ function App() {
               }
             />
 
-            {/* UAE */}
+
+            {/* ========================================
+                UAE HISTORY
+            ======================================== */}
+
             <Route
               path="/uae/powerhit/history"
               element={
@@ -541,22 +782,31 @@ function App() {
               }
             />
 
+
             {/* ========================================
                 PUBLIC RESULT
             ======================================== */}
 
-            <Route path="/publicresult" element={<AllResultsPage />} />
+            <Route
+              path="/publicresult"
+              element={<AllResultsPage />}
+            />
+
 
             {/* ========================================
-                CHART ANALYSIS
+                CHART
             ======================================== */}
 
-            <Route path="/chartanalysis" element={<MatkaChartAnalysis />} />
+            <Route
+              path="/chartanalysis"
+              element={<MatkaChartAnalysis />}
+            />
 
             <Route
               path="/market-results/:marketId"
               element={<MarketDetailedResults />}
             />
+
 
             {/* ========================================
                 PROMO
@@ -571,6 +821,7 @@ function App() {
               }
             />
 
+
             {/* ========================================
                 PROFILE
             ======================================== */}
@@ -583,6 +834,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
 
             {/* ========================================
                 WALLET
@@ -597,6 +849,7 @@ function App() {
               }
             />
 
+
             {/* ========================================
                 ACTIVITY
             ======================================== */}
@@ -610,6 +863,7 @@ function App() {
               }
             />
 
+
             {/* ========================================
                 WITHDRAWAL
             ======================================== */}
@@ -622,6 +876,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/change-password"
               element={
@@ -639,6 +894,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
 
             {/* ========================================
                 DEPOSIT
@@ -671,6 +927,7 @@ function App() {
               }
             />
 
+
             {/* ========================================
                 ACCOUNT
             ======================================== */}
@@ -683,6 +940,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
 
             {/* ========================================
                 MATKA DASHBOARD
@@ -697,6 +955,7 @@ function App() {
               }
             />
 
+
             {/* ========================================
                 MATKA MARKETS
             ======================================== */}
@@ -709,6 +968,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
 
             {/* ========================================
                 MATKA PLACE BID
@@ -723,6 +983,7 @@ function App() {
               }
             />
 
+
             {/* ========================================
                 MATKA BIDS HISTORY
             ======================================== */}
@@ -735,6 +996,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
 
             {/* ========================================
                 MATKA RESULTS
@@ -749,6 +1011,11 @@ function App() {
               }
             />
 
+
+            {/* ========================================
+                MINES GAME
+            ======================================== */}
+
             <Route
               path="/mine-games"
               element={
@@ -757,6 +1024,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+
+            {/* ========================================
+                WINGO
+            ======================================== */}
 
             <Route
               path="/wingo"
@@ -767,12 +1039,18 @@ function App() {
               }
             />
 
+
             {/* ========================================
                 404 / MAINTENANCE
             ======================================== */}
 
-            <Route path="*" element={<Maintenance />} />
+            <Route
+              path="*"
+              element={<Maintenance />}
+            />
+
           </Routes>
+
         </Navbar>
       </AppInitializer>
     </>
