@@ -12,9 +12,6 @@ import ChickenGames from "../Pages/games/ChickenGames.jsx";
 import MinesPage from "../Pages/games/Mines.jsx";
 import Slotgame from "../Pages/games/Slotgame.jsx";
 
-import MarketDetailedResults from "../Pages/MarketDetailedResults.jsx";
-import MinesGame from "../Pages/MinesGame.jsx";
-
 import PopularGamesCards from "./PopularGamesCards";
 
 const Homme = () => {
@@ -24,14 +21,19 @@ const Homme = () => {
 
       <PopularGamesCards />
 
-      <PopularGames />
-
       {/* Games Sections */}
       <AviatorGames />
-      <CasinoSlotGames />
       <ChickenGames />
       <MinesPage />
+      <CasinoSlotGames
+        isHome={true}
+        limit={6}
+        showViewAll={true}
+        showSearch={false}
+      />
+
       <Slotgame />
+      <PopularGames />
 
       {/* Other Sections */}
       <FeatureBar />

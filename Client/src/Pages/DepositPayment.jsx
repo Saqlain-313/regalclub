@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  ArrowLeft,
   CheckCircle2,
   Copy,
   CreditCard,
@@ -302,33 +301,14 @@ const DepositPayment = () => {
       <div className="relative px-4 sm:px-6 py-6">
         <div className="max-w-md w-full mx-auto">
           {/* Back */}
-          <button
+          {/* <button
             type="button"
             onClick={() => navigate("/deposit")}
             className="flex items-center gap-1 text-gray-400 text-xs font-medium mb-4 hover:text-[#B45CFF] transition w-fit"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back
-          </button>
-
-          {/* Header */}
-          <div className="mb-6">
-            <span className="flex gap-2 items-center">
-              <div
-                className={`w-11 h-11 rounded-2xl ${purpleGradient} flex items-center justify-center`}
-              >
-                <ShieldCheck className="w-5 h-5 text-white" />
-              </div>
-
-              <h1 className="text-2xl font-bold text-white tracking-tight">
-                Complete Payment
-              </h1>
-            </span>
-
-            <p className="text-sm text-gray-400 mt-1 ml-[3rem]">
-              Pay using the details below, then confirm
-            </p>
-          </div>
+          </button> */}
 
           {/* Amount + Method */}
           <div className="mb-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] px-5 py-4 flex items-center justify-between">
@@ -492,7 +472,7 @@ const DepositPayment = () => {
             <div>
               <label className="flex items-center gap-1 text-xs font-medium text-gray-300 mb-1.5">
                 <FileText className="w-3 h-3 text-[#B45CFF]" />
-                Transaction ID
+                UTR ID
               </label>
 
               <div className="relative">
@@ -507,7 +487,7 @@ const DepositPayment = () => {
                   value={transactionId}
                   onChange={handleTransactionIdChange}
                   onBlur={() => handleBlur("transactionId")}
-                  placeholder="e.g. TRX-12345"
+                  placeholder="e.g. UTR-12345"
                 />
 
                 {touched.transactionId &&

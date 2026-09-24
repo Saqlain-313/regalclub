@@ -1051,7 +1051,9 @@ const Wingo = () => {
         ))}
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-[#2a1b3d] bg-[#12061C] p-3 shadow-sm sm:grid-cols-[1fr_auto_auto] sm:items-stretch sm:gap-4 sm:p-4">
+      {/* ===== Pick a number + Multiplier ===== */}
+      <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-[#2a1b3d] bg-[#12061C] p-3 shadow-sm lg:grid lg:grid-cols-[1fr_auto_auto] lg:items-stretch lg:gap-4 lg:p-4">
+        {/* Pick a number */}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9B59B6] sm:text-xs">
@@ -1081,9 +1083,11 @@ const Wingo = () => {
           </div>
         </div>
 
-        <div className="hidden self-stretch border-l border-[#2a1b3d] sm:block" />
+        {/* Vertical divider — only on lg+ */}
+        <div className="hidden self-stretch border-l border-[#2a1b3d] lg:block" />
 
-        <div className="sm:w-[190px]">
+        {/* Multiplier */}
+        <div className="lg:w-[190px]">
           <div className="mb-2 flex items-center gap-1.5">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9B59B6] sm:text-xs">
               Multiplier

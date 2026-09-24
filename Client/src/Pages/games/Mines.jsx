@@ -22,6 +22,10 @@ const Minesgame = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
 
+  // TopX Purple gradient
+  const purpleGradient =
+    "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
+
   const minesGames = [
     {
       id: 1692,
@@ -81,52 +85,54 @@ const Minesgame = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4 sm:p-6">
-        {/* HEADER */}
-        <div className="mx-auto mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-xl">
-              <GiMineExplosion className="text-white text-2xl" />
+      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
+        {/* HEADER — compact */}
+        <div className="mx-auto mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
+            <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
+              <GiMineExplosion className="text-white text-lg sm:text-xl" />
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white">Mines</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Mines</h1>
           </div>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-xs sm:text-sm">
             Strategic risk-taking with explosive rewards
           </p>
         </div>
 
         {/* GRID */}
-        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
           {minesGames.map((game) => (
             <div
               key={game.id}
               onClick={() => handlePlay(game)}
               onMouseEnter={() => setHoveredId(game.id)}
               onMouseLeave={() => setHoveredId(null)}
-              className="group relative cursor-pointer bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl overflow-hidden border border-gray-700/50 hover:border-orange-500/50 hover:scale-[1.02] transition-all duration-300"
+              className="group relative cursor-pointer bg-[#1C0F2B] rounded-2xl overflow-hidden border border-[#2a1b3d] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] hover:scale-[1.02] transition-all duration-300 flex flex-row sm:flex-col"
             >
-              {/* IMAGE */}
-              <div className="relative aspect-[16/9] overflow-hidden">
+              {/* IMAGE — no aspect ratio, manual height */}
+              <div className="relative w-32 sm:w-full h-32 sm:h-[9rem] overflow-hidden flex-shrink-0">
                 <img
                   src={game.icon}
                   alt={game.game_name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/40 to-transparent" />
 
                 {/* BADGES */}
-                <div className="absolute top-3 left-3 flex gap-2">
+                <div className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex flex-wrap gap-1">
                   {game.is_featured && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full">
-                      <FaCrown className="text-white text-xs" />
-                      <span className="text-white text-xs font-bold">
-                        FEATURED
+                    <div
+                      className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full ${purpleGradient}`}
+                    >
+                      <FaCrown className="text-white text-[8px] sm:text-[10px]" />
+                      <span className="text-white text-[8px] sm:text-[10px] font-bold">
+                        HOT
                       </span>
                     </div>
                   )}
-                  <div className="px-2 py-1 bg-gray-900/80 rounded-full border border-gray-700/50">
-                    <span className="text-white text-xs font-bold">
+                  <div className="hidden sm:block px-1.5 py-0.5 bg-[#0B0410]/80 rounded-full border border-[#2a1b3d]">
+                    <span className="text-white text-[10px] font-bold">
                       {game.game_type}
                     </span>
                   </div>
@@ -137,32 +143,47 @@ const Minesgame = () => {
                   className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
                     hoveredId === game.id
                       ? "bg-black/70 opacity-100"
-                      : "bg-black/40 opacity-100 sm:opacity-0"
+                      : "bg-black/30 opacity-100 sm:opacity-0"
                   }`}
                 >
-                  {launchLoading ? (
-                    <FaSpinner className="animate-spin text-4xl text-white" />
+                  {launchLoading && selectedGame?.id === game.id ? (
+                    <FaSpinner className="animate-spin text-xl sm:text-3xl text-white" />
                   ) : (
-                    <div className="p-4 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full">
-                      <MdPlayCircle className="text-4xl text-white" />
+                    <div
+                      className={`p-1.5 sm:p-3 rounded-full ${purpleGradient}`}
+                    >
+                      <MdPlayCircle className="text-xl sm:text-3xl text-white" />
                     </div>
                   )}
                 </div>
               </div>
 
               {/* INFO */}
-              <div className="p-5">
-                <div className="flex justify-between mb-2">
-                  <h3 className="text-white font-bold text-xl">
+              <div className="p-2.5 sm:p-4 flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex justify-between items-start gap-1.5 mb-1">
+                  <h3 className="text-white font-bold text-sm sm:text-lg truncate">
                     {game.game_name}
                   </h3>
-                  <div className="flex items-center gap-1">
-                    <MdStar className="text-yellow-400" />
-                    <span className="text-white font-bold">{game.rating}</span>
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <MdStar className="text-[#F1C40F] text-xs sm:text-sm" />
+                    <span className="text-white font-bold text-[10px] sm:text-sm">
+                      {game.rating}
+                    </span>
                   </div>
                 </div>
 
-                <p className="text-gray-400 text-sm mb-4">{game.description}</p>
+                <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
+                  {game.description}
+                </p>
+
+                <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-xs text-gray-500">
+                  <span className="flex items-center gap-0.5">
+                    👥 {game.players}
+                  </span>
+                  <span className="flex items-center gap-0.5 text-[#B45CFF]">
+                    🔥 {game.volatility}
+                  </span>
+                </div>
               </div>
             </div>
           ))}

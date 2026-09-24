@@ -19,7 +19,12 @@ import {
   resetGameState,
 } from "../../redux/slices/gameSlice";
 
-const CasinoGames = ({ limit, showViewAll = false, showSearch = true }) => {
+const CasinoGames = ({
+  limit,
+  showViewAll = false,
+  showSearch = true,
+  isHome = false, // 👈 NEW — home page flag
+}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { gamesByGameType, loading } = useSelector((state) => state.game);
@@ -178,45 +183,68 @@ const CasinoGames = ({ limit, showViewAll = false, showSearch = true }) => {
           </div>
         )}
         <div className="mx-auto">
-          {/* HEADER WITH BACK BUTTON, VIEW ALL, AND SEARCH */}
-          <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div className="flex items-center gap-4 w-full md:w-auto">
-              <button
-                onClick={() => navigate(-1)}
-                className="flex items-center gap-2 text-gray-300 hover:text-white text-sm font-bold transition-colors bg-[#1C0F2B] border border-[#2a1b3d] hover:bg-[#2a1b3d] hover:border-[#9B59B6]/50 px-4 py-2 rounded-xl"
-              >
-                <FaArrowLeft /> Back
-              </button>
+          {/* HEADER — hide on home page OR when showSearch is false */}
+          {!isHome && (
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+              <div className="flex items-center gap-4 w-full md:w-auto">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="flex items-center gap-2 text-gray-300 hover:text-white text-sm font-bold transition-colors bg-[#1C0F2B] border border-[#2a1b3d] hover:bg-[#2a1b3d] hover:border-[#9B59B6]/50 px-4 py-2 rounded-xl"
+                >
+                  <FaArrowLeft /> Back
+                </button>
 
-              <h1 className="text-lg md:text-xl font-bold text-white">
-                Live Casino Games
-              </h1>
+                <h1 className="text-lg md:text-xl font-bold text-white">
+                  Live Casino Games
+                </h1>
 
+                {showViewAll && (
+                  <Link
+                    to="/casino"
+                    className="flex items-center gap-1 text-sm font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-lg hover:bg-[#2a1b3d] hover:text-white transition-all ml-auto md:ml-2"
+                  >
+                    View all
+                    <span className="text-lg">›</span>
+                  </Link>
+                )}
+              </div>
+
+              {/* Search Box — only if showSearch is true */}
+              {showSearch && (
+                <div className="relative w-full md:w-80">
+                  <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="Search live casino games..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-[#12061C] border border-[#2a1b3d] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#B45CFF]/60 focus:ring-2 focus:ring-[#B45CFF]/20 transition-all"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* If isHome=true, show a small heading instead */}
+          {isHome && (
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[22px]">🎰</span>
+                <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[24px]">
+                  Casino & Live Games
+                </h2>
+              </div>
               {showViewAll && (
                 <Link
                   to="/casino"
-                  className="flex items-center gap-1 text-sm font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-lg hover:bg-[#2a1b3d] hover:text-white transition-all ml-auto md:ml-2"
+                  className="flex items-center gap-1 text-sm font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-lg hover:bg-[#2a1b3d] hover:text-white transition-all"
                 >
                   View all
                   <span className="text-lg">›</span>
                 </Link>
               )}
             </div>
-
-            {/* 👇 Search Box — only if showSearch is true */}
-            {showSearch && (
-              <div className="relative w-full md:w-80">
-                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Search live casino games..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-[#12061C] border border-[#2a1b3d] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#B45CFF]/60 focus:ring-2 focus:ring-[#B45CFF]/20 transition-all"
-                />
-              </div>
-            )}
-          </div>
+          )}
 
           {/* GAME GRID – RESPONSIVE */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
@@ -278,8 +306,8 @@ const CasinoGames = ({ limit, showViewAll = false, showSearch = true }) => {
             </div>
           )}
 
-          {/* PAGINATION — only if showSearch is true (full page) */}
-          {showSearch && filteredGames.length > gamesPerPage && (
+          {/* PAGINATION — only if not home AND showSearch is true */}
+          {!isHome && showSearch && filteredGames.length > gamesPerPage && (
             <div className="mt-10">
               <div className="flex flex-col md:flex-row items-center justify-center gap-4">
                 <div className="hidden sm:flex items-center gap-2">
