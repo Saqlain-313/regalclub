@@ -39,12 +39,11 @@ function GameGrid({ games = [], mobileLimit = 6, desktopLimit = 12 }) {
           <Link
             key={game.game_uid || game.id || index}
             to={`/game/${game.game_uid || game.id}`}
-            className={`group relative rounded-2xl overflow-hidden bg-[#1C0F2B] border border-[#2a1b3d] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition duration-300 hover:border-[#9B59B6]/50 hover:shadow-[0_6px_18px_rgba(155,89,182,0.2)] ${
-              hideOnMobile ? "hidden md:block" : ""
-            }`}
+            className={`group relative rounded-2xl overflow-hidden bg-[#1C0F2B] border border-[#2a1b3d] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition duration-300 hover:border-[#9B59B6]/50 hover:shadow-[0_6px_18px_rgba(155,89,182,0.2)] ${hideOnMobile ? "hidden md:block" : ""
+              }`}
           >
             {/* Game Image */}
-            <div className="relative aspect-square w-full overflow-hidden">
+            <div className="relative aspect-square w-full h-48 md:h-auto overflow-hidden">
               <img
                 src={game.img || game.icon}
                 alt={game.game_name}
@@ -55,9 +54,8 @@ function GameGrid({ games = [], mobileLimit = 6, desktopLimit = 12 }) {
               {/* Badge */}
               {game.badge && (
                 <span
-                  className={`absolute top-2 right-2 ${
-                    game.badge === "HOT" ? "bg-[#E74C3C]" : "bg-[#00E676]"
-                  } text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-md`}
+                  className={`absolute top-2 right-2 ${game.badge === "HOT" ? "bg-[#E74C3C]" : "bg-[#00E676]"
+                    } text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-md`}
                 >
                   {game.badge}
                 </span>
@@ -174,11 +172,10 @@ export default function CasinoSlotGames() {
             key={tab.id}
             ref={(el) => (tabRefs.current[tab.id] = el)}
             onClick={() => setActiveTab(tab.id)}
-            className={`relative z-10 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors duration-300 ${
-              activeTab === tab.id
-                ? "text-white"
-                : "text-gray-400 hover:text-white"
-            }`}
+            className={`relative z-10 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors duration-300 ${activeTab === tab.id
+              ? "text-white"
+              : "text-gray-400 hover:text-white"
+              }`}
           >
             {tab.label}
           </button>

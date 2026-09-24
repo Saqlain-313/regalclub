@@ -43,7 +43,7 @@ const PopularGamesCards = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 sm:gap-5">
+      <div className="grid grid-cols-4 gap-2">
         {popularCards.map((game) => {
           const isTrading = game.id === 2;
           const needsLogin = isTrading && !user;

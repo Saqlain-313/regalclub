@@ -25,7 +25,7 @@ export default function GameGrid({
           to={`/game/${game.game_uid || game.id}`}
           className="group relative rounded-2xl overflow-hidden bg-[#1C0F2B] border border-[#2a1b3d] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition duration-300 hover:border-[#9B59B6]/50 hover:shadow-[0_6px_18px_rgba(155,89,182,0.2)]"
         >
-          <div className="relative aspect-square w-full overflow-hidden">
+          <div className="relative aspect-square w-full h-48 overflow-hidden">
             <img
               src={game.img || game.icon}
               alt={game.game_name}
