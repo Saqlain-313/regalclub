@@ -1,7 +1,6 @@
 import {
   AlertCircle,
   ArrowRight,
-  CheckCircle2,
   Clock,
   CreditCard,
   Landmark,
@@ -358,83 +357,20 @@ const Deposit = () => {
       <div className="relative px-4 sm:px-6 py-6">
         <div className="max-w-md w-full mx-auto">
           {/* Header */}
-          <div className="mb-6">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center mb-3">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center">
               <Wallet className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">
-              Deposit Funds
-            </h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Select a payment method and amount to continue
-            </p>
-            {/* Show current currency */}
-            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#9B59B6]/10 border border-[#9B59B6]/40 rounded-full">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#9B59B6]/10 border border-[#9B59B6]/40 rounded-full">
               <span className="text-[10px] font-medium text-[#9B59B6]">
                 Currency: {currencySymbol} {currencyConfig.code}
               </span>
             </div>
           </div>
 
-          {/* Payment Methods */}
-          <div className="mb-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                Payment Method
-              </h3>
-              {!selectedMethod && (
-                <span className="text-[10px] font-semibold text-red-400 bg-red-500/15 border border-red-500/30 px-2 py-0.5 rounded-full">
-                  Required
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              {methods?.map((item) => (
-                <button
-                  type="button"
-                  key={item.title}
-                  onClick={() => handleMethodSelect(item)}
-                  className={`flex-1 flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-150 text-left ${
-                    selectedMethod?.title === item.title
-                      ? "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]"
-                      : "border-[#2a1b3d] bg-[#12061C] hover:border-[#9B59B6]/50 hover:bg-[#2a1b3d]/50"
-                  }`}
-                >
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                      selectedMethod?.title === item.title
-                        ? "bg-white/20 text-white backdrop-blur-sm"
-                        : "bg-[#1C0F2B] text-gray-400 border border-[#2a1b3d]"
-                    }`}
-                  >
-                    {getMethodIcon(item.type)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-white truncate">
-                      {item.title}
-                    </p>
-                    <p className="text-[11px] text-gray-300 flex items-center gap-1 mt-0.5">
-                      <Clock className="w-2.5 h-2.5" />
-                      {item.processingTime}
-                    </p>
-                  </div>
-                  {selectedMethod?.title === item.title && (
-                    <CheckCircle2 className="w-4 h-4 text-white flex-shrink-0" />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {selectedMethod && (
-              <p className="mt-3.5 text-[11px] text-gray-400">
-                Limit: {formatCurrency(selectedMethod.minimumDeposit)} –{" "}
-                {formatCurrency(selectedMethod.maximumDeposit)}
-              </p>
-            )}
-          </div>
-
-          {/* Amount Section */}
+          {/* ============================================= */}
+          {/* AMOUNT SECTION — pehle */}
+          {/* ============================================= */}
           <div className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
               Amount ({currencySymbol})
@@ -487,18 +423,90 @@ const Deposit = () => {
                 {error}
               </p>
             )}
-
-            {!selectedMethod && (
-              <div className="mt-5 px-3.5 py-3 bg-[#9B59B6]/10 border border-[#9B59B6]/30 rounded-xl flex items-center gap-2">
-                <AlertCircle className="w-3.5 h-3.5 text-[#9B59B6] flex-shrink-0" />
-                <p className="text-[11px] text-[#9B59B6] font-medium">
-                  Select a payment method above to proceed
-                </p>
-              </div>
-            )}
           </div>
 
-          {/* Amount summary + Proceed button */}
+          {/* ============================================= */}
+          {/* PAYMENT METHOD — radio style — Amount ke neeche */}
+          {/* ============================================= */}
+          <div className="mt-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                Payment Method
+              </h3>
+              {!selectedMethod && (
+                <span className="text-[10px] font-semibold text-red-400 bg-red-500/15 border border-red-500/30 px-2 py-0.5 rounded-full">
+                  Required
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              {methods?.map((item) => {
+                const isSelected = selectedMethod?.title === item.title;
+
+                return (
+                  <button
+                    type="button"
+                    key={item.title}
+                    onClick={() => handleMethodSelect(item)}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all duration-150 ${
+                      isSelected
+                        ? "bg-gradient-to-br from-[#B45CFF]/10 via-[#7418F5]/10 to-[#3A00C9]/10 border-[#B45CFF] shadow-[0_0_12px_rgba(180,92,255,0.35)]"
+                        : "border-[#2a1b3d] bg-[#12061C] hover:border-[#9B59B6]/50 hover:bg-[#2a1b3d]/50"
+                    }`}
+                  >
+                    {/* 👇 RADIO BUTTON */}
+                    <span
+                      className={`flex items-center justify-center w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
+                        isSelected
+                          ? "border-[#B45CFF] bg-[#0B0410]"
+                          : "border-[#3a2a4d] bg-[#0B0410]"
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9]" />
+                      )}
+                    </span>
+
+                    {/* Icon */}
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                        isSelected
+                          ? "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] text-white"
+                          : "bg-[#1C0F2B] text-gray-400 border border-[#2a1b3d]"
+                      }`}
+                    >
+                      {getMethodIcon(item.type)}
+                    </div>
+
+                    {/* Title + Time */}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-white truncate">
+                        {item.title}
+                      </p>
+                      <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
+                        <Clock className="w-2.5 h-2.5" />
+                        {item.processingTime}
+                      </p>
+                    </div>
+
+                    {/* Limit info (right side) */}
+                    <div className="text-right flex-shrink-0 hidden sm:block">
+                      <p className="text-[10px] text-gray-500">Limit</p>
+                      <p className="text-[10px] font-medium text-gray-300">
+                        {formatCurrency(item.minimumDeposit)} -{" "}
+                        {formatCurrency(item.maximumDeposit)}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ============================================= */}
+          {/* PROCEED BUTTON — sabse neeche */}
+          {/* ============================================= */}
           <div className="mt-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs text-gray-400 font-medium">

@@ -1,11 +1,4 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  Gamepad2,
-  ShieldCheck,
-  Users,
-  WalletCards,
-} from "lucide-react";
+import { Gamepad2, ShieldCheck, Users, WalletCards } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
@@ -104,7 +97,7 @@ export default function HeroSection() {
                   relative
                   w-full
                   h-[185px]
-                  sm:h-[240px]
+                  sm:h-[200px]
                   md:h-[300px]
                   lg:h-[340px]
                   bg-white
@@ -121,7 +114,7 @@ export default function HeroSection() {
         </Swiper>
 
         {/* LEFT ARROW */}
-        <button
+        {/* <button
           type="button"
           className="
             hero-prev
@@ -152,10 +145,10 @@ export default function HeroSection() {
           "
         >
           <ChevronLeft size={18} />
-        </button>
+        </button> */}
 
         {/* RIGHT ARROW */}
-        <button
+        {/* <button
           type="button"
           className="
             hero-next
@@ -186,7 +179,7 @@ export default function HeroSection() {
           "
         >
           <ChevronRight size={18} />
-        </button>
+        </button> */}
       </div>
 
       {/* ================= SWIPER STYLE ================= */}
