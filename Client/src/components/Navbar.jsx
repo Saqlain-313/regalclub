@@ -243,7 +243,7 @@ const Navbar = ({ children }) => {
   // WINZOX Logo Component
   const WinzoxLogo = ({ className = "h-48" }) => (
     <img
-      src="https://i.ibb.co/5W1GTsh1/Chat-GPT-Image-Sep-15-2026-03-03-53-PM.png"
+      src="https://i.ibb.co/fdGFXBrr/logo.png"
       alt="WINZOX"
       className={`${className} object-contain w-auto`}
     />
@@ -678,9 +678,6 @@ const Navbar = ({ children }) => {
                   </div>
                 </div>
               </div>
-              <span className="text-white text-sm font-medium flex justify-center items-center z-30">
-                Deposite
-              </span>
             </Link>
           </div>
         </div>
