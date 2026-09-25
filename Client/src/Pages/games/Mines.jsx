@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaCrown, FaSpinner } from "react-icons/fa";
 import { MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import { GiMineExplosion } from "react-icons/gi";
 import GamePlayModal from "../../components/GamePlayModal";
+
 import {
   clearGameUrl,
   launchGame,
@@ -18,12 +19,15 @@ const Minesgame = ({ isHome = false }) => {
   const location = useLocation();
 
   const { gameUrl, launchLoading, launchError } = useSelector(
-    (state) => state.game,
+    (state) => state.game
   );
 
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
+
+  // Prevent duplicate auto launch
+  const autoLaunchStarted = useRef(false);
 
   const purpleGradient =
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
@@ -58,35 +62,84 @@ const Minesgame = ({ isHome = false }) => {
       min_bet: 10,
       max_bet: 5000,
       is_featured: false,
-      description: "Fast-paced mines action with instant cash-out excitement.",
+      description:
+        "Fast-paced mines action with instant cash-out excitement.",
     },
   ];
 
+  /*
+   * ============================================================
+   * RESET GAME STATE
+   * ============================================================
+   */
   useEffect(() => {
     if (!isHome) {
       dispatch(resetGameState());
     }
   }, [dispatch, isHome]);
 
+  /*
+   * ============================================================
+   * AUTO LAUNCH FROM HOME
+   * ============================================================
+   *
+   * Home
+   *   ↓
+   * Mines click
+   *   ↓
+   * /mines
+   *   ↓
+   * autoLaunch: true
+   *   ↓
+   * launchGame()
+   */
   useEffect(() => {
-    if (!isHome && gameUrl) setIsGameModalOpen(true);
-  }, [gameUrl, isHome]);
-
-  // ✅ AUTO LAUNCH
-  useEffect(() => {
-    if (!isHome && location.state?.autoLaunch && location.state?.gameUid) {
-      const game = minesGames.find(
-        (g) => g.game_uid === location.state.gameUid,
-      );
-      if (game) {
-        setSelectedGame(game);
-        dispatch(launchGame({ gameId: game.game_uid }));
-      }
+    if (
+      isHome ||
+      !location.state?.autoLaunch ||
+      !location.state?.gameUid ||
+      autoLaunchStarted.current
+    ) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state, isHome]);
 
-  const handlePlay = async (game) => {
+    autoLaunchStarted.current = true;
+
+    const game = minesGames.find(
+      (g) => g.game_uid === location.state.gameUid
+    );
+
+    if (!game) {
+      autoLaunchStarted.current = false;
+      return;
+    }
+
+    setSelectedGame(game);
+
+    dispatch(
+      launchGame({
+        gameId: game.game_uid,
+      })
+    );
+  }, [dispatch, isHome, location.state]);
+
+  /*
+   * ============================================================
+   * OPEN MODAL WHEN GAME URL ARRIVES
+   * ============================================================
+   */
+  useEffect(() => {
+    if (!isHome && gameUrl && selectedGame) {
+      setIsGameModalOpen(true);
+    }
+  }, [gameUrl, isHome, selectedGame]);
+
+  /*
+   * ============================================================
+   * HOME GAME CLICK
+   * ============================================================
+   */
+  const handlePlay = (game) => {
     if (isHome) {
       navigate("/mines", {
         state: {
@@ -94,74 +147,157 @@ const Minesgame = ({ isHome = false }) => {
           gameUid: game.game_uid,
         },
       });
+
       return;
     }
 
-    try {
-      setSelectedGame(game);
-      await dispatch(launchGame({ gameId: game.game_uid })).unwrap();
-    } catch {
-      alert("Failed to launch Mines");
-    }
+    setSelectedGame(game);
+
+    dispatch(
+      launchGame({
+        gameId: game.game_uid,
+      })
+    );
   };
 
+  /*
+   * ============================================================
+   * CLOSE GAME
+   * ============================================================
+   */
   const closeGameModal = () => {
     setIsGameModalOpen(false);
     setSelectedGame(null);
+
     dispatch(clearGameUrl());
   };
 
+  /*
+   * ============================================================
+   * FULL SCREEN AUTO LAUNCH LOADER
+   * ============================================================
+   *
+   * Loader ONLY:
+   *
+   * Home se /mines aaye
+   * +
+   * autoLaunch true
+   * +
+   * gameUrl abhi nahi aaya
+   *
+   * Direct /mines open karne par loader nahi aayega.
+   */
+  const isAutoLaunching =
+    !isHome &&
+    location.state?.autoLaunch &&
+    location.state?.gameUid &&
+    !gameUrl &&
+    (launchLoading || autoLaunchStarted.current);
+
   return (
     <>
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
-        <div className="mx-auto mb-4 sm:mb-6 sm:hidden md:block">
-          <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
-            <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
-              <GiMineExplosion className="text-white text-lg sm:text-xl" />
+      {/* ========================================================
+          AUTO LAUNCH FULL SCREEN LOADER
+          ======================================================== */}
+      {isAutoLaunching && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          <div className="flex flex-col items-center justify-center px-6 text-center">
+            {/* ICON */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute h-24 w-24 animate-ping rounded-full bg-[#B45CFF]/20" />
+
+              <div
+                className={`relative flex h-20 w-20 items-center justify-center rounded-full ${purpleGradient}`}
+              >
+                <GiMineExplosion className="text-4xl text-white" />
+              </div>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Mines</h1>
+
+            {/* TITLE */}
+            <h2 className="mt-6 text-xl font-bold text-white sm:text-2xl">
+              Loading Mines...
+            </h2>
+
+            {/* DESCRIPTION */}
+            <p className="mt-2 text-sm text-gray-400">
+              Please wait while the game is opening
+            </p>
+
+            {/* SPINNER */}
+            <div className="mt-5 flex items-center gap-2">
+              <FaSpinner className="animate-spin text-lg text-[#B45CFF]" />
+
+              <span className="text-sm font-medium text-gray-300">
+                Launching game...
+              </span>
+            </div>
           </div>
-          <p className="text-gray-400 text-xs sm:text-sm">
+        </div>
+      )}
+
+      {/* ========================================================
+          MINES PAGE
+          ======================================================== */}
+      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
+        {/* HEADER */}
+        <div className="mx-auto mb-4 sm:mb-6 sm:hidden md:block">
+          <div className="mb-1 flex items-center gap-2 sm:gap-2.5">
+            <div className={`rounded-lg p-2 sm:p-2.5 ${purpleGradient}`}>
+              <GiMineExplosion className="text-lg text-white sm:text-xl" />
+            </div>
+
+            <h1 className="text-xl font-bold text-white sm:text-2xl">
+              Mines
+            </h1>
+          </div>
+
+          <p className="text-xs text-gray-400 sm:text-sm">
             Strategic risk-taking with explosive rewards
           </p>
         </div>
 
-        <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 sm:-mt-4">
+        {/* GRID */}
+        <div className="max-w-6xl grid grid-cols-1 gap-3 sm:grid-cols-2 sm:-mt-4 sm:gap-5 lg:grid-cols-3">
           {minesGames.map((game) => (
             <div
               key={game.id}
               onClick={() => handlePlay(game)}
               onMouseEnter={() => setHoveredId(game.id)}
               onMouseLeave={() => setHoveredId(null)}
-              className="group relative cursor-pointer bg-[#1C0F2B] rounded-2xl overflow-hidden border border-[#2a1b3d] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] hover:scale-[1.02] transition-all duration-300 flex flex-row sm:flex-col"
+              className="group relative flex cursor-pointer flex-row overflow-hidden rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] transition-all duration-300 hover:scale-[1.02] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] sm:flex-col"
             >
-              <div className="relative w-32 sm:w-full h-32 sm:h-[9rem] overflow-hidden flex-shrink-0">
+              {/* IMAGE */}
+              <div className="relative h-32 w-32 flex-shrink-0 overflow-hidden sm:h-[9rem] sm:w-full">
                 <img
                   src={game.icon}
                   alt={game.game_name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/40 to-transparent" />
 
-                <div className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex flex-wrap gap-1">
+                {/* BADGES */}
+                <div className="absolute left-1.5 top-1.5 flex flex-wrap gap-1 sm:left-2.5 sm:top-2.5">
                   {game.is_featured && (
                     <div
-                      className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full ${purpleGradient}`}
+                      className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 ${purpleGradient}`}
                     >
-                      <FaCrown className="text-white text-[8px] sm:text-[10px]" />
-                      <span className="text-white text-[8px] sm:text-[10px] font-bold">
+                      <FaCrown className="text-[8px] text-white sm:text-[10px]" />
+
+                      <span className="text-[8px] font-bold text-white sm:text-[10px]">
                         HOT
                       </span>
                     </div>
                   )}
-                  <div className="hidden sm:block px-1.5 py-0.5 bg-[#0B0410]/80 rounded-full border border-[#2a1b3d]">
-                    <span className="text-white text-[10px] font-bold">
+
+                  <div className="hidden rounded-full border border-[#2a1b3d] bg-[#0B0410]/80 px-1.5 py-0.5 sm:block">
+                    <span className="text-[10px] font-bold text-white">
                       {game.game_type}
                     </span>
                   </div>
                 </div>
 
+                {/* PLAY OVERLAY */}
                 <div
                   className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
                     hoveredId === game.id
@@ -170,48 +306,64 @@ const Minesgame = ({ isHome = false }) => {
                   }`}
                 >
                   {launchLoading && selectedGame?.id === game.id ? (
-                    <FaSpinner className="animate-spin text-xl sm:text-3xl text-white" />
+                    <div className="flex flex-col items-center gap-1.5">
+                      <FaSpinner className="animate-spin text-xl text-white sm:text-3xl" />
+
+                      <span className="text-[10px] text-white sm:text-sm">
+                        Launching...
+                      </span>
+                    </div>
                   ) : (
                     <div
-                      className={`p-1.5 sm:p-3 rounded-full ${purpleGradient}`}
+                      className={`rounded-full p-1.5 sm:p-3 ${purpleGradient}`}
                     >
-                      <MdPlayCircle className="text-xl sm:text-3xl text-white" />
+                      <MdPlayCircle className="text-xl text-white sm:text-3xl" />
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="p-2.5 sm:p-4 flex-1 min-w-0 flex flex-col justify-center">
-                <div className="flex justify-between items-start gap-1.5 mb-1">
-                  <h3 className="text-white font-bold text-sm sm:text-lg truncate">
+              {/* CONTENT */}
+              <div className="flex min-w-0 flex-1 flex-col justify-center p-2.5 sm:p-4">
+                <div className="mb-1 flex items-start justify-between gap-1.5">
+                  <h3 className="truncate text-sm font-bold text-white sm:text-lg">
                     {game.game_name}
                   </h3>
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <MdStar className="text-[#F1C40F] text-xs sm:text-sm" />
-                    <span className="text-white font-bold text-[10px] sm:text-sm">
+
+                  <div className="flex flex-shrink-0 items-center gap-0.5">
+                    <MdStar className="text-xs text-[#F1C40F] sm:text-sm" />
+
+                    <span className="text-[10px] font-bold text-white sm:text-sm">
                       {game.rating}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
+                <p className="mb-1.5 line-clamp-1 text-[10px] text-gray-400 sm:mb-3 sm:line-clamp-2 sm:text-xs">
                   {game.description}
                 </p>
 
-                <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-xs text-gray-500">
+                <div className="flex items-center gap-2 text-[9px] text-gray-500 sm:gap-4 sm:text-xs">
                   <span className="flex items-center gap-0.5">
                     👥 {game.players}
                   </span>
+
                   <span className="flex items-center gap-0.5 text-[#B45CFF]">
                     🔥 {game.volatility}
                   </span>
                 </div>
               </div>
+
+              {/* BORDER */}
+              <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[#B45CFF]/40" />
             </div>
           ))}
         </div>
       </div>
 
+      {/* ========================================================
+          GAME MODAL
+          ======================================================== */}
       {!isHome && (
         <GamePlayModal
           isOpen={isGameModalOpen}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
 import { GiChicken } from "react-icons/gi";
 import { MdGamepad, MdPlayCircle, MdStar } from "react-icons/md";
@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import GamePlayModal from "../../components/GamePlayModal";
+
 import {
   clearGameUrl,
   launchGame,
@@ -18,7 +19,7 @@ const ChickenGames = ({ isHome = false }) => {
   const location = useLocation();
 
   const { gameUrl, launchLoading, launchError } = useSelector(
-    (state) => state.game,
+    (state) => state.game
   );
 
   const purpleGradient =
@@ -26,6 +27,9 @@ const ChickenGames = ({ isHome = false }) => {
 
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
+
+  // Prevent duplicate auto launch
+  const autoLaunchStarted = useRef(false);
 
   const chickenGames = [
     {
@@ -61,31 +65,81 @@ const ChickenGames = ({ isHome = false }) => {
     },
   ];
 
+  /*
+   * ============================================================
+   * RESET GAME STATE
+   * ============================================================
+   */
   useEffect(() => {
     if (!isHome) {
       dispatch(resetGameState());
     }
   }, [dispatch, isHome]);
 
+  /*
+   * ============================================================
+   * AUTO LAUNCH FROM HOME
+   * ============================================================
+   *
+   * Home
+   *   ↓
+   * Chicken click
+   *   ↓
+   * /chicken
+   *   ↓
+   * autoLaunch: true
+   *   ↓
+   * launchGame()
+   */
   useEffect(() => {
-    if (!isHome && gameUrl) setIsGameModalOpen(true);
-  }, [gameUrl, isHome]);
-
-  // ✅ AUTO LAUNCH
-  useEffect(() => {
-    if (!isHome && location.state?.autoLaunch && location.state?.gameUid) {
-      const game = chickenGames.find(
-        (g) => g.game_uid === location.state.gameUid,
-      );
-      if (game) {
-        setSelectedGame(game);
-        dispatch(launchGame({ gameId: game.game_uid }));
-      }
+    if (
+      isHome ||
+      !location.state?.autoLaunch ||
+      !location.state?.gameUid ||
+      autoLaunchStarted.current
+    ) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state, isHome]);
 
+    const game = chickenGames.find(
+      (g) => g.game_uid === location.state.gameUid
+    );
+
+    if (!game) {
+      return;
+    }
+
+    autoLaunchStarted.current = true;
+
+    setSelectedGame(game);
+
+    dispatch(
+      launchGame({
+        gameId: game.game_uid,
+      })
+    );
+  }, [dispatch, isHome, location.state]);
+
+  /*
+   * ============================================================
+   * OPEN MODAL WHEN GAME URL ARRIVES
+   * ============================================================
+   */
+  useEffect(() => {
+    if (!isHome && gameUrl && selectedGame) {
+      setIsGameModalOpen(true);
+    }
+  }, [gameUrl, isHome, selectedGame]);
+
+  /*
+   * ============================================================
+   * PLAY GAME
+   * ============================================================
+   */
   const handlePlay = async (game) => {
+    /*
+     * HOME -> CHICKEN
+     */
     if (isHome) {
       navigate("/chicken", {
         state: {
@@ -93,113 +147,205 @@ const ChickenGames = ({ isHome = false }) => {
           gameUid: game.game_uid,
         },
       });
+
       return;
     }
 
+    /*
+     * NORMAL CHICKEN PAGE
+     */
     try {
       setSelectedGame(game);
-      await dispatch(launchGame({ gameId: game.game_uid })).unwrap();
+
+      await dispatch(
+        launchGame({
+          gameId: game.game_uid,
+        })
+      ).unwrap();
     } catch (err) {
-      alert("Failed to launch game");
+      alert(err || "Failed to launch game");
     }
   };
 
+  /*
+   * ============================================================
+   * CLOSE GAME MODAL
+   * ============================================================
+   */
   const closeGameModal = () => {
     setIsGameModalOpen(false);
     setSelectedGame(null);
+
     dispatch(clearGameUrl());
   };
 
+  /*
+   * ============================================================
+   * AUTO LAUNCH LOADER
+   * ============================================================
+   *
+   * Loader ONLY when:
+   *
+   * Home -> /chicken
+   * +
+   * autoLaunch true
+   * +
+   * gameUrl not received
+   *
+   * Direct /chicken open = NO LOADER
+   */
+  const isAutoLaunching =
+    !isHome &&
+    location.state?.autoLaunch &&
+    location.state?.gameUid &&
+    !gameUrl &&
+    (launchLoading || autoLaunchStarted.current);
+
   return (
     <>
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
-        <div className="mx-auto mb-4 sm:mb-6">
-          <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
-            <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
-              <GiChicken className="text-white text-lg sm:text-xl" />
+      {/* ========================================================
+          FULL SCREEN AUTO LAUNCH LOADER
+          ======================================================== */}
+      {isAutoLaunching && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          <div className="flex flex-col items-center justify-center px-6 text-center">
+            {/* CHICKEN ICON */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute h-24 w-24 animate-ping rounded-full bg-[#B45CFF]/20" />
+
+              <div
+                className={`relative flex h-20 w-20 items-center justify-center rounded-full ${purpleGradient}`}
+              >
+                <GiChicken className="text-4xl text-white" />
+              </div>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">
+
+            {/* TITLE */}
+            <h2 className="mt-6 text-xl font-bold text-white sm:text-2xl">
+              Loading Chicken Game...
+            </h2>
+
+            {/* DESCRIPTION */}
+            <p className="mt-2 text-sm text-gray-400">
+              Please wait while the game is opening
+            </p>
+
+            {/* SPINNER */}
+            <div className="mt-5 flex items-center gap-2">
+              <FaSpinner className="animate-spin text-lg text-[#B45CFF]" />
+
+              <span className="text-sm font-medium text-gray-300">
+                Launching game...
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          CHICKEN GAMES
+          ======================================================== */}
+      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
+        {/* HEADER */}
+        <div className="mx-auto mb-4 sm:mb-6">
+          <div className="mb-1 flex items-center gap-2 sm:gap-2.5">
+            <div className={`rounded-lg p-2 sm:p-2.5 ${purpleGradient}`}>
+              <GiChicken className="text-lg text-white sm:text-xl" />
+            </div>
+
+            <h1 className="text-xl font-bold text-white sm:text-2xl">
               Recomended Games
             </h1>
           </div>
-          <p className="text-gray-400 text-xs sm:text-sm">
+
+          <p className="text-xs text-gray-400 sm:text-sm">
             Fast-paced racing action with the craziest chickens!
           </p>
         </div>
 
-        <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 sm:-mt-4">
+        {/* GRID */}
+        <div className="max-w-6xl grid grid-cols-1 gap-3 sm:grid-cols-2 sm:-mt-4 sm:gap-5 lg:grid-cols-3">
           {chickenGames.map((game) => (
             <div
               key={game.game_uid}
               onClick={() => handlePlay(game)}
-              className="group cursor-pointer bg-[#1C0F2B]
-                         rounded-2xl overflow-hidden border border-[#2a1b3d]
-                         hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)]
-                         hover:scale-[1.02]
-                         transition-all duration-300 flex flex-row sm:flex-col"
+              className="group flex cursor-pointer flex-row overflow-hidden rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] transition-all duration-300 hover:scale-[1.02] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] sm:flex-col"
             >
-              <div className="relative w-32 sm:w-full h-32 sm:h-[9rem] overflow-hidden flex-shrink-0">
+              {/* IMAGE */}
+              <div className="relative h-32 w-32 flex-shrink-0 overflow-hidden sm:h-[9rem] sm:w-full">
                 <img
                   src={game.icon}
                   alt={game.game_name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
+
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/40 to-transparent" />
 
-                <div className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex flex-wrap gap-1">
+                {/* BADGES */}
+                <div className="absolute left-1.5 top-1.5 flex flex-wrap gap-1 sm:left-2.5 sm:top-2.5">
                   {game.is_featured && (
                     <span
-                      className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold text-white ${purpleGradient}`}
+                      className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white sm:text-[10px] ${purpleGradient}`}
                     >
-                      <FaCrown className="text-[7px] sm:text-[9px]" /> HOT
+                      <FaCrown className="text-[7px] sm:text-[9px]" />
+                      HOT
                     </span>
                   )}
+
                   {game.is_new && (
-                    <span className="px-1.5 py-0.5 bg-[#00E676] rounded-full text-[8px] sm:text-[10px] font-bold text-[#0B0410]">
+                    <span className="rounded-full bg-[#00E676] px-1.5 py-0.5 text-[8px] font-bold text-[#0B0410] sm:text-[10px]">
                       NEW
                     </span>
                   )}
                 </div>
 
-                <div
-                  className="absolute inset-0 flex items-center justify-center
-                             bg-black/30 opacity-100 sm:bg-black/40 sm:opacity-0
-                             sm:group-hover:opacity-100 transition"
-                >
-                  {launchLoading && selectedGame?.game_uid === game.game_uid ? (
-                    <FaSpinner className="animate-spin text-xl sm:text-3xl text-white" />
+                {/* PLAY OVERLAY */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-100 transition sm:bg-black/40 sm:opacity-0 sm:group-hover:opacity-100">
+                  {launchLoading &&
+                  selectedGame?.game_uid === game.game_uid ? (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <FaSpinner className="animate-spin text-xl text-white sm:text-3xl" />
+
+                      <span className="text-[10px] text-white sm:text-sm">
+                        Launching...
+                      </span>
+                    </div>
                   ) : (
                     <div
-                      className={`p-1.5 sm:p-3 rounded-full ${purpleGradient}`}
+                      className={`rounded-full p-1.5 sm:p-3 ${purpleGradient}`}
                     >
-                      <MdPlayCircle className="text-xl sm:text-3xl text-white" />
+                      <MdPlayCircle className="text-xl text-white sm:text-3xl" />
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="p-2.5 sm:p-4 flex-1 min-w-0 flex flex-col justify-center">
-                <div className="flex justify-between items-start gap-1.5 mb-1">
-                  <h3 className="text-white font-bold text-sm sm:text-lg truncate">
+              {/* CONTENT */}
+              <div className="flex min-w-0 flex-1 flex-col justify-center p-2.5 sm:p-4">
+                <div className="mb-1 flex items-start justify-between gap-1.5">
+                  <h3 className="truncate text-sm font-bold text-white sm:text-lg">
                     {game.game_name}
                   </h3>
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <MdStar className="text-[#F1C40F] text-xs sm:text-sm" />
-                    <span className="text-white font-bold text-[10px] sm:text-sm">
+
+                  <div className="flex flex-shrink-0 items-center gap-0.5">
+                    <MdStar className="text-xs text-[#F1C40F] sm:text-sm" />
+
+                    <span className="text-[10px] font-bold text-white sm:text-sm">
                       {game.rating}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
+                <p className="mb-1.5 line-clamp-1 text-[10px] text-gray-400 sm:mb-3 sm:line-clamp-2 sm:text-xs">
                   {game.description}
                 </p>
 
-                <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-xs text-gray-500">
+                <div className="flex items-center gap-2 text-[9px] text-gray-500 sm:gap-4 sm:text-xs">
                   <span className="flex items-center gap-0.5">
                     <MdGamepad className="text-[10px] sm:text-xs" />
                     {game.players}
                   </span>
+
                   <span className="flex items-center gap-0.5 text-[#B45CFF]">
                     <FaFire className="text-[9px] sm:text-xs" />
                     {game.volatility}
@@ -211,6 +357,9 @@ const ChickenGames = ({ isHome = false }) => {
         </div>
       </div>
 
+      {/* ========================================================
+          GAME MODAL
+          ======================================================== */}
       {!isHome && (
         <GamePlayModal
           isOpen={isGameModalOpen}
