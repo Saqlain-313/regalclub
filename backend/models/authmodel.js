@@ -35,10 +35,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    credit: {
-      type: Number,
-      default: 0,
-    },
+
     // ================= PROFILE =================
     profilePic: {
       type: String,
