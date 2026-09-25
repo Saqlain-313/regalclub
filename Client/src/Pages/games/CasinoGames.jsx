@@ -8,7 +8,7 @@ import {
 } from "react-icons/fa";
 import { MdPlayCircle, MdWarning } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import { liveCasino } from "../../Data/GamesData";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -27,6 +27,8 @@ const CasinoGames = ({
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const { gamesByGameType, loading } = useSelector((state) => state.game);
   const { gameUrl, launchLoading, launchError } = useSelector(
     (state) => state.game,
@@ -66,6 +68,25 @@ const CasinoGames = ({
     }
   }, [gameUrl, isHome]);
 
+  // ✅ AUTO LAUNCH — jab games list aa jaye tab dhoondein
+  useEffect(() => {
+    if (
+      !isHome &&
+      location.state?.autoLaunch &&
+      location.state?.gameUid &&
+      gamesByGameType?.length > 0
+    ) {
+      const game = gamesByGameType.find(
+        (g) => g.game_uid === location.state.gameUid,
+      );
+      if (game) {
+        setSelectedGame(game);
+        dispatch(launchGame({ gameId: game.game_uid }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, isHome, gamesByGameType]);
+
   const filteredGames = useMemo(() => {
     const sourceGames =
       Array.isArray(gamesByGameType) && gamesByGameType.length > 0
@@ -91,9 +112,13 @@ const CasinoGames = ({
   }, [searchTerm]);
 
   const handlePlay = async (game) => {
-    // ✅ Home page par click → apne route par navigate karein
     if (isHome) {
-      navigate("/casino");
+      navigate("/casino", {
+        state: {
+          autoLaunch: true,
+          gameUid: game.game_uid,
+        },
+      });
       return;
     }
 

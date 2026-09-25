@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { MdPlayCircle, MdWarning } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom"; // ✅ ADD
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { SlotsGames } from "../../Data/GamesData";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -16,7 +16,9 @@ import {
 
 const Slotgame = ({ isHome = false }) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate(); // ✅ ADD
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const { userprofile, stats } = useSelector((state) => state.auth);
   const { gamesByGameType, loading, gameUrl, launchLoading, launchError } =
     useSelector((state) => state.game);
@@ -67,10 +69,33 @@ const Slotgame = ({ isHome = false }) => {
     return sourceGames.slice(0, 12);
   }, [sourceGames]);
 
+  // ✅ AUTO LAUNCH
+  useEffect(() => {
+    if (
+      !isHome &&
+      location.state?.autoLaunch &&
+      location.state?.gameUid &&
+      sourceGames?.length > 0
+    ) {
+      const game = sourceGames.find(
+        (g) => g.game_uid === location.state.gameUid,
+      );
+      if (game) {
+        setSelectedGame(game);
+        dispatch(launchGame({ gameId: game.game_uid }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, isHome, sourceGames]);
+
   const handlePlay = async (game) => {
-    // ✅ Home page par click → apne route par navigate karein
     if (isHome) {
-      navigate("/slots");
+      navigate("/slots", {
+        state: {
+          autoLaunch: true,
+          gameUid: game.game_uid,
+        },
+      });
       return;
     }
 

@@ -3,7 +3,7 @@ import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
 import { GiChicken } from "react-icons/gi";
 import { MdGamepad, MdPlayCircle, MdStar, MdWarning } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom"; // ✅ ADD
+import { useNavigate, useLocation } from "react-router-dom";
 
 import GamePlayModal from "../../components/GamePlayModal";
 import {
@@ -14,7 +14,8 @@ import {
 
 const ChickenGames = ({ isHome = false }) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate(); // ✅ ADD
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const { gameUrl, launchLoading, launchError } = useSelector(
     (state) => state.game,
@@ -78,10 +79,28 @@ const ChickenGames = ({ isHome = false }) => {
     if (!isHome && gameUrl) setIsGameModalOpen(true);
   }, [gameUrl, isHome]);
 
+  // ✅ AUTO LAUNCH
+  useEffect(() => {
+    if (!isHome && location.state?.autoLaunch && location.state?.gameUid) {
+      const game = chickenGames.find(
+        (g) => g.game_uid === location.state.gameUid,
+      );
+      if (game) {
+        setSelectedGame(game);
+        dispatch(launchGame({ gameId: game.game_uid }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, isHome]);
+
   const handlePlay = async (game) => {
-    // ✅ Home page par click → apne route par navigate karein
     if (isHome) {
-      navigate("/chicken");
+      navigate("/chicken", {
+        state: {
+          autoLaunch: true,
+          gameUid: game.game_uid,
+        },
+      });
       return;
     }
 
