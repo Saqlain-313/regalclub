@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import mineBlastSound from "../assets/faah.mp3";
+import { getProfile } from "../redux/slices/authSlice";
 import { getCurrencyRates } from "../redux/slices/currencyRateSlice";
 import {
   cashoutMines,
@@ -134,7 +135,14 @@ export default function MinesGame() {
       }),
     ).then((action) => {
       if (startMinesGame.fulfilled.match(action)) {
+        // Join the socket room for this specific game
         socket.emit("join-mines-game", action.payload.game.id);
+
+        // Refresh profile so the UI shows the freshly deducted credit.
+        // If it was an existing game (no deduction), this is still safe.
+        if (!action.payload.existingGame) {
+          dispatch(getProfile());
+        }
       }
     });
   };
@@ -171,11 +179,18 @@ export default function MinesGame() {
         cell,
       }),
     ).then((action) => {
-      if (
-        revealMine.fulfilled.match(action) &&
-        action.payload?.result?.status === "lost"
-      ) {
+      if (!revealMine.fulfilled.match(action)) return;
+
+      const status = action.payload?.result?.status;
+
+      if (status === "lost") {
         triggerMineExplosion(cell);
+      }
+
+      // Auto-win (all safe cells opened) — credit was added server-side.
+      // Refresh profile so credit shows the win immediately.
+      if (status === "won") {
+        dispatch(getProfile());
       }
     });
   };
@@ -188,7 +203,12 @@ export default function MinesGame() {
       cashoutMines({
         gameId: game.id,
       }),
-    );
+    ).then((action) => {
+      if (cashoutMines.fulfilled.match(action)) {
+        // Credit was credited server-side. Refresh profile.
+        dispatch(getProfile());
+      }
+    });
   };
 
   const currentWin =

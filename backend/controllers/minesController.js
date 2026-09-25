@@ -27,11 +27,18 @@ function generateMines(count) {
    Public game rule: every new game has either 2 or 3
    guaranteed-safe first clicks.
 
-   We derive 2/3 from the game id so no extra Mongoose
-   schema field is required.
+   Derived deterministically from the game id so it stays
+   consistent across all clicks of the same game.
 ========================================================= */
-function getGuaranteedSafeClicks() {
-  return crypto.randomInt(0, 10) < 6 ? 2 : 3;
+function getGuaranteedSafeClicks(game) {
+  if (!game || !game._id) {
+    return crypto.randomInt(0, 10) < 6 ? 2 : 3;
+  }
+
+  const idStr = String(game._id);
+  const lastChar = idStr.charCodeAt(idStr.length - 1);
+
+  return lastChar % 2 === 0 ? 2 : 3;
 }
 
 /*
@@ -92,11 +99,6 @@ function getMultiplier(safeCells) {
 
 /* =========================================================
    CURRENCY / COUNTRY HELPERS
-   ---------------------------------------------------------
-   CurrencyRate is used to identify the user's currency/rate.
-IMPORTANT: user.credit is maintained directly in the user's
-LOCAL currency. No INR conversion is performed for game accounting.
-The client sends the amount in the user's local currency.
 ========================================================= */
 
 const COUNTRY_ALIASES = {
@@ -129,12 +131,6 @@ function normalizeCountryCode(country) {
   return COUNTRY_ALIASES[key] || key.toUpperCase();
 }
 
-/**
- * Get the active CurrencyRate for the logged-in user.
- *
- * India does not need a DB rate because INR is the base currency.
- * For every other country, an active CurrencyRate is mandatory.
- */
 async function getUserCurrencyInfo(user) {
   const countryCode = normalizeCountryCode(user?.country);
 
@@ -178,26 +174,15 @@ async function getUserCurrencyInfo(user) {
   };
 }
 
-/**
- * Convert local currency amount -> local currency amount.
- *
- * India:
- *   100 INR -> 100 INR
- *
- * Australia with rate 55:
- *   100 AUD -> 5500 INR
- */
 function localToBaseAmount(localAmount, _rate) {
   const amount = Number(localAmount);
   if (!Number.isFinite(amount) || amount <= 0) return 0;
-  // LOCAL -> LOCAL: no conversion for credit accounting.
   return amount;
 }
 
 function baseToLocalAmount(baseAmount, _rate) {
   const amount = Number(baseAmount);
   if (!Number.isFinite(amount)) return 0;
-  // LOCAL -> LOCAL: no conversion for responses/display.
   return amount;
 }
 
@@ -263,9 +248,6 @@ exports.startGame = async (req, res) => {
       35,
     );
 
-    // IMPORTANT:
-    // virtualStake coming from frontend is LOCAL currency.
-    // It is deducted directly from user.credit in the same currency.
     const localStake = Number(req.body.virtualStake);
 
     if (!Number.isFinite(localStake) || localStake <= 0) {
@@ -321,15 +303,11 @@ exports.startGame = async (req, res) => {
 
           multiplier: Number(existing.multiplier || 1),
 
-          // DB keeps local currency amount.
           virtualStake: existingStake,
-
-          // Local amount for UI.
           entryAmount: existingStake,
 
           virtualWin: Number(existing.virtualWin || 0),
 
-          // Local win amount for UI.
           winAmount: baseToLocalAmount(
             Number(existing.virtualWin || 0),
             currencyInfo.rate,
@@ -397,10 +375,7 @@ exports.startGame = async (req, res) => {
 
         multiplier: 1,
 
-        // IMPORTANT:
-        // Store only local currency in DB.
         virtualStake,
-
         virtualWin: 0,
 
         status: "playing",
@@ -437,14 +412,12 @@ exports.startGame = async (req, res) => {
 
         minesCount,
 
-        // Local currency values for accounting.
         virtualStake,
         entryAmount: virtualStake,
 
-        // Local display value.
         localStake: entryLocalAmount,
 
-        creditAfter: Number(updateduser.credit),
+        creditAfter: Number(updatedUser.credit),
 
         status: game.status,
         createdAt: game.createdAt,
@@ -461,11 +434,10 @@ exports.startGame = async (req, res) => {
       currency: currencyInfo.currencyCode,
       currencyRate: currencyInfo.rate,
 
-      credit: Number(updateduser.credit),
+      credit: Number(updatedUser.credit),
 
-      // Local credit for display.
       creditLocal: baseToLocalAmount(
-        Number(updateduser.credit),
+        Number(updatedUser.credit),
         currencyInfo.rate,
       ),
 
@@ -482,10 +454,8 @@ exports.startGame = async (req, res) => {
 
         multiplier: 1,
 
-        // DB/local currency amount.
         virtualStake,
 
-        // Local amount for UI.
         entryAmount: virtualStake,
 
         virtualWin: 0,
@@ -535,9 +505,6 @@ exports.revealCell = async (req, res) => {
       });
     }
 
-    // ---------------------------------------------------------
-    // GET USER + COUNTRY RATE
-    // ---------------------------------------------------------
     const user = await User.findById(userId).select(
       "credit status country",
     );
@@ -599,7 +566,7 @@ exports.revealCell = async (req, res) => {
     // GUARANTEED SAFE FIRST 2-3 CLICKS
     // ---------------------------------------------------------
     const currentClickNumber = (game.openedCells?.length || 0) + 1;
-    const guaranteedSafeClicks = getGuaranteedSafeClicks();
+    const guaranteedSafeClicks = getGuaranteedSafeClicks(game);
 
     if (currentClickNumber <= guaranteedSafeClicks) {
       const moved = moveMineFromSafeCell(game, cell);
@@ -638,12 +605,10 @@ exports.revealCell = async (req, res) => {
 
         multiplier: Number(game.multiplier || 1),
 
-        // DB/local currency values.
         virtualStake: Number(game.virtualStake || 0),
         entryAmount: Number(game.virtualStake || 0),
         virtualWin: 0,
 
-        // Local display values.
         localStake: baseToLocalAmount(
           Number(game.virtualStake || 0),
           currencyInfo.rate,
@@ -699,7 +664,6 @@ exports.revealCell = async (req, res) => {
     if (game.safeCells >= safeTotal) {
       game.status = "won";
 
-      // virtualStake is already the user's local-currency amount.
       const virtualWin =
         Number(game.virtualStake || 0) *
         Number(game.multiplier || 1);
@@ -709,7 +673,6 @@ exports.revealCell = async (req, res) => {
 
       await game.save();
 
-      // Add the WIN in local currency to the real credit.
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         {
@@ -750,12 +713,10 @@ exports.revealCell = async (req, res) => {
 
         multiplier: Number(game.multiplier || 1),
 
-        // Local currency values.
         virtualStake: Number(game.virtualStake || 0),
         entryAmount: Number(game.virtualStake || 0),
         virtualWin: Number(virtualWin || 0),
 
-        // Local values.
         localStake,
         localWin,
 
@@ -763,12 +724,10 @@ exports.revealCell = async (req, res) => {
         currency: currencyInfo.currencyCode,
         currencyRate: currencyInfo.rate,
 
-        // credit stays local currency.
-        credit: Number(updateduser.credit || 0),
+        credit: Number(updatedUser.credit || 0),
 
-        // Local credit for display.
         creditLocal: baseToLocalAmount(
-          Number(updateduser.credit || 0),
+          Number(updatedUser.credit || 0),
           currencyInfo.rate,
         ),
 
@@ -832,12 +791,10 @@ exports.revealCell = async (req, res) => {
 
       multiplier: Number(game.multiplier || 1),
 
-      // Local currency values.
       virtualStake: Number(game.virtualStake || 0),
       entryAmount: Number(game.virtualStake || 0),
       virtualWin: 0,
 
-      // Local values.
       localStake,
       localWin: currentLocalWin,
 
@@ -875,9 +832,6 @@ exports.cashout = async (req, res) => {
     const userId = req.user.id;
     const { gameId } = req.params;
 
-    // ---------------------------------------------------------
-    // GET USER + COUNTRY RATE
-    // ---------------------------------------------------------
     const user = await User.findById(userId).select(
       "credit status country",
     );
@@ -915,9 +869,6 @@ exports.cashout = async (req, res) => {
       throw currencyError;
     }
 
-    // ---------------------------------------------------------
-    // FIND ACTIVE GAME
-    // ---------------------------------------------------------
     const game = await MinesGame.findOne({
       _id: gameId,
       user: userId,
@@ -938,10 +889,6 @@ exports.cashout = async (req, res) => {
       });
     }
 
-    // ---------------------------------------------------------
-    // CALCULATE WIN
-    // ---------------------------------------------------------
-    // virtualStake is already stored in the user's local currency.
     const virtualWin =
       Number(game.virtualStake || 0) *
       Number(game.multiplier || 1);
@@ -953,10 +900,6 @@ exports.cashout = async (req, res) => {
       });
     }
 
-    // ---------------------------------------------------------
-    // UPDATE GAME FIRST
-    // Prevent double cashout.
-    // ---------------------------------------------------------
     const updatedGame = await MinesGame.findOneAndUpdate(
       {
         _id: gameId,
@@ -985,9 +928,6 @@ exports.cashout = async (req, res) => {
       });
     }
 
-    // ---------------------------------------------------------
-    // ADD WINNING AMOUNT TO REAL LOCAL credit
-    // ---------------------------------------------------------
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
@@ -1036,12 +976,10 @@ exports.cashout = async (req, res) => {
 
       multiplier: Number(updatedGame.multiplier || 1),
 
-      // Local currency/accounting values.
       virtualStake: Number(updatedGame.virtualStake || 0),
       entryAmount: Number(updatedGame.virtualStake || 0),
       virtualWin: Number(virtualWin),
 
-      // User's local currency values.
       localStake,
       localWin,
 
@@ -1049,21 +987,16 @@ exports.cashout = async (req, res) => {
       currency: currencyInfo.currencyCode,
       currencyRate: currencyInfo.rate,
 
-      // credit remains local currency.
-      credit: Number(updateduser.credit || 0),
+      credit: Number(updatedUser.credit || 0),
 
-      // Local credit for display.
       creditLocal: baseToLocalAmount(
-        Number(updateduser.credit || 0),
+        Number(updatedUser.credit || 0),
         currencyInfo.rate,
       ),
 
       finishedAt: updatedGame.finishedAt,
     };
 
-    // ---------------------------------------------------------
-    // SOCKET
-    // ---------------------------------------------------------
     const io = req.app.get("io");
 
     if (io) {
@@ -1085,7 +1018,7 @@ exports.cashout = async (req, res) => {
         localStake,
         localWin,
 
-        creditAfter: Number(updateduser.credit || 0),
+        creditAfter: Number(updatedUser.credit || 0),
 
         finishedAt: updatedGame.finishedAt,
       });
@@ -1099,25 +1032,21 @@ exports.cashout = async (req, res) => {
       currency: currencyInfo.currencyCode,
       currencyRate: currencyInfo.rate,
 
-      // Local currency amount.
       virtualWin: Number(virtualWin),
 
-      // Local currency amount.
       winAmount: localWin,
 
       multiplier: Number(updatedGame.multiplier || 1),
 
-      credit: Number(updateduser.credit || 0),
+      credit: Number(updatedUser.credit || 0),
 
       creditLocal: baseToLocalAmount(
-        Number(updateduser.credit || 0),
+        Number(updatedUser.credit || 0),
         currencyInfo.rate,
       ),
 
-      // Local currency.
       entryAmount: Number(updatedGame.virtualStake || 0),
 
-      // Local.
       entryAmountLocal: localStake,
 
       status: "cashout",
