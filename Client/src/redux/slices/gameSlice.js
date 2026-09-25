@@ -132,6 +132,9 @@ const gameSlice = createSlice({
     error: null,
     launchError: null,
     transferError: null,
+
+    // 👇 NEW — flag to auto-refresh credit when user returns from a game route
+    shouldRefreshOnReturn: false,
   },
 
   reducers: {
@@ -147,6 +150,10 @@ const gameSlice = createSlice({
       state.gameUrl = null;
       state.launchLoading = false;
       state.launchError = null;
+    },
+    // 👇 NEW
+    setShouldRefreshOnReturn: (state, action) => {
+      state.shouldRefreshOnReturn = action.payload;
     },
   },
 
@@ -247,5 +254,11 @@ const gameSlice = createSlice({
   },
 });
 
-export const { clearGameUrl, resetGameState } = gameSlice.actions;
+// 👇 Export the new action along with existing ones
+export const {
+  clearGameUrl,
+  resetGameState,
+  setShouldRefreshOnReturn,
+} = gameSlice.actions;
+
 export default gameSlice.reducer;

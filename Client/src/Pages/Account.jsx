@@ -18,15 +18,15 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { showErrorToast, showSuccessToast } from "../hooks/toast";
-import { logout } from "../redux/slices/authSlice";
+import { logout, getProfile } from "../redux/slices/authSlice";
 import {
   checkGamecredit,
-  clearGameUrl,
   resetGameState,
+  setShouldRefreshOnReturn,
 } from "../../../Client/src/redux/slices/gameSlice";
 
 // ======================================================
@@ -67,6 +67,8 @@ const Account = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const { shouldRefreshOnReturn } = useSelector((state) => state.game);
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -184,6 +186,58 @@ const Account = () => {
     }
   };
 
+  // ======================================================
+  // CHECK GAME CREDIT + REFRESH PROFILE
+  // used by both manual button + auto trigger
+  // ======================================================
+
+  const runCheckCredit = useCallback(async () => {
+    if (isCheckingCredit) return;
+    setIsCheckingCredit(true);
+    try {
+      dispatch(resetGameState());
+
+      // 1️⃣ Check game credit
+      const result = await dispatch(checkGamecredit()).unwrap();
+
+      // 2️⃣ Refresh profile (balance, wallet, etc.) after credit check
+      await dispatch(getProfile()).unwrap();
+
+      showSuccessToast(
+        "Credit Updated",
+        result?.message || "Game credit refreshed.",
+      );
+    } catch (error) {
+      showErrorToast(
+        "Check Failed",
+        error?.message || error || "Failed to refresh game credit.",
+      );
+    } finally {
+      setIsCheckingCredit(false);
+    }
+  }, [dispatch, isCheckingCredit]);
+
+  const handleCheckCreditClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    runCheckCredit();
+  };
+
+  // ======================================================
+  // 🔥 AUTO-HIT — when user returns from a game route
+  // ======================================================
+
+  useEffect(() => {
+    if (shouldRefreshOnReturn) {
+      dispatch(setShouldRefreshOnReturn(false)); // clear first (avoid loop)
+      runCheckCredit();                          // then auto-hit
+    }
+  }, [shouldRefreshOnReturn, dispatch, runCheckCredit]);
+
+  // ======================================================
+  // LOGOUT
+  // ======================================================
+
   const handleLogoutClick = () => setShowLogoutConfirm(true);
 
   const handleCancelLogout = () => {
@@ -208,36 +262,6 @@ const Account = () => {
       );
       setIsLoggingOut(false);
       setShowLogoutConfirm(false);
-    }
-  };
-
-  // ======================================================
-  // CHECK GAME CREDIT HANDLER
-  // ======================================================
-
-  const handleCheckCredit = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (isCheckingCredit) return;
-    setIsCheckingCredit(true);
-
-    try {
-      // Optionally reset stale state first
-      dispatch(resetGameState());
-
-      const result = await dispatch(checkGamecredit()).unwrap();
-      showSuccessToast(
-        "Credit Checked",
-        result?.message || "Game credit fetched successfully.",
-      );
-    } catch (error) {
-      showErrorToast(
-        "Check Failed",
-        error || "Failed to check game credit. Try again.",
-      );
-    } finally {
-      setIsCheckingCredit(false);
     }
   };
 
@@ -318,7 +342,7 @@ const Account = () => {
 
           {/* Check Credit Button */}
           <button
-            onClick={handleCheckCredit}
+            onClick={handleCheckCreditClick}
             disabled={isCheckingCredit}
             title="Check Game Credit"
             className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl bg-gradient-to-b from-[#9B59B6] to-[#7D3C98] text-white text-[10px] font-bold hover:from-[#a86bc4] hover:to-[#8a45a5] transition-all disabled:opacity-60 shadow-[0_2px_8px_rgba(155,89,182,0.4)] flex-shrink-0"
