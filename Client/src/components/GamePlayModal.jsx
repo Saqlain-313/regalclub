@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FaCoins,
   FaCompress,
@@ -24,15 +25,50 @@ import {
   resetGameState,
 } from "../../../Client/src/redux/slices/gameSlice";
 
+// --------------------------------------------------
+// Route-aware "Back" resolution
+//
+// GamePlayModal is mounted from several different game
+// listing pages (Aviator, Chicken, Casino, Slots, and
+// dynamic "/game/:id" detail pages). "Back" should return
+// the user to whichever of those pages they came from,
+// not always to a hardcoded route.
+//
+// Add/adjust entries here if new game routes are introduced.
+// --------------------------------------------------
+const KNOWN_GAME_ROUTES = ["/aviator", "/chicken", "/casino", "/slots"];
+
+const resolveBackRoute = (pathname) => {
+  if (!pathname) return "/";
+
+  // Dynamic game detail pages, e.g. /game/123 → back to the
+  // games listing. Change "/game" below if your listing page
+  // lives at a different path.
+  if (pathname.startsWith("/game/")) {
+    return "/game";
+  }
+
+  const matched = KNOWN_GAME_ROUTES.find((route) => pathname === route);
+  if (matched) {
+    return matched;
+  }
+
+  // Fallback for anything not explicitly listed above.
+  return "/";
+};
+
 const GamePlayModal = ({
   isOpen,
   onClose,
+  onReconnect, // 👈 NEW: parent passes a function that re-dispatches launchGame
   gameData,
   gameUrl,
   loading: launchLoading = false,
   launchError = null,
 }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const { isAuthenticated, loading: authLoading } = useSelector(
     (state) => state.auth
@@ -49,6 +85,11 @@ const GamePlayModal = ({
   const [iframeLoading, setIframeLoading] = useState(true);
   const [iframeError, setIframeError] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+
+  // NEW: tracks the disconnect state that the provider itself renders
+  // inside the iframe (we can't see the DOM inside it because it's
+  // cross-origin, so we only track whether WE think the session is stale)
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   // --------------------------------------------------
   // IMPORTANT SESSION PROTECTION
@@ -108,6 +149,11 @@ const GamePlayModal = ({
       If same URL already mounted:
       DO NOT recreate iframe.
       DO NOT reload provider session.
+
+      EXCEPTION: if we are actively reconnecting (isReconnecting),
+      a fresh URL might be identical in shape but represent a new
+      session token from the backend — still don't skip in that
+      case because mountedUrlRef is cleared by handleRefresh below.
     */
 
     if (mountedUrlRef.current === resolvedGameUrl) {
@@ -129,6 +175,7 @@ const GamePlayModal = ({
 
     setIframeLoading(true);
     setIframeError(null);
+    setIsReconnecting(false);
     setShowTransferModal(false);
 
     // Release lock after React has mounted iframe
@@ -208,18 +255,45 @@ const GamePlayModal = ({
   };
 
   // --------------------------------------------------
-  // REFRESH
+  // RECONNECT / REFRESH
   //
-  // DO NOT reload iframe.
-  // Provider session can be killed by iframe reload.
+  // We deliberately do NOT reload the existing iframe src,
+  // because a dead/expired provider session token will just
+  // fail again. Instead we ask the parent to fetch a brand
+  // new launch URL (new session) and swap the iframe once
+  // that arrives.
   // --------------------------------------------------
 
-  const handleRefresh = () => {
-    console.log(
-      "⚠️ Game refresh disabled to protect provider session."
-    );
+  const handleRefresh = async () => {
+    if (!onReconnect) {
+      console.warn(
+        "⚠️ No onReconnect handler provided — cannot recover session."
+      );
+      setIframeError(
+        "Unable to reconnect. Please close and reopen the game."
+      );
+      return;
+    }
 
-    setIframeError(null);
+    try {
+      setIsReconnecting(true);
+      setIframeError(null);
+
+      // Force the URL-handler effect to treat the next gameUrl
+      // (even if string-identical) as a fresh mount.
+      mountedUrlRef.current = "";
+      openingRef.current = false;
+
+      setIframeLoading(true);
+
+      await onReconnect();
+    } catch (error) {
+      console.error("Reconnect failed:", error);
+      setIframeError("Failed to reconnect. Please try again.");
+      setIframeLoading(false);
+    } finally {
+      setIsReconnecting(false);
+    }
   };
 
   // --------------------------------------------------
@@ -294,6 +368,7 @@ const GamePlayModal = ({
     // Reset UI
     setIframeLoading(true);
     setIframeError(null);
+    setIsReconnecting(false);
     setShowTransferModal(false);
     setIsFullscreen(false);
 
@@ -302,6 +377,13 @@ const GamePlayModal = ({
 
     // Close parent modal
     onClose();
+
+    // FIX: send the user back to the correct parent game route
+    // (aviator → /aviator, slots → /slots, etc.) instead of a
+    // hardcoded path — and instead of leaving them on a route
+    // that has no active gameUrl, which used to briefly render
+    // "Game URL not available".
+    navigate(resolveBackRoute(location.pathname));
 
     // Unlock
     setTimeout(() => {
@@ -320,7 +402,8 @@ const GamePlayModal = ({
   const actualLoading =
     iframeLoading ||
     launchLoading ||
-    iscreditLoading;
+    iscreditLoading ||
+    isReconnecting;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
@@ -413,16 +496,26 @@ const GamePlayModal = ({
             )}
           </button>
 
-          {/* REFRESH
-              Does NOT reload iframe
+          {/* RECONNECT / REFRESH
+              Now actually fetches a fresh session instead
+              of silently doing nothing.
           */}
           <button
             type="button"
             onClick={handleRefresh}
-            className="w-10 h-10 hidden sm:flex items-center justify-center rounded-lg hover:bg-gray-800 text-white"
-            title="Refresh disabled to protect game session"
+            disabled={isReconnecting || !onReconnect}
+            className="w-10 h-10 hidden sm:flex items-center justify-center rounded-lg hover:bg-gray-800 text-white disabled:opacity-40"
+            title={
+              onReconnect
+                ? "Reconnect game session"
+                : "Reconnect unavailable"
+            }
           >
-            <span className="text-xl">↻</span>
+            {isReconnecting ? (
+              <FaSpinner className="text-lg animate-spin" />
+            ) : (
+              <span className="text-xl">↻</span>
+            )}
           </button>
 
           {/* FULLSCREEN */}
@@ -455,8 +548,9 @@ const GamePlayModal = ({
               <FaSpinner className="text-white text-4xl animate-spin" />
 
               <span className="text-gray-300 text-sm">
-                Loading{" "}
-                {gameData?.game_name || "game"}...
+                {isReconnecting
+                  ? "Reconnecting..."
+                  : `Loading ${gameData?.game_name || "game"}...`}
               </span>
 
             </div>
@@ -464,7 +558,7 @@ const GamePlayModal = ({
         )}
 
         {/* LAUNCH ERROR */}
-        {launchError && (
+        {launchError && !actualLoading && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black px-5">
 
             <div className="text-center max-w-md">
@@ -479,13 +573,25 @@ const GamePlayModal = ({
                 {launchError}
               </p>
 
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-              >
-                Back
-              </button>
+              <div className="flex items-center justify-center gap-3">
+                {onReconnect && (
+                  <button
+                    type="button"
+                    onClick={handleRefresh}
+                    className="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold"
+                  >
+                    Try Again
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
+                >
+                  Back
+                </button>
+              </div>
 
             </div>
           </div>
@@ -494,7 +600,8 @@ const GamePlayModal = ({
         {/* NO URL */}
         {!resolvedGameUrl &&
           !actualLoading &&
-          !launchError && (
+          !launchError &&
+          !closingRef.current && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black px-5">
 
               <div className="text-center">
@@ -509,13 +616,25 @@ const GamePlayModal = ({
                   The game session could not be created.
                 </p>
 
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-                >
-                  Back
-                </button>
+                <div className="flex items-center justify-center gap-3">
+                  {onReconnect && (
+                    <button
+                      type="button"
+                      onClick={handleRefresh}
+                      className="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold"
+                    >
+                      Try Again
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
+                  >
+                    Back
+                  </button>
+                </div>
 
               </div>
             </div>
@@ -527,7 +646,7 @@ const GamePlayModal = ({
             NO iframe.src = iframe.src
         ================================================== */}
 
-        {resolvedGameUrl && !launchError && (
+        {resolvedGameUrl && !launchError && !isReconnecting && (
           <iframe
             ref={iframeRef}
             id="game-iframe"
@@ -559,8 +678,13 @@ const GamePlayModal = ({
           />
         )}
 
-        {/* IFRAME ERROR */}
-        {iframeError && (
+        {/* IFRAME ERROR
+            This is where the "You have been disconnected"
+            style failures land once WE detect them (onError,
+            or you can wire a postMessage listener from the
+            provider if they support one).
+        */}
+        {iframeError && !isReconnecting && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black px-5">
 
             <div className="text-center max-w-md">
@@ -575,13 +699,25 @@ const GamePlayModal = ({
                 {iframeError}
               </p>
 
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-              >
-                Back
-              </button>
+              <div className="flex items-center justify-center gap-3">
+                {onReconnect && (
+                  <button
+                    type="button"
+                    onClick={handleRefresh}
+                    className="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold"
+                  >
+                    Reconnect
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
+                >
+                  Back
+                </button>
+              </div>
 
             </div>
           </div>
