@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { MdPlayCircle, MdWarning } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom"; // ✅ ADD
 
 import { SlotsGames } from "../../Data/GamesData";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -15,6 +16,7 @@ import {
 
 const Slotgame = ({ isHome = false }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ ADD
   const { userprofile, stats } = useSelector((state) => state.auth);
   const { gamesByGameType, loading, gameUrl, launchLoading, launchError } =
     useSelector((state) => state.game);
@@ -32,14 +34,12 @@ const Slotgame = ({ isHome = false }) => {
   const credit = Number(userprofile?.credit || 0);
   const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;
 
-  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
     if (!isHome) {
       dispatch(resetGameState());
     }
   }, [dispatch, isHome]);
 
-  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
     if (!isHome && gameUrl) {
       setIsGameModalOpen(true);
@@ -68,6 +68,12 @@ const Slotgame = ({ isHome = false }) => {
   }, [sourceGames]);
 
   const handlePlay = async (game) => {
+    // ✅ Home page par click → apne route par navigate karein
+    if (isHome) {
+      navigate("/slots");
+      return;
+    }
+
     if (needsRecharge) {
       setSelectedGame(game);
       setShowRechargeModal(true);
@@ -219,7 +225,6 @@ const Slotgame = ({ isHome = false }) => {
         </div>
       )}
 
-      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
       {!isHome && (
         <GamePlayModal
           isOpen={isGameModalOpen}

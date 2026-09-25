@@ -48,7 +48,6 @@ const CasinoGames = ({
   const credit = Number(user?.credit || 0);
   const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;
 
-  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
     if (!isHome) {
       dispatch(resetGameState());
@@ -61,7 +60,6 @@ const CasinoGames = ({
     );
   }, [dispatch]);
 
-  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
     if (!isHome && gameUrl) {
       setIsGameModalOpen(true);
@@ -93,6 +91,12 @@ const CasinoGames = ({
   }, [searchTerm]);
 
   const handlePlay = async (game) => {
+    // ✅ Home page par click → apne route par navigate karein
+    if (isHome) {
+      navigate("/casino");
+      return;
+    }
+
     if (needsRecharge) {
       setSelectedGame(game);
       setShowRechargeModal(true);
@@ -394,7 +398,6 @@ const CasinoGames = ({
         </div>
       )}
 
-      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
       {!isHome && (
         <GamePlayModal
           isOpen={isGameModalOpen}

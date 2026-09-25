@@ -3,6 +3,7 @@ import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
 import { GiChicken } from "react-icons/gi";
 import { MdGamepad, MdPlayCircle, MdStar, MdWarning } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom"; // ✅ ADD
 
 import GamePlayModal from "../../components/GamePlayModal";
 import {
@@ -13,6 +14,7 @@ import {
 
 const ChickenGames = ({ isHome = false }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ ADD
 
   const { gameUrl, launchLoading, launchError } = useSelector(
     (state) => state.game,
@@ -66,19 +68,23 @@ const ChickenGames = ({ isHome = false }) => {
     },
   ];
 
-  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
     if (!isHome) {
       dispatch(resetGameState());
     }
   }, [dispatch, isHome]);
 
-  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
     if (!isHome && gameUrl) setIsGameModalOpen(true);
   }, [gameUrl, isHome]);
 
   const handlePlay = async (game) => {
+    // ✅ Home page par click → apne route par navigate karein
+    if (isHome) {
+      navigate("/chicken");
+      return;
+    }
+
     if (needsRecharge) {
       setSelectedGame(game);
       setShowRechargeModal(true);
@@ -240,7 +246,6 @@ const ChickenGames = ({ isHome = false }) => {
         </div>
       )}
 
-      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
       {!isHome && (
         <GamePlayModal
           isOpen={isGameModalOpen}

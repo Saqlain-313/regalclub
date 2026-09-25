@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaCrown, FaSpinner } from "react-icons/fa";
 import { MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom"; // ✅ ADD
 
 import { GiMineExplosion } from "react-icons/gi";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -13,6 +14,7 @@ import {
 
 const Minesgame = ({ isHome = false }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ ADD
 
   const { gameUrl, launchLoading, launchError } = useSelector(
     (state) => state.game,
@@ -59,19 +61,23 @@ const Minesgame = ({ isHome = false }) => {
     },
   ];
 
-  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
     if (!isHome) {
       dispatch(resetGameState());
     }
   }, [dispatch, isHome]);
 
-  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
     if (!isHome && gameUrl) setIsGameModalOpen(true);
   }, [gameUrl, isHome]);
 
   const handlePlay = async (game) => {
+    // ✅ Home page par click → apne route par navigate karein
+    if (isHome) {
+      navigate("/mines");
+      return;
+    }
+
     try {
       setSelectedGame(game);
       await dispatch(launchGame({ gameId: game.game_uid })).unwrap();
@@ -187,7 +193,6 @@ const Minesgame = ({ isHome = false }) => {
         </div>
       </div>
 
-      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
       {!isHome && (
         <GamePlayModal
           isOpen={isGameModalOpen}

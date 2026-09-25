@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
 import { MdGamepad, MdPlayCircle, MdStar, MdWarning } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom"; // ✅ ADD
 import { GiAirplane } from "react-icons/gi";
 import GamePlayModal from "../../components/GamePlayModal";
 import {
@@ -12,6 +13,7 @@ import {
 
 const AviatorGames = ({ isHome = false }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ ADD
 
   const { gameUrl, launchLoading, launchError } = useSelector(
     (state) => state.game,
@@ -49,19 +51,23 @@ const AviatorGames = ({ isHome = false }) => {
       "The legendary crash game where timing is everything. Cash out before the plane flies away!",
   };
 
-  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
     if (!isHome) {
       dispatch(resetGameState());
     }
   }, [dispatch, isHome]);
 
-  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
     if (!isHome && gameUrl) setIsGameModalOpen(true);
   }, [gameUrl, isHome]);
 
   const handlePlay = async () => {
+    // ✅ Home page par click → apne route par navigate karein
+    if (isHome) {
+      navigate("/aviator");
+      return;
+    }
+
     if (needsRecharge) {
       setSelectedGame(aviatorGame);
       setShowRechargeModal(true);
@@ -85,7 +91,6 @@ const AviatorGames = ({ isHome = false }) => {
   return (
     <>
       <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
-        {/* HEADER — compact */}
         <div className="max-w-6xl mb-4 sm:mb-6 sm:hidden md:block">
           <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
             <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
@@ -100,7 +105,6 @@ const AviatorGames = ({ isHome = false }) => {
           </p>
         </div>
 
-        {/* GRID */}
         <div className=" max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 sm:-mt-4">
           <div
             onClick={handlePlay}
@@ -116,7 +120,6 @@ const AviatorGames = ({ isHome = false }) => {
                        transition-all duration-300
                        flex flex-row sm:flex-col"
           >
-            {/* IMAGE */}
             <div className="relative w-32 sm:w-full h-32 sm:h-[9rem] overflow-hidden bg-[#12061C] flex-shrink-0">
               <img
                 src={aviatorGame.icon}
@@ -144,7 +147,6 @@ const AviatorGames = ({ isHome = false }) => {
                 </div>
               </div>
 
-              {/* PLAY OVERLAY */}
               <div
                 className={`
                   absolute inset-0 flex items-center justify-center
@@ -178,7 +180,6 @@ const AviatorGames = ({ isHome = false }) => {
               </div>
             </div>
 
-            {/* INFO */}
             <div className="p-2.5 sm:p-4 flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-center justify-between gap-1.5 mb-1">
                 <h3 className="text-white font-bold text-sm sm:text-lg truncate">
@@ -213,7 +214,6 @@ const AviatorGames = ({ isHome = false }) => {
         </div>
       </div>
 
-      {/* RECHARGE REQUIRED MODAL */}
       {showRechargeModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm px-4">
           <div className="w-full max-w-md bg-[#1C0F2B] border border-[#9B59B6]/40 rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.7)] text-center">
@@ -254,7 +254,6 @@ const AviatorGames = ({ isHome = false }) => {
         </div>
       )}
 
-      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
       {!isHome && (
         <GamePlayModal
           isOpen={isGameModalOpen}
