@@ -27,7 +27,6 @@ import {
 const GamePlayModal = ({
   isOpen,
   onClose,
-  onReconnect, // 👈 NEW: parent passes a function that re-dispatches launchGame
   gameData,
   gameUrl,
   loading: launchLoading = false,
@@ -50,11 +49,6 @@ const GamePlayModal = ({
   const [iframeLoading, setIframeLoading] = useState(true);
   const [iframeError, setIframeError] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
-
-  // NEW: tracks the disconnect state that the provider itself renders
-  // inside the iframe (we can't see the DOM inside it because it's
-  // cross-origin, so we only track whether WE think the session is stale)
-  const [isReconnecting, setIsReconnecting] = useState(false);
 
   // --------------------------------------------------
   // IMPORTANT SESSION PROTECTION
@@ -114,11 +108,6 @@ const GamePlayModal = ({
       If same URL already mounted:
       DO NOT recreate iframe.
       DO NOT reload provider session.
-
-      EXCEPTION: if we are actively reconnecting (isReconnecting),
-      a fresh URL might be identical in shape but represent a new
-      session token from the backend — still don't skip in that
-      case because mountedUrlRef is cleared by handleRefresh below.
     */
 
     if (mountedUrlRef.current === resolvedGameUrl) {
@@ -140,7 +129,6 @@ const GamePlayModal = ({
 
     setIframeLoading(true);
     setIframeError(null);
-    setIsReconnecting(false);
     setShowTransferModal(false);
 
     // Release lock after React has mounted iframe
@@ -220,45 +208,18 @@ const GamePlayModal = ({
   };
 
   // --------------------------------------------------
-  // RECONNECT / REFRESH
+  // REFRESH
   //
-  // We deliberately do NOT reload the existing iframe src,
-  // because a dead/expired provider session token will just
-  // fail again. Instead we ask the parent to fetch a brand
-  // new launch URL (new session) and swap the iframe once
-  // that arrives.
+  // DO NOT reload iframe.
+  // Provider session can be killed by iframe reload.
   // --------------------------------------------------
 
-  const handleRefresh = async () => {
-    if (!onReconnect) {
-      console.warn(
-        "⚠️ No onReconnect handler provided — cannot recover session."
-      );
-      setIframeError(
-        "Unable to reconnect. Please close and reopen the game."
-      );
-      return;
-    }
+  const handleRefresh = () => {
+    console.log(
+      "⚠️ Game refresh disabled to protect provider session."
+    );
 
-    try {
-      setIsReconnecting(true);
-      setIframeError(null);
-
-      // Force the URL-handler effect to treat the next gameUrl
-      // (even if string-identical) as a fresh mount.
-      mountedUrlRef.current = "";
-      openingRef.current = false;
-
-      setIframeLoading(true);
-
-      await onReconnect();
-    } catch (error) {
-      console.error("Reconnect failed:", error);
-      setIframeError("Failed to reconnect. Please try again.");
-      setIframeLoading(false);
-    } finally {
-      setIsReconnecting(false);
-    }
+    setIframeError(null);
   };
 
   // --------------------------------------------------
@@ -333,7 +294,6 @@ const GamePlayModal = ({
     // Reset UI
     setIframeLoading(true);
     setIframeError(null);
-    setIsReconnecting(false);
     setShowTransferModal(false);
     setIsFullscreen(false);
 
@@ -360,8 +320,7 @@ const GamePlayModal = ({
   const actualLoading =
     iframeLoading ||
     launchLoading ||
-    iscreditLoading ||
-    isReconnecting;
+    iscreditLoading;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
@@ -454,26 +413,16 @@ const GamePlayModal = ({
             )}
           </button>
 
-          {/* RECONNECT / REFRESH
-              Now actually fetches a fresh session instead
-              of silently doing nothing.
+          {/* REFRESH
+              Does NOT reload iframe
           */}
           <button
             type="button"
             onClick={handleRefresh}
-            disabled={isReconnecting || !onReconnect}
-            className="w-10 h-10 hidden sm:flex items-center justify-center rounded-lg hover:bg-gray-800 text-white disabled:opacity-40"
-            title={
-              onReconnect
-                ? "Reconnect game session"
-                : "Reconnect unavailable"
-            }
+            className="w-10 h-10 hidden sm:flex items-center justify-center rounded-lg hover:bg-gray-800 text-white"
+            title="Refresh disabled to protect game session"
           >
-            {isReconnecting ? (
-              <FaSpinner className="text-lg animate-spin" />
-            ) : (
-              <span className="text-xl">↻</span>
-            )}
+            <span className="text-xl">↻</span>
           </button>
 
           {/* FULLSCREEN */}
@@ -506,9 +455,8 @@ const GamePlayModal = ({
               <FaSpinner className="text-white text-4xl animate-spin" />
 
               <span className="text-gray-300 text-sm">
-                {isReconnecting
-                  ? "Reconnecting..."
-                  : `Loading ${gameData?.game_name || "game"}...`}
+                Loading{" "}
+                {gameData?.game_name || "game"}...
               </span>
 
             </div>
@@ -516,7 +464,7 @@ const GamePlayModal = ({
         )}
 
         {/* LAUNCH ERROR */}
-        {launchError && !actualLoading && (
+        {launchError && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black px-5">
 
             <div className="text-center max-w-md">
@@ -531,25 +479,13 @@ const GamePlayModal = ({
                 {launchError}
               </p>
 
-              <div className="flex items-center justify-center gap-3">
-                {onReconnect && (
-                  <button
-                    type="button"
-                    onClick={handleRefresh}
-                    className="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold"
-                  >
-                    Try Again
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-                >
-                  Back
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
+              >
+                Back
+              </button>
 
             </div>
           </div>
@@ -573,25 +509,13 @@ const GamePlayModal = ({
                   The game session could not be created.
                 </p>
 
-                <div className="flex items-center justify-center gap-3">
-                  {onReconnect && (
-                    <button
-                      type="button"
-                      onClick={handleRefresh}
-                      className="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold"
-                    >
-                      Try Again
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleClose}
-                    className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-                  >
-                    Back
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
+                >
+                  Back
+                </button>
 
               </div>
             </div>
@@ -603,7 +527,7 @@ const GamePlayModal = ({
             NO iframe.src = iframe.src
         ================================================== */}
 
-        {resolvedGameUrl && !launchError && !isReconnecting && (
+        {resolvedGameUrl && !launchError && (
           <iframe
             ref={iframeRef}
             id="game-iframe"
@@ -635,13 +559,8 @@ const GamePlayModal = ({
           />
         )}
 
-        {/* IFRAME ERROR
-            This is where the "You have been disconnected"
-            style failures land once WE detect them (onError,
-            or you can wire a postMessage listener from the
-            provider if they support one).
-        */}
-        {iframeError && !isReconnecting && (
+        {/* IFRAME ERROR */}
+        {iframeError && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black px-5">
 
             <div className="text-center max-w-md">
@@ -656,25 +575,13 @@ const GamePlayModal = ({
                 {iframeError}
               </p>
 
-              <div className="flex items-center justify-center gap-3">
-                {onReconnect && (
-                  <button
-                    type="button"
-                    onClick={handleRefresh}
-                    className="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold"
-                  >
-                    Reconnect
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-                >
-                  Back
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
+              >
+                Back
+              </button>
 
             </div>
           </div>
