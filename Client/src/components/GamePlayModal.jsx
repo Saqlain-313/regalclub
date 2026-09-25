@@ -169,54 +169,72 @@ const GamePlayModal = ({
   // GAME URL / IFRAME INITIALIZATION
   // =========================================================
 
-  useEffect(() => {
-    if (!isOpen) return;
+useEffect(() => {
+  if (!isOpen) {
+    return;
+  }
 
-    // No URL yet
-    if (!resolvedGameUrl) {
-      setIframeLoading(false);
-      setIframeError(null);
-      return;
-    }
-
-    // Same URL already mounted
-    // DO NOT reload provider session
-    if (mountedUrlRef.current === resolvedGameUrl) {
-      return;
-    }
-
-    // Prevent duplicate initialization
-    if (openingRef.current) {
-      return;
-    }
-
-    openingRef.current = true;
-
-    console.log("🎮 Opening game:", {
-      game: gameData?.game_name,
-      provider: gameData?.provider,
-      url: resolvedGameUrl,
-    });
-
-    mountedUrlRef.current = resolvedGameUrl;
-
-    setIframeLoading(true);
+  // New modal opening ke time fresh loading
+  if (!resolvedGameUrl) {
+    setIframeLoading(false);
     setIframeError(null);
-    setShowTransferModal(false);
+    return;
+  }
 
-    const timer = setTimeout(() => {
-      openingRef.current = false;
-    }, 700);
+  /*
+   * Agar same URL already mounted hai,
+   * iframe ko unnecessarily reload mat karo.
+   */
+  if (mountedUrlRef.current === resolvedGameUrl) {
+    return;
+  }
 
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [
-    isOpen,
-    resolvedGameUrl,
-    gameData?.game_name,
-    gameData?.provider,
-  ]);
+  /*
+   * Duplicate initialization prevent
+   */
+  if (openingRef.current) {
+    return;
+  }
+
+  openingRef.current = true;
+
+  console.log("🎮 Initializing game iframe:", {
+    game: gameData?.game_name,
+    provider: gameData?.provider,
+    url: resolvedGameUrl,
+  });
+
+  /*
+   * IMPORTANT:
+   * Har new game URL par loader fresh ON
+   */
+  setIframeLoading(true);
+  setIframeError(null);
+  setShowTransferModal(false);
+
+  /*
+   * URL ko mounted mark karo
+   */
+  mountedUrlRef.current = resolvedGameUrl;
+
+  /*
+   * New iframe ref
+   */
+  iframeRef.current = null;
+
+  const timer = setTimeout(() => {
+    openingRef.current = false;
+  }, 700);
+
+  return () => {
+    clearTimeout(timer);
+  };
+}, [
+  isOpen,
+  resolvedGameUrl,
+  gameData?.game_name,
+  gameData?.provider,
+]);
 
   // =========================================================
   // ESC + FULLSCREEN
