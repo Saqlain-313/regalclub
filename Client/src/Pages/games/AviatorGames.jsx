@@ -51,15 +51,32 @@ const AviatorGames = () => {
       "The legendary crash game where timing is everything. Cash out before the plane flies away!",
   };
 
+  // --------------------------------------------------
+  // FIX: only reset game state on UNMOUNT, not on mount.
+  // Resetting on mount could wipe an in-progress session
+  // (e.g. if this component re-renders/remounts for any
+  // reason while a game is already open), which can look
+  // to the provider like the session was abandoned and
+  // contribute to "disconnected" screens.
+  // --------------------------------------------------
   useEffect(() => {
-    dispatch(resetGameState());
+    return () => {
+      dispatch(resetGameState());
+    };
   }, [dispatch]);
 
   useEffect(() => {
     if (gameUrl) setIsGameModalOpen(true);
   }, [gameUrl]);
 
+  // --------------------------------------------------
+  // FIX: guard against double-dispatch from rapid/double
+  // clicks or tap-lag on mobile, which could create two
+  // overlapping provider sessions.
+  // --------------------------------------------------
   const handlePlay = async () => {
+    if (launchLoading) return;
+
     if (needsRecharge) {
       setSelectedGame(aviatorGame);
       setShowRechargeModal(true);
@@ -71,6 +88,20 @@ const AviatorGames = () => {
       await dispatch(launchGame({ gameId: aviatorGame.game_uid })).unwrap();
     } catch {
       alert("Failed to launch Aviator");
+    }
+  };
+
+  // --------------------------------------------------
+  // NEW: reconnect handler passed down to GamePlayModal.
+  // Fetches a brand-new launch URL/session rather than
+  // trying to reuse a dead one.
+  // --------------------------------------------------
+  const handleReconnect = async () => {
+    try {
+      setSelectedGame(aviatorGame);
+      await dispatch(launchGame({ gameId: aviatorGame.game_uid })).unwrap();
+    } catch {
+      alert("Failed to reconnect to Aviator");
     }
   };
 
@@ -258,6 +289,7 @@ const AviatorGames = () => {
       <GamePlayModal
         isOpen={isGameModalOpen}
         onClose={closeGameModal}
+        onReconnect={handleReconnect}
         gameData={selectedGame}
         gameUrl={gameUrl}
         loading={launchLoading}
