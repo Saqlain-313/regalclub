@@ -11,7 +11,7 @@ import {
   resetGameState,
 } from "../../redux/slices/gameSlice";
 
-const Minesgame = () => {
+const Minesgame = ({ isHome = false }) => {
   const dispatch = useDispatch();
 
   const { gameUrl, launchLoading, launchError } = useSelector(
@@ -22,7 +22,6 @@ const Minesgame = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
 
-  // TopX Purple gradient
   const purpleGradient =
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
 
@@ -60,13 +59,17 @@ const Minesgame = () => {
     },
   ];
 
+  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
-    dispatch(resetGameState());
-  }, [dispatch]);
+    if (!isHome) {
+      dispatch(resetGameState());
+    }
+  }, [dispatch, isHome]);
 
+  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
-    if (gameUrl) setIsGameModalOpen(true);
-  }, [gameUrl]);
+    if (!isHome && gameUrl) setIsGameModalOpen(true);
+  }, [gameUrl, isHome]);
 
   const handlePlay = async (game) => {
     try {
@@ -86,7 +89,6 @@ const Minesgame = () => {
   return (
     <>
       <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
-        {/* HEADER — compact */}
         <div className="mx-auto mb-4 sm:mb-6 sm:hidden md:block">
           <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
             <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
@@ -99,7 +101,6 @@ const Minesgame = () => {
           </p>
         </div>
 
-        {/* GRID */}
         <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 sm:-mt-4">
           {minesGames.map((game) => (
             <div
@@ -109,7 +110,6 @@ const Minesgame = () => {
               onMouseLeave={() => setHoveredId(null)}
               className="group relative cursor-pointer bg-[#1C0F2B] rounded-2xl overflow-hidden border border-[#2a1b3d] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] hover:scale-[1.02] transition-all duration-300 flex flex-row sm:flex-col"
             >
-              {/* IMAGE — no aspect ratio, manual height */}
               <div className="relative w-32 sm:w-full h-32 sm:h-[9rem] overflow-hidden flex-shrink-0">
                 <img
                   src={game.icon}
@@ -119,7 +119,6 @@ const Minesgame = () => {
 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/40 to-transparent" />
 
-                {/* BADGES */}
                 <div className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex flex-wrap gap-1">
                   {game.is_featured && (
                     <div
@@ -138,7 +137,6 @@ const Minesgame = () => {
                   </div>
                 </div>
 
-                {/* PLAY OVERLAY */}
                 <div
                   className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
                     hoveredId === game.id
@@ -158,7 +156,6 @@ const Minesgame = () => {
                 </div>
               </div>
 
-              {/* INFO */}
               <div className="p-2.5 sm:p-4 flex-1 min-w-0 flex flex-col justify-center">
                 <div className="flex justify-between items-start gap-1.5 mb-1">
                   <h3 className="text-white font-bold text-sm sm:text-lg truncate">
@@ -190,14 +187,17 @@ const Minesgame = () => {
         </div>
       </div>
 
-      <GamePlayModal
-        isOpen={isGameModalOpen}
-        onClose={closeGameModal}
-        gameData={selectedGame}
-        gameUrl={gameUrl}
-        loading={launchLoading}
-        launchError={launchError}
-      />
+      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
+      {!isHome && (
+        <GamePlayModal
+          isOpen={isGameModalOpen}
+          onClose={closeGameModal}
+          gameData={selectedGame}
+          gameUrl={gameUrl}
+          loading={launchLoading}
+          launchError={launchError}
+        />
+      )}
     </>
   );
 };

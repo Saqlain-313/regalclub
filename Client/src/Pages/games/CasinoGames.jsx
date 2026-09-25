@@ -23,7 +23,7 @@ const CasinoGames = ({
   limit,
   showViewAll = false,
   showSearch = true,
-  isHome = false, // 👈 NEW — home page flag
+  isHome = false,
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -33,13 +33,9 @@ const CasinoGames = ({
   );
   const { user } = useSelector((state) => state.auth);
 
-  // TopX Purple gradient
   const purpleGradient =
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
 
-  /* ===========================
-     LOCAL STATE
-  =========================== */
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,9 +48,12 @@ const CasinoGames = ({
   const credit = Number(user?.credit || 0);
   const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;
 
+  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
-    dispatch(resetGameState());
-  }, [dispatch]);
+    if (!isHome) {
+      dispatch(resetGameState());
+    }
+  }, [dispatch, isHome]);
 
   useEffect(() => {
     dispatch(
@@ -62,25 +61,19 @@ const CasinoGames = ({
     );
   }, [dispatch]);
 
-  /* ===========================
-     AUTO OPEN MODAL
-  =========================== */
+  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
-    if (gameUrl) {
+    if (!isHome && gameUrl) {
       setIsGameModalOpen(true);
     }
-  }, [gameUrl]);
+  }, [gameUrl, isHome]);
 
-  /* ===========================
-     FILTER GAMES BY SEARCH + LIMIT
-  =========================== */
   const filteredGames = useMemo(() => {
     const sourceGames =
       Array.isArray(gamesByGameType) && gamesByGameType.length > 0
         ? gamesByGameType
         : liveCasino;
 
-    // Apply limit if provided
     const limitedGames = limit ? sourceGames.slice(0, limit) : sourceGames;
 
     if (!searchTerm.trim()) return limitedGames;
@@ -90,9 +83,6 @@ const CasinoGames = ({
     );
   }, [searchTerm, gamesByGameType, limit]);
 
-  /* ===========================
-     PAGINATION CALCULATION
-  =========================== */
   const totalPages = Math.ceil(filteredGames.length / gamesPerPage);
   const indexOfLastGame = currentPage * gamesPerPage;
   const indexOfFirstGame = indexOfLastGame - gamesPerPage;
@@ -102,9 +92,6 @@ const CasinoGames = ({
     setCurrentPage(1);
   }, [searchTerm]);
 
-  /* ===========================
-     GAME CLICK
-  =========================== */
   const handlePlay = async (game) => {
     if (needsRecharge) {
       setSelectedGame(game);
@@ -120,18 +107,12 @@ const CasinoGames = ({
     }
   };
 
-  /* ===========================
-     MODAL CLOSE
-  =========================== */
   const closeGameModal = () => {
     setIsGameModalOpen(false);
     setSelectedGame(null);
     dispatch(clearGameUrl());
   };
 
-  /* ===========================
-     PAGINATION HANDLERS
-  =========================== */
   const goToPage = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -171,9 +152,6 @@ const CasinoGames = ({
     return pageNumbers;
   };
 
-  /* ===========================
-     UI
-  =========================== */
   return (
     <>
       <div className="bg-[#0B0410] p-4 md:p-6">
@@ -183,7 +161,6 @@ const CasinoGames = ({
           </div>
         )}
         <div className="mx-auto">
-          {/* HEADER — hide on home page OR when showSearch is false */}
           {!isHome && (
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
               <div className="flex items-center gap-4 w-full md:w-auto">
@@ -209,7 +186,6 @@ const CasinoGames = ({
                 )}
               </div>
 
-              {/* Search Box — only if showSearch is true */}
               {showSearch && (
                 <div className="relative w-full md:w-80">
                   <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
@@ -225,7 +201,6 @@ const CasinoGames = ({
             </div>
           )}
 
-          {/* If isHome=true, show a small heading instead */}
           {isHome && (
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -246,7 +221,6 @@ const CasinoGames = ({
             </div>
           )}
 
-          {/* GAME GRID – RESPONSIVE */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             {currentGames.map((game) => (
               <div
@@ -289,7 +263,6 @@ const CasinoGames = ({
             ))}
           </div>
 
-          {/* EMPTY STATE */}
           {currentGames.length === 0 && (
             <div className="text-center py-16 bg-[#1C0F2B] rounded-2xl border border-dashed border-[#2a1b3d] mt-10">
               <FaSearch className="text-4xl text-gray-500 mx-auto mb-4" />
@@ -306,7 +279,6 @@ const CasinoGames = ({
             </div>
           )}
 
-          {/* PAGINATION — only if not home AND showSearch is true */}
           {!isHome && showSearch && filteredGames.length > gamesPerPage && (
             <div className="mt-10">
               <div className="flex flex-col md:flex-row items-center justify-center gap-4">
@@ -382,7 +354,6 @@ const CasinoGames = ({
         </div>
       </div>
 
-      {/* RECHARGE REQUIRED MODAL */}
       {showRechargeModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm px-4">
           <div className="w-full max-w-md bg-[#1C0F2B] border border-[#9B59B6]/40 rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.7)] text-center">
@@ -423,16 +394,18 @@ const CasinoGames = ({
         </div>
       )}
 
-      {/* GAME MODAL */}
-      <GamePlayModal
-        isOpen={isGameModalOpen}
-        onClose={closeGameModal}
-        gameData={selectedGame}
-        selectedGame={selectedGame}
-        gameUrl={gameUrl}
-        loading={launchLoading}
-        launchError={launchError}
-      />
+      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
+      {!isHome && (
+        <GamePlayModal
+          isOpen={isGameModalOpen}
+          onClose={closeGameModal}
+          gameData={selectedGame}
+          selectedGame={selectedGame}
+          gameUrl={gameUrl}
+          loading={launchLoading}
+          launchError={launchError}
+        />
+      )}
     </>
   );
 };

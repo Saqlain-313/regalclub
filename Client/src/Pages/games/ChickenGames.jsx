@@ -11,25 +11,18 @@ import {
   resetGameState,
 } from "../../redux/slices/gameSlice";
 
-const ChickenGames = () => {
+const ChickenGames = ({ isHome = false }) => {
   const dispatch = useDispatch();
 
-  /* =======================
-     REDUX STATE
-  ======================= */
   const { gameUrl, launchLoading, launchError } = useSelector(
     (state) => state.game,
   );
 
   const { user } = useSelector((state) => state.auth);
 
-  // TopX Purple gradient
   const purpleGradient =
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
 
-  /* =======================
-     LOCAL STATE
-  ======================= */
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
@@ -39,9 +32,6 @@ const ChickenGames = () => {
   const credit = Number(user?.credit || 0);
   const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;
 
-  /* =======================
-     GAMES DATA
-  ======================= */
   const chickenGames = [
     {
       game_name: "Chicken Road 2.0",
@@ -76,23 +66,18 @@ const ChickenGames = () => {
     },
   ];
 
-  /* =======================
-     RESET ON LOAD
-  ======================= */
+  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
-    dispatch(resetGameState());
-  }, [dispatch]);
+    if (!isHome) {
+      dispatch(resetGameState());
+    }
+  }, [dispatch, isHome]);
 
-  /* =======================
-     AUTO OPEN MODAL
-  ======================= */
+  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
-    if (gameUrl) setIsGameModalOpen(true);
-  }, [gameUrl]);
+    if (!isHome && gameUrl) setIsGameModalOpen(true);
+  }, [gameUrl, isHome]);
 
-  /* =======================
-     PLAY HANDLER
-  ======================= */
   const handlePlay = async (game) => {
     if (needsRecharge) {
       setSelectedGame(game);
@@ -108,22 +93,15 @@ const ChickenGames = () => {
     }
   };
 
-  /* =======================
-     CLOSE MODAL
-  ======================= */
   const closeGameModal = () => {
     setIsGameModalOpen(false);
     setSelectedGame(null);
     dispatch(clearGameUrl());
   };
 
-  /* =======================
-     UI
-  ======================= */
   return (
     <>
       <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
-        {/* HEADER — compact */}
         <div className="mx-auto mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
             <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
@@ -138,7 +116,6 @@ const ChickenGames = () => {
           </p>
         </div>
 
-        {/* GRID: 1 col mobile, 2 cols tablet, 3 cols desktop */}
         <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 sm:-mt-4">
           {chickenGames.map((game) => (
             <div
@@ -150,7 +127,6 @@ const ChickenGames = () => {
                          hover:scale-[1.02]
                          transition-all duration-300 flex flex-row sm:flex-col"
             >
-              {/* IMAGE — mobile pe left, desktop pe top — no aspect ratio */}
               <div className="relative w-32 sm:w-full h-32 sm:h-[9rem] overflow-hidden flex-shrink-0">
                 <img
                   src={game.icon}
@@ -159,7 +135,6 @@ const ChickenGames = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/40 to-transparent" />
 
-                {/* BADGES */}
                 <div className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex flex-wrap gap-1">
                   {game.is_featured && (
                     <span
@@ -175,7 +150,6 @@ const ChickenGames = () => {
                   )}
                 </div>
 
-                {/* PLAY OVERLAY */}
                 <div
                   className="absolute inset-0 flex items-center justify-center
                              bg-black/30 opacity-100 sm:bg-black/40 sm:opacity-0
@@ -193,7 +167,6 @@ const ChickenGames = () => {
                 </div>
               </div>
 
-              {/* CONTENT — compact text */}
               <div className="p-2.5 sm:p-4 flex-1 min-w-0 flex flex-col justify-center">
                 <div className="flex justify-between items-start gap-1.5 mb-1">
                   <h3 className="text-white font-bold text-sm sm:text-lg truncate">
@@ -211,7 +184,6 @@ const ChickenGames = () => {
                   {game.description}
                 </p>
 
-                {/* Stats row */}
                 <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-xs text-gray-500">
                   <span className="flex items-center gap-0.5">
                     <MdGamepad className="text-[10px] sm:text-xs" />
@@ -222,24 +194,12 @@ const ChickenGames = () => {
                     {game.volatility}
                   </span>
                 </div>
-
-                {/* FOOTER — compact */}
-                {/* <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[#2a1b3d] flex justify-between items-center text-[9px] sm:text-xs">
-                  <span className="text-[#C77AFF] font-bold">
-                    ${game.min_bet} - ${game.max_bet}
-                  </span>
-                  <div className="flex items-center gap-0.5 text-gray-500">
-                    <MdInfoOutline className="text-[10px] sm:text-xs" />
-                    {game.provider}
-                  </div>
-                </div> */}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* RECHARGE REQUIRED MODAL */}
       {showRechargeModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm px-4">
           <div className="w-full max-w-md bg-[#1C0F2B] border border-[#9B59B6]/40 rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.7)] text-center">
@@ -280,15 +240,17 @@ const ChickenGames = () => {
         </div>
       )}
 
-      {/* MODAL */}
-      <GamePlayModal
-        isOpen={isGameModalOpen}
-        onClose={closeGameModal}
-        gameData={selectedGame}
-        gameUrl={gameUrl}
-        loading={launchLoading}
-        launchError={launchError}
-      />
+      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
+      {!isHome && (
+        <GamePlayModal
+          isOpen={isGameModalOpen}
+          onClose={closeGameModal}
+          gameData={selectedGame}
+          gameUrl={gameUrl}
+          loading={launchLoading}
+          launchError={launchError}
+        />
+      )}
     </>
   );
 };

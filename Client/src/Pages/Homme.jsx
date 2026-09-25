@@ -1,3 +1,4 @@
+// Homme.jsx
 import CountriesSection from "../components/CountriesSection";
 import FeatureBar from "../components/FeatureBar";
 import Herosection from "../components/Herosection";
@@ -17,33 +18,19 @@ const Homme = () => {
   return (
     <main className="pb-11 md:pb-0">
       <Herosection />
-
       <PopularGamesCards />
 
-      {/* Games Sections */}
+      {/* ✅ isHome={true} pass karein taaki modal auto-open na ho */}
+      <ChickenGames isHome={true} />
+      <MinesPage isHome={true} />
+      <AviatorGames isHome={true} />
+      <CasinoSlotGames isHome={true} limit={6} showViewAll={true} showSearch={false} />
+      <Slotgame isHome={true} />
 
-      <ChickenGames />
-      <MinesPage />
-      <AviatorGames />
-      <CasinoSlotGames
-        isHome={true}
-        limit={6}
-        showViewAll={true}
-        showSearch={false}
-      />
-
-      <Slotgame />
-      {/* <PopularGames /> */}
-
-      {/* Other Sections */}
       <FeatureBar />
-
       <TopWinners />
-
       <StatsSection2 />
-
       <CountriesSection />
-
       <Footer />
     </main>
   );

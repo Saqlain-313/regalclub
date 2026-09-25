@@ -13,19 +13,15 @@ import {
   resetGameState,
 } from "../../redux/slices/gameSlice";
 
-const Slotgame = () => {
+const Slotgame = ({ isHome = false }) => {
   const dispatch = useDispatch();
   const { userprofile, stats } = useSelector((state) => state.auth);
   const { gamesByGameType, loading, gameUrl, launchLoading, launchError } =
     useSelector((state) => state.game);
 
-  // TopX Purple gradient
   const purpleGradient =
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
 
-  /* ===========================
-     LOCAL STATE
-  =========================== */
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [hasRequestedGames, setHasRequestedGames] = useState(false);
@@ -36,18 +32,19 @@ const Slotgame = () => {
   const credit = Number(userprofile?.credit || 0);
   const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;
 
+  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
-    dispatch(resetGameState());
-  }, [dispatch]);
+    if (!isHome) {
+      dispatch(resetGameState());
+    }
+  }, [dispatch, isHome]);
 
-  /* ===========================
-     AUTO OPEN MODAL
-  =========================== */
+  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
-    if (gameUrl) {
+    if (!isHome && gameUrl) {
       setIsGameModalOpen(true);
     }
-  }, [gameUrl]);
+  }, [gameUrl, isHome]);
 
   useEffect(() => {
     dispatch(
@@ -56,9 +53,6 @@ const Slotgame = () => {
     setHasRequestedGames(true);
   }, [dispatch]);
 
-  /* ===========================
-     SOURCE GAMES — FALLBACK LOGIC FIXED
-  =========================== */
   const sourceGames = useMemo(() => {
     const apiGames =
       Array.isArray(gamesByGameType) && gamesByGameType.length > 0
@@ -69,16 +63,10 @@ const Slotgame = () => {
     return SlotsGames;
   }, [gamesByGameType]);
 
-  /* ===========================
-     LIMIT GAMES (6 mobile, 12 desktop) — no pagination
-  =========================== */
   const displayGames = useMemo(() => {
-    return sourceGames.slice(0, 12); // top 12 games
+    return sourceGames.slice(0, 12);
   }, [sourceGames]);
 
-  /* ===========================
-     GAME CLICK
-  =========================== */
   const handlePlay = async (game) => {
     if (needsRecharge) {
       setSelectedGame(game);
@@ -94,28 +82,18 @@ const Slotgame = () => {
     }
   };
 
-  /* ===========================
-     MODAL CLOSE
-  =========================== */
   const closeGameModal = () => {
     setIsGameModalOpen(false);
     setSelectedGame(null);
     dispatch(clearGameUrl());
   };
 
-  /* ===========================
-     LOADING STATE
-  =========================== */
   const showGamesLoader =
     hasRequestedGames && loading && displayGames.length === 0;
 
-  /* ===========================
-     UI
-  =========================== */
   return (
     <>
       <div className="bg-[#0B0410] px-4 py-5 sm:px-6">
-        {/* HEADER — simple heading, no back / no search */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[22px]">🎰</span>
@@ -138,7 +116,6 @@ const Slotgame = () => {
             </div>
           ) : (
             <>
-              {/* GAME GRID — mobile 6, desktop 12 */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                 {displayGames.map((game, index) => {
                   const hideOnMobile = index >= 6;
@@ -189,7 +166,6 @@ const Slotgame = () => {
                 })}
               </div>
 
-              {/* EMPTY STATE */}
               {displayGames.length === 0 && (
                 <div className="text-center py-16 bg-[#1C0F2B] rounded-2xl border border-dashed border-[#2a1b3d] mt-10">
                   <h3 className="text-white text-lg font-semibold mb-2">
@@ -203,7 +179,6 @@ const Slotgame = () => {
         </div>
       </div>
 
-      {/* RECHARGE REQUIRED MODAL */}
       {showRechargeModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm px-4">
           <div className="w-full max-w-md bg-[#1C0F2B] border border-[#9B59B6]/40 rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.7)] text-center">
@@ -244,15 +219,17 @@ const Slotgame = () => {
         </div>
       )}
 
-      {/* GAME MODAL */}
-      <GamePlayModal
-        isOpen={isGameModalOpen}
-        onClose={closeGameModal}
-        gameData={selectedGame}
-        gameUrl={gameUrl}
-        loading={launchLoading}
-        launchError={launchError}
-      />
+      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
+      {!isHome && (
+        <GamePlayModal
+          isOpen={isGameModalOpen}
+          onClose={closeGameModal}
+          gameData={selectedGame}
+          gameUrl={gameUrl}
+          loading={launchLoading}
+          launchError={launchError}
+        />
+      )}
     </>
   );
 };

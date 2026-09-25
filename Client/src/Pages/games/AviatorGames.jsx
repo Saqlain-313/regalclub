@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
 import { MdGamepad, MdPlayCircle, MdStar, MdWarning } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-
 import { GiAirplane } from "react-icons/gi";
 import GamePlayModal from "../../components/GamePlayModal";
 import {
@@ -11,7 +10,7 @@ import {
   resetGameState,
 } from "../../redux/slices/gameSlice";
 
-const AviatorGames = () => {
+const AviatorGames = ({ isHome = false }) => {
   const dispatch = useDispatch();
 
   const { gameUrl, launchLoading, launchError } = useSelector(
@@ -30,7 +29,6 @@ const AviatorGames = () => {
   const credit = Number(user?.credit || 0);
   const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;
 
-  // TopX Purple gradient
   const purpleGradient =
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
 
@@ -51,13 +49,17 @@ const AviatorGames = () => {
       "The legendary crash game where timing is everything. Cash out before the plane flies away!",
   };
 
+  // ✅ Sirf tab reset karein jab Home page par na ho
   useEffect(() => {
-    dispatch(resetGameState());
-  }, [dispatch]);
+    if (!isHome) {
+      dispatch(resetGameState());
+    }
+  }, [dispatch, isHome]);
 
+  // ✅ Sirf tab modal open karein jab Home page par na ho
   useEffect(() => {
-    if (gameUrl) setIsGameModalOpen(true);
-  }, [gameUrl]);
+    if (!isHome && gameUrl) setIsGameModalOpen(true);
+  }, [gameUrl, isHome]);
 
   const handlePlay = async () => {
     if (needsRecharge) {
@@ -114,7 +116,7 @@ const AviatorGames = () => {
                        transition-all duration-300
                        flex flex-row sm:flex-col"
           >
-            {/* IMAGE — mobile left, desktop top — no aspect ratio, fixed height */}
+            {/* IMAGE */}
             <div className="relative w-32 sm:w-full h-32 sm:h-[9rem] overflow-hidden bg-[#12061C] flex-shrink-0">
               <img
                 src={aviatorGame.icon}
@@ -122,10 +124,8 @@ const AviatorGames = () => {
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
 
-              {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/40 to-transparent pointer-events-none" />
 
-              {/* BADGES — compact on mobile */}
               <div className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 right-1.5 flex flex-wrap items-center gap-1">
                 {aviatorGame.is_featured && (
                   <div
@@ -178,7 +178,7 @@ const AviatorGames = () => {
               </div>
             </div>
 
-            {/* INFO — compact */}
+            {/* INFO */}
             <div className="p-2.5 sm:p-4 flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-center justify-between gap-1.5 mb-1">
                 <h3 className="text-white font-bold text-sm sm:text-lg truncate">
@@ -254,15 +254,17 @@ const AviatorGames = () => {
         </div>
       )}
 
-      {/* GAME MODAL */}
-      <GamePlayModal
-        isOpen={isGameModalOpen}
-        onClose={closeGameModal}
-        gameData={selectedGame}
-        gameUrl={gameUrl}
-        loading={launchLoading}
-        launchError={launchError}
-      />
+      {/* ✅ GAME MODAL — sirf tab render karein jab Home page par na ho */}
+      {!isHome && (
+        <GamePlayModal
+          isOpen={isGameModalOpen}
+          onClose={closeGameModal}
+          gameData={selectedGame}
+          gameUrl={gameUrl}
+          loading={launchLoading}
+          launchError={launchError}
+        />
+      )}
     </>
   );
 };
