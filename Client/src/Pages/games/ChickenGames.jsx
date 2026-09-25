@@ -34,7 +34,7 @@ const ChickenGames = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
 
-  const MIN_CREDIT_TO_PLAY = 10;
+  const MIN_CREDIT_TO_PLAY = 0;
   const hasDeposited = true;
   const credit = Number(user?.credit || 0);
   const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;

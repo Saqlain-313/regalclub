@@ -13,7 +13,7 @@ import {
 } from "./../redux/slices/gameSlice";
 import GamePlayModal from "./GamePlayModal";
 
-const MIN_CREDIT_TO_PLAY = 10;
+const MIN_CREDIT_TO_PLAY = 0;
 
 // ======================================================
 // TABS

@@ -31,7 +31,7 @@ const Slotgame = () => {
   const [hasRequestedGames, setHasRequestedGames] = useState(false);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
 
-  const MIN_CREDIT_TO_PLAY = 10;
+  const MIN_CREDIT_TO_PLAY = 0;
   const hasDeposited = (stats?.totalDeposits || 0) > 0;
   const credit = Number(userprofile?.credit || 0);
   const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;

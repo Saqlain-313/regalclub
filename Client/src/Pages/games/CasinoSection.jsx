@@ -12,7 +12,7 @@ import {
   resetGameState,
 } from "../../redux/slices/gameSlice";
 
-const MIN_CREDIT_TO_PLAY = 10;
+const MIN_CREDIT_TO_PLAY = 0;
 
 /**
  * CasinoSection — TopX Purple Theme
