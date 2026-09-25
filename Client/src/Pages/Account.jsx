@@ -23,6 +23,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { showErrorToast, showSuccessToast } from "../hooks/toast";
 import { logout } from "../redux/slices/authSlice";
+import {
+  checkGamecredit,
+  clearGameUrl,
+  resetGameState,
+} from "../../../Client/src/redux/slices/gameSlice";
 
 // ======================================================
 // COUNTRY CONFIGURATION
@@ -65,6 +70,7 @@ const Account = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isCheckingCredit, setIsCheckingCredit] = useState(false);
 
   // ======================================================
   // Get user's country for dynamic routing
@@ -206,6 +212,36 @@ const Account = () => {
   };
 
   // ======================================================
+  // CHECK GAME CREDIT HANDLER
+  // ======================================================
+
+  const handleCheckCredit = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isCheckingCredit) return;
+    setIsCheckingCredit(true);
+
+    try {
+      // Optionally reset stale state first
+      dispatch(resetGameState());
+
+      const result = await dispatch(checkGamecredit()).unwrap();
+      showSuccessToast(
+        "Credit Checked",
+        result?.message || "Game credit fetched successfully.",
+      );
+    } catch (error) {
+      showErrorToast(
+        "Check Failed",
+        error || "Failed to check game credit. Try again.",
+      );
+    } finally {
+      setIsCheckingCredit(false);
+    }
+  };
+
+  // ======================================================
   // RENDER
   // ======================================================
 
@@ -280,7 +316,25 @@ const Account = () => {
             </div>
           </div>
 
-          <ChevronRight size={20} className="text-gray-500 flex-shrink-0" />
+          {/* Check Credit Button */}
+          <button
+            onClick={handleCheckCredit}
+            disabled={isCheckingCredit}
+            title="Check Game Credit"
+            className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl bg-gradient-to-b from-[#9B59B6] to-[#7D3C98] text-white text-[10px] font-bold hover:from-[#a86bc4] hover:to-[#8a45a5] transition-all disabled:opacity-60 shadow-[0_2px_8px_rgba(155,89,182,0.4)] flex-shrink-0"
+          >
+            {isCheckingCredit ? (
+              <>
+                <Circle className="animate-spin" size={16} />
+                <span>Checking</span>
+              </>
+            ) : (
+              <>
+                <Coins size={16} />
+                <span>Credit</span>
+              </>
+            )}
+          </button>
         </Link>
 
         {/* Deposit / Withdrawal */}
