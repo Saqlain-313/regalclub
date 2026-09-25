@@ -19,7 +19,7 @@ const Minesgame = ({ isHome = false }) => {
   const location = useLocation();
 
   const { gameUrl, launchLoading, launchError } = useSelector(
-    (state) => state.game
+    (state) => state.game,
   );
 
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
@@ -62,8 +62,7 @@ const Minesgame = ({ isHome = false }) => {
       min_bet: 10,
       max_bet: 5000,
       is_featured: false,
-      description:
-        "Fast-paced mines action with instant cash-out excitement.",
+      description: "Fast-paced mines action with instant cash-out excitement.",
     },
   ];
 
@@ -105,9 +104,7 @@ const Minesgame = ({ isHome = false }) => {
 
     autoLaunchStarted.current = true;
 
-    const game = minesGames.find(
-      (g) => g.game_uid === location.state.gameUid
-    );
+    const game = minesGames.find((g) => g.game_uid === location.state.gameUid);
 
     if (!game) {
       autoLaunchStarted.current = false;
@@ -119,7 +116,7 @@ const Minesgame = ({ isHome = false }) => {
     dispatch(
       launchGame({
         gameId: game.game_uid,
-      })
+      }),
     );
   }, [dispatch, isHome, location.state]);
 
@@ -156,7 +153,7 @@ const Minesgame = ({ isHome = false }) => {
     dispatch(
       launchGame({
         gameId: game.game_uid,
-      })
+      }),
     );
   };
 
@@ -238,7 +235,7 @@ const Minesgame = ({ isHome = false }) => {
       {/* ========================================================
           MINES PAGE
           ======================================================== */}
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
+      <div className="bg-[#0B0410] px-3 py-4 sm:px-3 sm:py-6">
         {/* HEADER */}
         <div className="mx-auto mb-4 sm:mb-6 sm:hidden md:block">
           <div className="mb-1 flex items-center gap-2 sm:gap-2.5">
@@ -246,9 +243,7 @@ const Minesgame = ({ isHome = false }) => {
               <GiMineExplosion className="text-lg text-white sm:text-xl" />
             </div>
 
-            <h1 className="text-xl font-bold text-white sm:text-2xl">
-              Mines
-            </h1>
+            <h1 className="text-xl font-bold text-white sm:text-2xl">Mines</h1>
           </div>
 
           <p className="text-xs text-gray-400 sm:text-sm">
@@ -324,7 +319,7 @@ const Minesgame = ({ isHome = false }) => {
               </div>
 
               {/* CONTENT */}
-              <div className="flex min-w-0 flex-1 flex-col justify-center p-2.5 sm:p-4">
+              <div className="flex min-w-0 flex-1 flex-col justify-center p-2.5 sm:p-2">
                 <div className="mb-1 flex items-start justify-between gap-1.5">
                   <h3 className="truncate text-sm font-bold text-white sm:text-lg">
                     {game.game_name}
@@ -339,7 +334,7 @@ const Minesgame = ({ isHome = false }) => {
                   </div>
                 </div>
 
-                <p className="mb-1.5 line-clamp-1 text-[10px] text-gray-400 sm:mb-3 sm:line-clamp-2 sm:text-xs">
+                {/* <p className="mb-1.5 line-clamp-1 text-[10px] text-gray-400 sm:mb-3 sm:line-clamp-2 sm:text-xs">
                   {game.description}
                 </p> */}
 

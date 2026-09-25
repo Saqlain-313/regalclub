@@ -10,6 +10,7 @@ import CasinoSlotGames from "../Pages/games/CasinoGames.jsx";
 import ChickenGames from "../Pages/games/ChickenGames.jsx";
 import MinesPage from "../Pages/games/Mines.jsx";
 import Slotgame from "../Pages/games/Slotgame.jsx";
+import AllGames from "./games/GamesPages/Allgames .jsx";
 
 import PopularGamesCards from "./PopularGamesCards";
 
@@ -19,6 +20,8 @@ const Homme = () => {
       <Herosection />
 
       <PopularGamesCards />
+
+      <AllGames isHome={true} />
 
       <ChickenGames isHome={true} />
 
