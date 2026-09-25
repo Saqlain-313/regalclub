@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
+import { GiAirplane } from "react-icons/gi";
 import { MdGamepad, MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
-import { GiAirplane } from "react-icons/gi";
+import { useLocation, useNavigate } from "react-router-dom";
 import GamePlayModal from "../../components/GamePlayModal";
 import {
   clearGameUrl,
@@ -93,7 +93,7 @@ const AviatorGames = ({ isHome = false }) => {
 
   return (
     <>
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
+      <div className="bg-[#0B0410] px-3 py-4 sm:px-2 sm:py-6">
         {/* HEADER */}
         <div className="max-w-6xl mb-4 sm:mb-6 sm:hidden md:block">
           <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
@@ -198,9 +198,9 @@ const AviatorGames = ({ isHome = false }) => {
                 </div>
               </div>
 
-              <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
+              {/* <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
                 {aviatorGame.description}
-              </p>
+              </p> */}
 
               <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-xs text-gray-500">
                 <span className="flex items-center gap-0.5">

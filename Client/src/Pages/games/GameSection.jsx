@@ -100,12 +100,12 @@ export default function GameSection({
   };
 
   return (
-    <section className="w-full bg-[#0B0410] px-4 py-5 sm:px-6">
+    <section className="w-full bg-[#0B0410] px-4 py-5 sm:px-2">
       {/* HEADER */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-[22px]">{emoji}</span>
-          <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[24px]">
+          <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[18px]">
             {title}
           </h2>
         </div>

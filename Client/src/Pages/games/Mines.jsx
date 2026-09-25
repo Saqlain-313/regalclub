@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FaCrown, FaSpinner } from "react-icons/fa";
 import { MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { GiMineExplosion } from "react-icons/gi";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -113,7 +113,7 @@ const Minesgame = ({ isHome = false }) => {
 
   return (
     <>
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
+      <div className="bg-[#0B0410] px-3 py-4 sm:px-2 sm:py-6">
         <div className="mx-auto mb-4 sm:mb-6 sm:hidden md:block">
           <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
             <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
@@ -194,9 +194,9 @@ const Minesgame = ({ isHome = false }) => {
                   </div>
                 </div>
 
-                <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
+                {/* <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
                   {game.description}
-                </p>
+                </p> */}
 
                 <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-xs text-gray-500">
                   <span className="flex items-center gap-0.5">

@@ -8,7 +8,7 @@ import {
 } from "react-icons/fa";
 import { MdPlayCircle } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { liveCasino } from "../../Data/GamesData";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -221,7 +221,7 @@ const CasinoGames = ({
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-[22px]">🎰</span>
-                <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[24px]">
+                <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[20px]">
                   Casino & Live Games
                 </h2>
               </div>

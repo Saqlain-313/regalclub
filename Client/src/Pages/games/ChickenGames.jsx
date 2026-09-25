@@ -3,7 +3,7 @@ import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
 import { GiChicken } from "react-icons/gi";
 import { MdGamepad, MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import GamePlayModal from "../../components/GamePlayModal";
 import {
@@ -112,7 +112,7 @@ const ChickenGames = ({ isHome = false }) => {
 
   return (
     <>
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
+      <div className="bg-[#0B0410] px-3 py-4 sm:px-2 sm:py-6">
         <div className="mx-auto mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
             <div className={`p-2 sm:p-2.5 rounded-lg ${purpleGradient}`}>
@@ -122,7 +122,7 @@ const ChickenGames = ({ isHome = false }) => {
               Recomended Games
             </h1>
           </div>
-          <p className="text-gray-400 text-xs sm:text-sm">
+          <p className="text-gray-400 text-xs sm:hidden md:block">
             Fast-paced racing action with the craziest chickens!
           </p>
         </div>
@@ -191,9 +191,9 @@ const ChickenGames = ({ isHome = false }) => {
                   </div>
                 </div>
 
-                <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
+                {/* <p className="text-gray-400 text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-3">
                   {game.description}
-                </p>
+                </p> */}
 
                 <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-xs text-gray-500">
                   <span className="flex items-center gap-0.5">

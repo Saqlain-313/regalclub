@@ -8,7 +8,7 @@ import {
 } from "react-icons/fa";
 import { MdPlayCircle, MdWarning } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { liveCasino } from "../../Data/GamesData";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -183,7 +183,7 @@ const CasinoGames = ({
 
   return (
     <>
-      <div className="bg-[#0B0410] p-4 md:p-6">
+      <div className="bg-[#0B0410] p-2 md:p-6">
         {loading && (
           <div className="flex items-center justify-center h-96">
             <FaSpinner className="animate-spin text-4xl text-[#B45CFF]" />
@@ -234,7 +234,7 @@ const CasinoGames = ({
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-[22px]">🎰</span>
-                <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[24px]">
+                <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[16px]">
                   Casino & Live Games
                 </h2>
               </div>

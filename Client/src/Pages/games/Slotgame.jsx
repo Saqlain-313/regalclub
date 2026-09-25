@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { MdPlayCircle } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { SlotsGames } from "../../Data/GamesData";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -111,11 +111,11 @@ const Slotgame = ({ isHome = false }) => {
 
   return (
     <>
-      <div className="bg-[#0B0410] px-4 py-5 sm:px-6">
+      <div className="bg-[#0B0410] px-4 py-5 sm:px-2">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[22px]">🎰</span>
-            <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[24px]">
+            <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[16px]">
               Slot Games
             </h2>
           </div>
@@ -143,7 +143,7 @@ const Slotgame = ({ isHome = false }) => {
                       key={game.game_uid || game.id || index}
                       onClick={() => handlePlay(game)}
                       className={`relative cursor-pointer rounded-xl overflow-hidden 
-                        aspect-[3/4] bg-[#1C0F2B] group shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] transition-all duration-300 border border-[#2a1b3d] hover:border-[#B45CFF]/60 ${
+                        aspect-[2/4] bg-[#1C0F2B] group shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] transition-all duration-300 border border-[#2a1b3d] hover:border-[#B45CFF]/60 ${
                           hideOnMobile ? "hidden md:block" : ""
                         }`}
                     >
@@ -171,9 +171,9 @@ const Slotgame = ({ isHome = false }) => {
                           {game.game_name}
                         </h3>
                         <div className="flex justify-between items-center mt-1">
-                          <span className="text-xs text-gray-300 bg-[#12061C]/80 border border-[#2a1b3d] px-2 py-1 rounded">
+                          {/* <span className="text-xs text-gray-300 bg-[#12061C]/80 border border-[#2a1b3d] px-2 py-1 rounded">
                             {game.provider || "Slots"}
-                          </span>
+                          </span> */}
                           <span className="text-xs text-[#F1C40F] font-medium">
                             Live
                           </span>
