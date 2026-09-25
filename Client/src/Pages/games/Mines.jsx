@@ -138,7 +138,7 @@ const Minesgame = ({ isHome = false }) => {
    */
   const handlePlay = (game) => {
     if (isHome) {
-      navigate("/mines", {
+      navigate("/minis", {
         state: {
           autoLaunch: true,
           gameUid: game.game_uid,
