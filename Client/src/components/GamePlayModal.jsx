@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
   FaCoins,
   FaCompress,
@@ -25,38 +24,6 @@ import {
   resetGameState,
 } from "../../../Client/src/redux/slices/gameSlice";
 
-// --------------------------------------------------
-// Route-aware "Back" resolution
-//
-// GamePlayModal is mounted from several different game
-// listing pages (Aviator, Chicken, Casino, Slots, and
-// dynamic "/game/:id" detail pages). "Back" should return
-// the user to whichever of those pages they came from,
-// not always to a hardcoded route.
-//
-// Add/adjust entries here if new game routes are introduced.
-// --------------------------------------------------
-const KNOWN_GAME_ROUTES = ["/aviator", "/chicken", "/casino", "/slots"];
-
-const resolveBackRoute = (pathname) => {
-  if (!pathname) return "/";
-
-  // Dynamic game detail pages, e.g. /game/123 → back to the
-  // games listing. Change "/game" below if your listing page
-  // lives at a different path.
-  if (pathname.startsWith("/game/")) {
-    return "/game";
-  }
-
-  const matched = KNOWN_GAME_ROUTES.find((route) => pathname === route);
-  if (matched) {
-    return matched;
-  }
-
-  // Fallback for anything not explicitly listed above.
-  return "/";
-};
-
 const GamePlayModal = ({
   isOpen,
   onClose,
@@ -67,8 +34,6 @@ const GamePlayModal = ({
   launchError = null,
 }) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const { isAuthenticated, loading: authLoading } = useSelector(
     (state) => state.auth
@@ -378,13 +343,6 @@ const GamePlayModal = ({
     // Close parent modal
     onClose();
 
-    // FIX: send the user back to the correct parent game route
-    // (aviator → /aviator, slots → /slots, etc.) instead of a
-    // hardcoded path — and instead of leaving them on a route
-    // that has no active gameUrl, which used to briefly render
-    // "Game URL not available".
-    navigate(resolveBackRoute(location.pathname));
-
     // Unlock
     setTimeout(() => {
       closingRef.current = false;
@@ -600,8 +558,7 @@ const GamePlayModal = ({
         {/* NO URL */}
         {!resolvedGameUrl &&
           !actualLoading &&
-          !launchError &&
-          !closingRef.current && (
+          !launchError && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black px-5">
 
               <div className="text-center">
