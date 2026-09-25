@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FaSpinner } from "react-icons/fa";
-import { MdPlayCircle, MdWarning } from "react-icons/md";
+import { MdPlayCircle } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -19,7 +19,6 @@ const Slotgame = ({ isHome = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { userprofile, stats } = useSelector((state) => state.auth);
   const { gamesByGameType, loading, gameUrl, launchLoading, launchError } =
     useSelector((state) => state.game);
 
@@ -29,12 +28,6 @@ const Slotgame = ({ isHome = false }) => {
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [hasRequestedGames, setHasRequestedGames] = useState(false);
-  const [showRechargeModal, setShowRechargeModal] = useState(false);
-
-  const MIN_CREDIT_TO_PLAY = 0;
-  const hasDeposited = (stats?.totalDeposits || 0) > 0;
-  const credit = Number(userprofile?.credit || 0);
-  const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;
 
   useEffect(() => {
     if (!isHome) {
@@ -96,12 +89,6 @@ const Slotgame = ({ isHome = false }) => {
           gameUid: game.game_uid,
         },
       });
-      return;
-    }
-
-    if (needsRecharge) {
-      setSelectedGame(game);
-      setShowRechargeModal(true);
       return;
     }
 
@@ -209,46 +196,6 @@ const Slotgame = ({ isHome = false }) => {
           )}
         </div>
       </div>
-
-      {showRechargeModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md bg-[#1C0F2B] border border-[#9B59B6]/40 rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.7)] text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#9B59B6]/15 border border-[#9B59B6]/40">
-              <MdWarning className="text-4xl text-[#C77AFF]" />
-            </div>
-            <div className="text-xl font-bold text-white mb-2">
-              Recharge Required
-            </div>
-            <p className="text-sm text-gray-300 mb-2">
-              {!hasDeposited
-                ? "You need to make at least one deposit before you can play."
-                : `You need a minimum credit of ₹${MIN_CREDIT_TO_PLAY} to play this game.`}
-            </p>
-            <p className="text-xs text-gray-400 mb-6">
-              Current credit: ₹{credit.toLocaleString()}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={() => setShowRechargeModal(false)}
-                className="flex-1 px-4 py-3 rounded-xl bg-[#12061C] border border-[#2a1b3d] text-gray-300 hover:bg-[#2a1b3d] hover:text-white font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRechargeModal(false);
-                  window.location.href = "/deposit";
-                }}
-                className={`flex-1 px-4 py-3 rounded-xl ${purpleGradient} text-white font-bold transition-all active:scale-[0.98]`}
-              >
-                Recharge Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {!isHome && (
         <GamePlayModal

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
-import { MdGamepad, MdPlayCircle, MdStar, MdWarning } from "react-icons/md";
+import { MdGamepad, MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GiAirplane } from "react-icons/gi";
@@ -20,17 +20,9 @@ const AviatorGames = ({ isHome = false }) => {
     (state) => state.game,
   );
 
-  const { user } = useSelector((state) => state.auth);
-
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [hovered, setHovered] = useState(false);
-  const [showRechargeModal, setShowRechargeModal] = useState(false);
-
-  const MIN_CREDIT_TO_PLAY = 0;
-  const hasDeposited = true;
-  const credit = Number(user?.credit || 0);
-  const needsRecharge = !hasDeposited || credit < MIN_CREDIT_TO_PLAY;
 
   const purpleGradient =
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
@@ -82,12 +74,6 @@ const AviatorGames = ({ isHome = false }) => {
           gameUid: aviatorGame.game_uid,
         },
       });
-      return;
-    }
-
-    if (needsRecharge) {
-      setSelectedGame(aviatorGame);
-      setShowRechargeModal(true);
       return;
     }
 
@@ -232,47 +218,6 @@ const AviatorGames = ({ isHome = false }) => {
           </div>
         </div>
       </div>
-
-      {/* RECHARGE REQUIRED MODAL */}
-      {showRechargeModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md bg-[#1C0F2B] border border-[#9B59B6]/40 rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.7)] text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#9B59B6]/15 border border-[#9B59B6]/40">
-              <MdWarning className="text-4xl text-[#C77AFF]" />
-            </div>
-            <div className="text-xl font-bold text-white mb-2">
-              Recharge Required
-            </div>
-            <p className="text-sm text-gray-300 mb-2">
-              {!hasDeposited
-                ? "You need to make at least one deposit before you can play."
-                : `You need a minimum credit of ₹${MIN_CREDIT_TO_PLAY} to play this game.`}
-            </p>
-            <p className="text-xs text-gray-400 mb-6">
-              Current credit: ₹{credit.toLocaleString()}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={() => setShowRechargeModal(false)}
-                className="flex-1 px-4 py-3 rounded-xl bg-[#12061C] border border-[#2a1b3d] text-gray-300 hover:bg-[#2a1b3d] hover:text-white font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRechargeModal(false);
-                  window.location.href = "/deposit";
-                }}
-                className={`flex-1 px-4 py-3 rounded-xl ${purpleGradient} text-white font-bold transition-all active:scale-[0.98]`}
-              >
-                Recharge Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* GAME MODAL — sirf non-home par */}
       {!isHome && (
