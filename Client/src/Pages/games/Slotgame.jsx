@@ -143,7 +143,7 @@ const Slotgame = ({ isHome = false }) => {
                       key={game.game_uid || game.id || index}
                       onClick={() => handlePlay(game)}
                       className={`relative cursor-pointer rounded-xl overflow-hidden 
-                        aspect-[2/4] bg-[#1C0F2B] group shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] transition-all duration-300 border border-[#2a1b3d] hover:border-[#B45CFF]/60 ${
+                        aspect-[3/4] bg-[#1C0F2B] group shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] transition-all duration-300 border border-[#2a1b3d] hover:border-[#B45CFF]/60 ${
                           hideOnMobile ? "hidden md:block" : ""
                         }`}
                     >
