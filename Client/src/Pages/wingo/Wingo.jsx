@@ -35,9 +35,6 @@ import TwoImg from "../../assets/two.png";
 import ZeroImg from "../../assets/zero.png";
 
 // Constants
-const WinImg = "https://i.ibb.co/ssJ2HLw/win-popup.png";
-const LoseImg = "https://i.ibb.co/8zTQQmx/loss-popup.png";
-
 const ImgData = [
   ZeroImg,
   OneImg,
@@ -1354,7 +1351,7 @@ const Wingo = () => {
                   key={i}
                   type="button"
                   onClick={() => selectBetHandle(i)}
-                  className={`flex items-center justify-center rounded-xl bg-[#1C0F2B] border border-[#2a1b3d] shadow-sm transition hover:-translate-y-0.5 hover:border-[#9B59B6]/50 hover:shadow-[0_4px_12px_rgba(155,89,182,.25)] active:scale-95 ${
+                  className={`flex min-h-[64px] items-center justify-center rounded-xl bg-[#1C0F2B] border border-[#2a1b3d] shadow-sm transition hover:-translate-y-0.5 hover:border-[#9B59B6]/50 hover:shadow-[0_4px_12px_rgba(155,89,182,.25)] active:scale-95 ${
                     animate ? "animate-bounce" : ""
                   }`}
                   style={{ animationDelay: `${i * 0.06}s` }}
@@ -1362,7 +1359,7 @@ const Wingo = () => {
                   <img
                     src={item}
                     alt={i}
-                    className="h-12 w-12 object-contain sm:h-9 sm:w-9 md:h-10 md:w-10"
+                    className="h-14 w-14 object-contain sm:h-16 sm:w-16 md:h-16 md:w-16"
                   />
                 </button>
               ))}
@@ -1987,96 +1984,177 @@ const Wingo = () => {
         </>
       )}
 
-      {/* ====== RESULT POPUP ====== */}
+      {/* ====== CUSTOM WIN / LOSS POPUP ====== */}
       {resultPopup && winResult !== null && hasUserBet && (
         <>
           <div
-            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-[#050208]/80 backdrop-blur-md"
             onClick={handleClose}
           />
-          <div className="fixed left-1/2 top-1/2 z-[70] w-[calc(100%-28px)] max-w-[390px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border border-[#2a1b3d] bg-[#1C0F2B] p-5 text-center shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
-            <img
-              src={winResult ? WinImg : LoseImg}
-              alt="result"
-              className="mx-auto h-auto max-h-32 w-auto max-w-[80%] object-contain"
-            />
-            <p
-              className={`mt-3 text-2xl font-black ${winResult ? "text-[#F1C40F]" : "text-[#9B59B6]"}`}
-            >
-              {winResult ? "Congratulations!" : "Better Luck Next Time"}
-            </p>
 
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-              <span className="text-gray-400">Result</span>
+          <div className="fixed left-1/2 top-1/2 z-[70] w-[calc(100%-24px)] max-w-[390px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[28px] border border-[#B45CFF]/50 bg-[#0F0618] shadow-[0_20px_70px_rgba(0,0,0,0.75),0_0_35px_rgba(180,92,255,0.22)]">
+            {/* Top glow */}
+            <div
+              className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${
+                winResult
+                  ? "from-[#7418F5]/30 via-[#B45CFF]/10 to-transparent"
+                  : "from-[#E74C3C]/20 via-[#7418F5]/10 to-transparent"
+              } pointer-events-none`}
+            />
+
+            {/* Close */}
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="Close result"
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-[#1C0F2B]/90 text-lg font-bold text-gray-300 transition hover:border-[#B45CFF]/60 hover:text-white"
+            >
+              ×
+            </button>
+
+            <div className="relative px-5 pb-5 pt-6 sm:px-6 sm:pb-6">
+              {/* Result icon */}
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#C77AFF]/50 bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] shadow-[0_0_18px_rgba(180,92,255,0.65),0_0_45px_rgba(116,24,245,0.35)]">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/30 bg-[#12061C] text-3xl font-black text-white">
+                  {winResult ? "✓" : "×"}
+                </div>
+              </div>
+
+              <div className="mt-4 text-center">
+                <p className="text-[10px] font-black uppercase tracking-[.25em] text-[#B45CFF]">
+                  Game Result
+                </p>
+                <h2
+                  className={`mt-1 text-3xl font-black tracking-tight ${
+                    winResult ? "text-white" : "text-gray-100"
+                  }`}
+                >
+                  {winResult ? "YOU WIN!" : "YOU LOSE!"}
+                </h2>
+                <p
+                  className={`mt-1 text-xs font-semibold ${
+                    winResult ? "text-[#C77AFF]" : "text-gray-400"
+                  }`}
+                >
+                  {winResult
+                    ? "Congratulations! Your bet won."
+                    : "Better luck next time!"}
+                </p>
+              </div>
+
+              {/* Result details */}
               {(() => {
                 const resultValue =
                   wingoHistoryData?.data?.gameslist?.[0]?.result ??
                   wingoHistoryData?.gameslist?.[0]?.result ??
                   null;
+
                 const resultNum =
                   resultValue !== null && resultValue !== undefined
                     ? Number(resultValue)
                     : null;
 
-                if (resultNum === null || isNaN(resultNum)) {
-                  return (
-                    <span className="rounded-full px-3 py-1 font-black text-white bg-gray-600">
-                      --
-                    </span>
-                  );
-                }
+                let colorName = "--";
+                let colorClass = "text-gray-300 bg-[#2a1b3d]";
 
-                let colorClass = "bg-gray-600";
-                let colorName = "";
-                if (resultNum === 0 || resultNum === 5) {
-                  colorClass = resultNum === 0 ? "bg-red-600" : "bg-green-600";
-                  colorName = resultNum === 0 ? "Red" : "Green";
-                } else if ([1, 3, 7, 9].includes(resultNum)) {
-                  colorClass = "bg-green-600";
-                  colorName = "Green";
-                } else if ([2, 4, 6, 8].includes(resultNum)) {
-                  colorClass = "bg-red-600";
-                  colorName = "Red";
+                if (resultNum !== null && !isNaN(resultNum)) {
+                  if (resultNum === 0) {
+                    colorName = "Red";
+                    colorClass = "text-white bg-[#7a1c1c]";
+                  } else if (resultNum === 5) {
+                    colorName = "Green";
+                    colorClass = "text-white bg-[#1a5c2e]";
+                  } else if ([1, 3, 7, 9].includes(resultNum)) {
+                    colorName = "Green";
+                    colorClass = "text-white bg-[#1a5c2e]";
+                  } else if ([2, 4, 6, 8].includes(resultNum)) {
+                    colorName = "Red";
+                    colorClass = "text-white bg-[#7a1c1c]";
+                  }
                 }
 
                 return (
-                  <>
-                    <span
-                      className={`rounded-full px-3 py-1 font-black text-white ${colorClass}`}
-                    >
-                      {colorName}
-                    </span>
-                    <span
-                      className={`flex h-8 w-8 items-center justify-center rounded-full font-black text-white ${winResult ? "bg-[#B45CFF]" : "bg-gray-600"}`}
-                    >
-                      {resultNum}
-                    </span>
-                    <span
-                      className={`rounded-full px-3 py-1 font-black text-white ${resultNum > 4 ? "bg-[#9B59B6]" : "bg-gray-600"}`}
-                    >
-                      {resultNum > 4 ? "Big" : "Small"}
-                    </span>
-                  </>
+                  <div className="mt-5 grid grid-cols-3 gap-2">
+                    <div className="rounded-2xl border border-[#2a1b3d] bg-[#12061C] px-2 py-3 text-center">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">
+                        Result
+                      </p>
+                      <div className="mt-2 flex items-center justify-center">
+                        <span
+                          className={`flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-lg font-black ${colorClass}`}
+                        >
+                          {resultNum !== null && !isNaN(resultNum)
+                            ? resultNum
+                            : "--"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#2a1b3d] bg-[#12061C] px-2 py-3 text-center">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">
+                        Color
+                      </p>
+                      <div className="mt-2 flex justify-center">
+                        <span
+                          className={`rounded-full px-3 py-1.5 text-[10px] font-black ${colorClass}`}
+                        >
+                          {colorName}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#2a1b3d] bg-[#12061C] px-2 py-3 text-center">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">
+                        Size
+                      </p>
+                      <p className="mt-2 text-sm font-black text-[#C77AFF]">
+                        {resultNum !== null && !isNaN(resultNum)
+                          ? resultNum > 4
+                            ? "Big"
+                            : "Small"
+                          : "--"}
+                      </p>
+                    </div>
+                  </div>
                 );
               })()}
+
+              {/* Period */}
+              <div className="mt-3 rounded-xl border border-[#2a1b3d] bg-[#12061C]/80 px-3 py-2.5 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[.18em] text-gray-500">
+                  Period
+                </p>
+                <p className="mt-1 truncate text-[11px] font-bold text-gray-200">
+                  {wingoHistoryData?.data?.gameslist?.[0]?.stage ||
+                    wingoHistoryData?.gameslist?.[0]?.stage ||
+                    wingoHistoryData?.data?.gameslist?.[0]?.period ||
+                    wingoHistoryData?.gameslist?.[0]?.period ||
+                    "Loading..."}
+                </p>
+              </div>
+
+              {/* Status strip */}
+              <div
+                className={`mt-3 flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-black ${
+                  winResult
+                    ? "border-[#00E676]/25 bg-[#00E676]/10 text-[#00E676]"
+                    : "border-[#E74C3C]/25 bg-[#E74C3C]/10 text-[#FF6B5B]"
+                }`}
+              >
+                <span className="mr-1.5">{winResult ? "✓" : "!"}</span>
+                {winResult
+                  ? "Winning bet settled successfully"
+                  : "Bet result settled"}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleClose}
+                className="mt-4 w-full rounded-xl bg-gradient-to-r from-[#B45CFF] via-[#7418F5] to-[#3A00C9] px-5 py-3 text-sm font-black text-white shadow-[0_0_18px_rgba(180,92,255,0.45)] transition hover:brightness-110 active:scale-[0.98]"
+              >
+                Continue
+              </button>
             </div>
-
-            <p className="mt-4 text-[10px] text-gray-400">
-              Period:{" "}
-              {wingoHistoryData?.data?.gameslist?.[0]?.stage ||
-                wingoHistoryData?.gameslist?.[0]?.stage ||
-                wingoHistoryData?.data?.gameslist?.[0]?.period ||
-                wingoHistoryData?.gameslist?.[0]?.period ||
-                "Loading..."}
-            </p>
-
-            <button
-              type="button"
-              className="mt-4 rounded-full border border-[#2a1b3d] bg-[#12061C] px-6 py-2 text-xs font-black text-gray-300 hover:bg-[#2a1b3d] hover:text-white transition"
-              onClick={handleClose}
-            >
-              Close
-            </button>
           </div>
         </>
       )}
