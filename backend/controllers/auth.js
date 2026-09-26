@@ -231,7 +231,7 @@ const getCookieOptions = () => {
 
   // Domain sirf production mein — warna localhost pe cookie store nahi hogi
   if (isProduction) {
-    options.domain = ".regalclub.live";
+    options.domain = "regalclub.live";
   }
 
   return options;
