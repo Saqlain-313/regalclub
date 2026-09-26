@@ -223,15 +223,15 @@ const isProduction = process.env.NODE_ENV === "production";
 const getCookieOptions = () => {
   const options = {
     httpOnly: true,
-    secure: isProduction, // HTTPS pe true
-    sameSite: isProduction ? "none" : "lax", // cross-site ke liye none
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
-  // Domain sirf production mein — warna localhost pe cookie store nahi hogi
+  // Production: main domain + all subdomains
   if (isProduction) {
-    options.domain = "regalclub.live";
+    options.domain = ".regalclub.live";
   }
 
   return options;
