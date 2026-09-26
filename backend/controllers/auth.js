@@ -213,7 +213,7 @@ const generateToken = (user) => {
 // WHY:
 // - Production: HTTPS + cross-site => secure=true, sameSite="none"
 // - Development: HTTP + localhost => secure=false, sameSite="lax"
-// - Domain ".marinclub.site" SIRF production mein lagao
+// - Domain ".regalclub.live" SIRF production mein lagao
 //   warna localhost pe browser cookie silently drop kar dega.
 //
 // ======================================================
@@ -231,7 +231,7 @@ const getCookieOptions = () => {
 
   // Domain sirf production mein — warna localhost pe cookie store nahi hogi
   if (isProduction) {
-    options.domain = ".marinclub.site";
+    options.domain = ".regalclub.live";
   }
 
   return options;
