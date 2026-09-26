@@ -965,7 +965,7 @@ const GameSelection = () => {
       <section className="mx-auto max-w-[980px] px-2 pt-2 sm:px-4 sm:pt-3">
         <div className="relative h-[140px] overflow-hidden rounded-xl border border-[#2a1b3d] shadow-[0_0_20px_rgba(116,24,245,0.18)] sm:h-[260px] md:h-[320px]">
           <img
-            src="https://i.ibb.co/60g6N1Fp/banner1.png"
+            src="https://i.ibb.co/zWFjM0dG/powerhit-1.png"
             alt="WinLuxury Powerball"
             className="h-full w-full object-cover"
           />
