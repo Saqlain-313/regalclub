@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { FaCrown, FaSpinner } from "react-icons/fa";
+import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
 import { GiAirplane, GiChicken, GiMineExplosion } from "react-icons/gi";
-import { MdGamepad, MdPlayCircle } from "react-icons/md";
+import { MdGamepad, MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -78,7 +78,7 @@ const allGames = [
     max_bet: 8000,
     is_featured: true,
     is_new: false,
-    route: "/mines",
+    route: "/minis",
     loaderIcon: GiMineExplosion,
     loaderTitle: "Loading Mines...",
   },
@@ -97,7 +97,7 @@ const allGames = [
     max_bet: 5000,
     is_featured: false,
     is_new: false,
-    route: "/mines",
+    route: "/minis",
     loaderIcon: GiMineExplosion,
     loaderTitle: "Loading Mines...",
   },
@@ -327,7 +327,7 @@ const AllGames = ({ isHome = false }) => {
             </div>
 
             <h1 className="text-xl font-bold text-white sm:text-2xl">
-              All Games
+              Popular Games
             </h1>
           </div>
 
@@ -337,24 +337,22 @@ const AllGames = ({ isHome = false }) => {
         </div>
 
         {/* GRID */}
-        <div className="max-w-6xl grid grid-cols-1 gap-3 sm:grid-cols-3 sm:-mt-4 sm:gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5 md:grid-cols-4 md:gap-3 lg:grid-cols-5">
           {allGames.map((game) => (
             <div
               key={game.id}
               onClick={() => handlePlay(game)}
               onMouseEnter={() => setHoveredId(game.id)}
               onMouseLeave={() => setHoveredId(null)}
-              className="group flex cursor-pointer flex-row overflow-hidden rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] transition-all duration-300 hover:scale-[1.02] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] sm:flex-col"
+              className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] transition-all duration-300 hover:scale-[1.02] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] w-full h-auto"
             >
-              {/* IMAGE */}
+              {/* IMAGE - dimensions same rakhe hain */}
               <div className="relative h-24 w-40 flex-shrink-0 overflow-hidden sm:h-[9rem] sm:w-full">
                 <img
                   src={game.icon}
                   alt={game.game_name}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/40 to-transparent" />
 
                 {/* BADGES */}
                 <div className="absolute left-1.5 top-1.5 flex flex-wrap gap-1 sm:left-2.5 sm:top-2.5">
@@ -385,7 +383,6 @@ const AllGames = ({ isHome = false }) => {
                   {launchLoading && selectedGame?.id === game.id ? (
                     <div className="flex flex-col items-center gap-1.5">
                       <FaSpinner className="animate-spin text-xl text-white sm:text-3xl" />
-
                       <span className="text-[10px] text-white sm:text-sm">
                         Launching...
                       </span>
@@ -401,19 +398,18 @@ const AllGames = ({ isHome = false }) => {
               </div>
 
               {/* CONTENT */}
-              <div className="flex min-w-0 flex-1 flex-col justify-center p-2.5 sm:p-1">
+              <div className="flex min-w-0 flex-1 flex-col justify-center p-0.5 sm:px-2">
                 <div className="mb-1 flex items-start justify-between gap-1.5">
                   <h3 className="truncate text-sm font-bold text-white sm:text-xs">
                     {game.game_name}
                   </h3>
 
-                  {/* <div className="flex flex-shrink-0 items-center gap-0.5">
+                  <div className="sm:hidden md:flex flex-shrink-0 items-center gap-0.5">
                     <MdStar className="text-xs text-[#F1C40F] sm:text-sm" />
-
                     <span className="text-[10px] font-bold text-white sm:text-sm">
                       {game.rating}
                     </span>
-                  </div> */}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 text-[9px] text-gray-500 sm:gap-4 sm:text-xs">
@@ -422,10 +418,10 @@ const AllGames = ({ isHome = false }) => {
                     {game.players}
                   </span>
 
-                  {/* <span className="flex items-center gap-0.5 text-[#B45CFF]">
+                  <span className="md:flex items-center gap-0.5 text-[#B45CFF] sm:hidden">
                     <FaFire className="text-[9px] sm:text-xs" />
                     {game.volatility}
-                  </span> */}
+                  </span>
                 </div>
               </div>
             </div>

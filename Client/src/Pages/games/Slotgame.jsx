@@ -267,7 +267,7 @@ const Slotgame = ({ isHome = false }) => {
       {/* ========================================================
           SLOT GAMES PAGE
           ======================================================== */}
-      <div className="bg-[#0B0410] px-4 py-5 sm:px-6">
+      <div className="bg-[#0B0410] px-4 py-5 sm:px-3">
         {/* HEADER */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -296,7 +296,7 @@ const Slotgame = ({ isHome = false }) => {
           ) : (
             <>
               {/* GAME GRID */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-3 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-6">
                 {displayGames.map((game, index) => {
                   const hideOnMobile = index >= 6;
 
@@ -304,9 +304,27 @@ const Slotgame = ({ isHome = false }) => {
                     <div
                       key={game.game_uid || game.id || index}
                       onClick={() => handlePlay(game)}
-                      className={`group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all duration-300 hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] ${
-                        hideOnMobile ? "hidden md:block" : ""
-                      }`}
+                      className={`group relative
+    w-[160px]
+    h-[260px]
+    sm:w-[103%]
+    sm:h-[143px]
+    md:w-[200px]
+    md:h-[300px]
+    lg:w-[165px]
+    lg:h-[320px]
+    xl:w-[230px]
+    xl:h-[340px]
+    cursor-pointer
+    overflow-hidden
+    rounded-xl
+    border border-[#2a1b3d]
+    bg-[#1C0F2B]
+    shadow-[0_4px_12px_rgba(0,0,0,0.5)]
+    transition-all duration-300
+    hover:border-[#B45CFF]/60
+    hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)]
+    ${hideOnMobile ? "hidden md:block" : ""}`}
                     >
                       {/* IMAGE */}
                       <img
@@ -327,14 +345,14 @@ const Slotgame = ({ isHome = false }) => {
 
                       {/* GAME INFO */}
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0B0410] to-transparent p-3">
-                        <h3 className="truncate text-sm font-semibold text-white">
+                        {/* <h3 className="truncate text-sm font-semibold text-white">
                           {game.game_name}
-                        </h3>
+                        </h3> */}
 
                         <div className="mt-1 flex items-center justify-between">
-                          <span className="rounded border border-[#2a1b3d] bg-[#12061C]/80 px-2 py-1 text-xs text-gray-300">
+                          {/* <span className="rounded border border-[#2a1b3d] bg-[#12061C]/80 px-2 py-1 text-xs text-gray-300">
                             {game.provider || "Slots"}
-                          </span>
+                          </span> */}
 
                           <span className="text-xs font-medium text-[#F1C40F]">
                             Live

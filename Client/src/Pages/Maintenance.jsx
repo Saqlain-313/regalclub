@@ -23,10 +23,10 @@ const Maintenance = () => {
   return (
     <div className="min-h-screen bg-[#0B0410] flex items-center justify-center px-4 py-10">
       <div className="max-w-md w-full text-center">
-        {/* WINZOX Brand */}
+        {/* RegalClub Brand */}
         <div className="mb-8">
           <h1 className="text-2xl font-black text-white tracking-tight">
-            WINZOX
+            RegalClub
           </h1>
           <p className="text-[10px] text-gray-500 font-medium tracking-widest">
             PLAY • WIN • REPEAT
@@ -64,7 +64,7 @@ const Maintenance = () => {
           We're topping up the tables{dots}
         </h2>
         <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-          WINZOX is under scheduled maintenance. Your credit and bet history
+          RegalClub is under scheduled maintenance. Your credit and bet history
           are safe — we'll be back shortly.
         </p>
 

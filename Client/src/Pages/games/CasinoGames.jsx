@@ -250,12 +250,31 @@ const CasinoGames = ({
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-2">
             {currentGames.map((game) => (
               <div
                 key={game.game_uid || game.id}
                 onClick={() => handlePlay(game)}
-                className="relative cursor-pointer rounded-xl overflow-hidden aspect-[3/4] bg-[#1C0F2B] group shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] transition-all duration-300 border border-[#2a1b3d] hover:border-[#B45CFF]/60"
+                className="group relative
+  w-[160px]
+  h-[260px]
+  sm:w-[103%]
+  sm:h-[143px]
+  md:w-[200px]
+  md:h-[300px]
+  lg:w-[193px]
+  lg:h-[320px]
+  xl:w-[230px]
+  xl:h-[340px]
+  cursor-pointer
+  overflow-hidden
+  rounded-xl
+  border border-[#2a1b3d]
+  bg-[#1C0F2B]
+  shadow-[0_4px_12px_rgba(0,0,0,0.5)]
+  transition-all duration-300
+  hover:border-[#B45CFF]/60
+  hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)]"
               >
                 <img
                   src={game.img || game.icon}
@@ -276,13 +295,13 @@ const CasinoGames = ({
                 </div>
 
                 <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-[#0B0410] to-transparent">
-                  <h3 className="text-white font-semibold text-sm truncate">
+                  {/* <h3 className="text-white font-semibold text-sm truncate">
                     {game.game_name}
-                  </h3>
+                  </h3> */}
                   <div className="flex justify-between items-center mt-1">
-                    <span className="text-xs text-gray-300 bg-[#12061C]/80 border border-[#2a1b3d] px-2 py-1 rounded">
+                    {/* <span className="text-xs text-gray-300 bg-[#12061C]/80 border border-[#2a1b3d] px-2 py-1 rounded">
                       {game.provider || "BF Gaming"}
-                    </span>
+                    </span> */}
                     <span className="text-xs text-[#F1C40F] font-medium">
                       Live
                     </span>
