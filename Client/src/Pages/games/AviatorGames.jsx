@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { FaCrown, FaFire, FaSpinner } from "react-icons/fa";
+import { GiAirplane } from "react-icons/gi";
 import { MdGamepad, MdPlayCircle, MdStar } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
-import { GiAirplane } from "react-icons/gi";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import GamePlayModal from "../../components/GamePlayModal";
 
@@ -19,7 +19,7 @@ const AviatorGames = ({ isHome = false }) => {
   const location = useLocation();
 
   const { gameUrl, launchLoading, launchError } = useSelector(
-    (state) => state.game
+    (state) => state.game,
   );
 
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
@@ -102,7 +102,7 @@ const AviatorGames = ({ isHome = false }) => {
     dispatch(
       launchGame({
         gameId: game.game_uid,
-      })
+      }),
     );
   }, [dispatch, isHome, location.state]);
 
@@ -146,7 +146,7 @@ const AviatorGames = ({ isHome = false }) => {
     dispatch(
       launchGame({
         gameId: aviatorGame.game_uid,
-      })
+      }),
     );
   };
 
@@ -220,7 +220,7 @@ const AviatorGames = ({ isHome = false }) => {
       {/* ========================================================
           AVIATOR PAGE
           ======================================================== */}
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-6 sm:py-6">
+      <div className="bg-[#0B0410] px-3 py-4 sm:px-3 sm:py-6 sm:-mt-2">
         {/* HEADER */}
         <div className="max-w-6xl mb-4 sm:mb-6 sm:hidden md:block">
           <div className="mb-1 flex items-center gap-2 sm:gap-2.5">
@@ -314,7 +314,7 @@ const AviatorGames = ({ isHome = false }) => {
             </div>
 
             {/* CONTENT */}
-            <div className="flex min-w-0 flex-1 flex-col justify-center p-2.5 sm:p-4">
+            <div className="flex min-w-0 flex-1 flex-col justify-center p-2.5 sm:p-2">
               <div className="mb-1 flex items-center justify-between gap-1.5">
                 <h3 className="truncate text-sm font-bold text-white sm:text-lg">
                   {aviatorGame.game_name}
@@ -328,10 +328,10 @@ const AviatorGames = ({ isHome = false }) => {
                   </span>
                 </div>
               </div>
-
+              {/* 
               <p className="mb-1.5 line-clamp-1 text-[10px] text-gray-400 sm:mb-3 sm:line-clamp-2 sm:text-xs">
                 {aviatorGame.description}
-              </p>
+              </p> */}
 
               <div className="flex items-center gap-2 text-[9px] text-gray-500 sm:gap-4 sm:text-xs">
                 <span className="flex items-center gap-0.5">

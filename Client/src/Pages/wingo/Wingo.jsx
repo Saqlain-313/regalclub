@@ -837,7 +837,7 @@ const Wingo = () => {
   }, [minutetime2, secondtime1, secondtime2, activeTime, activeVoice]);
 
   // ============================================================
-  // RENDER HELPERS (TopX Purple Theme)
+  // RENDER HELPERS (RegalClub Purple Theme)
   // ============================================================
 
   const goldCard =
@@ -847,8 +847,8 @@ const Wingo = () => {
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
 
   const renderTimeTabs = () => (
-    <section className={`${goldCard} p-1.5 sm:p-2`}>
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+    <section className={`${goldCard} w-full p-1.5 sm:p-2`}>
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 sm:gap-2">
         {TIME_OPTIONS.map(({ value, label }) => {
           const active = activeTime === value;
           return (
@@ -894,17 +894,304 @@ const Wingo = () => {
     </section>
   );
 
-  const WINGO_BANNER_BG =
-    "https://i.ibb.co/0ycw4GQp/Chat-GPT-Image-Sep-3-2026-04-52-17-PM-100kb.jpg";
+  // ============================================================
+  // WIN GO BANNER ILLUSTRATION
+  // Pure JSX/SVG illustration — no external banner image required.
+  // ============================================================
+  const WingoBannerIllustration = () => (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+    >
+      {/* Ambient purple glow */}
+      <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-[#B45CFF]/10 blur-3xl sm:h-80 sm:w-80" />
+      <div className="absolute -bottom-24 right-10 h-52 w-52 rounded-full bg-[#7418F5]/15 blur-3xl" />
+
+      {/* Decorative rays */}
+      <svg
+        viewBox="0 0 800 420"
+        preserveAspectRatio="xMidYMid slice"
+        className="absolute inset-0 h-full w-full opacity-70"
+      >
+        <defs>
+          <linearGradient id="wingoRay" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#B45CFF" stopOpacity="0" />
+            <stop offset="55%" stopColor="#B45CFF" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#C77AFF" stopOpacity="0" />
+          </linearGradient>
+          <radialGradient id="wingoGlow">
+            <stop offset="0%" stopColor="#C77AFF" stopOpacity="0.45" />
+            <stop offset="45%" stopColor="#7418F5" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#0B0410" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        <circle cx="625" cy="215" r="190" fill="url(#wingoGlow)" />
+
+        <path d="M625 215 L790 35 L625 215 Z" fill="url(#wingoRay)" />
+        <path d="M625 215 L800 120 L625 215 Z" fill="url(#wingoRay)" />
+        <path d="M625 215 L800 215 L625 215 Z" fill="url(#wingoRay)" />
+        <path d="M625 215 L800 310 L625 215 Z" fill="url(#wingoRay)" />
+        <path d="M625 215 L760 405 L625 215 Z" fill="url(#wingoRay)" />
+        <path d="M625 215 L520 410 L625 215 Z" fill="url(#wingoRay)" />
+
+        {/* Thin orbital lines */}
+        <ellipse
+          cx="625"
+          cy="215"
+          rx="154"
+          ry="73"
+          fill="none"
+          stroke="#B45CFF"
+          strokeOpacity="0.22"
+          strokeWidth="1"
+        />
+        <ellipse
+          cx="625"
+          cy="215"
+          rx="184"
+          ry="104"
+          fill="none"
+          stroke="#C77AFF"
+          strokeOpacity="0.13"
+          strokeWidth="1"
+        />
+      </svg>
+
+      {/* Main game orb */}
+      <div className="absolute right-[7%] top-1/2 h-36 w-36 -translate-y-1/2 sm:right-[-5%] sm:h-48 sm:w-48 lg:right-[13%] lg:h-56 lg:w-56">
+        <div className="absolute inset-0 rounded-full bg-[#B45CFF]/20 blur-2xl" />
+
+        <svg
+          viewBox="0 0 300 300"
+          className="relative h-full w-full drop-shadow-[0_0_20px_rgba(180,92,255,.45)]"
+        >
+          <defs>
+            <radialGradient id="orbCore" cx="35%" cy="28%">
+              <stop offset="0%" stopColor="#F4E9FF" />
+              <stop offset="28%" stopColor="#D9B7FF" />
+              <stop offset="60%" stopColor="#9B59B6" />
+              <stop offset="100%" stopColor="#3A00C9" />
+            </radialGradient>
+            <linearGradient id="orbRing" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#E8CFFF" />
+              <stop offset="35%" stopColor="#B45CFF" />
+              <stop offset="70%" stopColor="#7418F5" />
+              <stop offset="100%" stopColor="#3A00C9" />
+            </linearGradient>
+            <filter id="orbShadow">
+              <feDropShadow
+                dx="0"
+                dy="8"
+                stdDeviation="8"
+                floodColor="#000000"
+                floodOpacity="0.45"
+              />
+            </filter>
+          </defs>
+
+          {/* Outer rings */}
+          <circle
+            cx="150"
+            cy="150"
+            r="132"
+            fill="none"
+            stroke="#B45CFF"
+            strokeOpacity="0.22"
+            strokeWidth="2"
+          />
+          <circle
+            cx="150"
+            cy="150"
+            r="118"
+            fill="none"
+            stroke="url(#orbRing)"
+            strokeWidth="7"
+            filter="url(#orbShadow)"
+          />
+          <circle
+            cx="150"
+            cy="150"
+            r="103"
+            fill="#12061C"
+            stroke="#C77AFF"
+            strokeOpacity="0.35"
+            strokeWidth="2"
+          />
+
+          {/* Inner lottery sphere */}
+          <circle
+            cx="150"
+            cy="150"
+            r="88"
+            fill="url(#orbCore)"
+            stroke="#E9D5FF"
+            strokeOpacity="0.7"
+            strokeWidth="3"
+          />
+
+          {/* Curved cage */}
+          <ellipse
+            cx="150"
+            cy="150"
+            rx="88"
+            ry="35"
+            fill="none"
+            stroke="#F3E8FF"
+            strokeOpacity="0.55"
+            strokeWidth="3"
+          />
+          <ellipse
+            cx="150"
+            cy="150"
+            rx="35"
+            ry="88"
+            fill="none"
+            stroke="#F3E8FF"
+            strokeOpacity="0.45"
+            strokeWidth="3"
+          />
+          <path
+            d="M78 115 Q150 180 222 115"
+            fill="none"
+            stroke="#F3E8FF"
+            strokeOpacity="0.28"
+            strokeWidth="2"
+          />
+          <path
+            d="M78 185 Q150 120 222 185"
+            fill="none"
+            stroke="#F3E8FF"
+            strokeOpacity="0.24"
+            strokeWidth="2"
+          />
+
+          {/* Number balls */}
+          <g filter="url(#orbShadow)">
+            <circle cx="112" cy="111" r="17" fill="#F8F3FF" />
+            <text
+              x="112"
+              y="117"
+              textAnchor="middle"
+              fontSize="17"
+              fontWeight="900"
+              fill="#7418F5"
+            >
+              7
+            </text>
+
+            <circle cx="160" cy="98" r="18" fill="#F8F3FF" />
+            <text
+              x="160"
+              y="104"
+              textAnchor="middle"
+              fontSize="17"
+              fontWeight="900"
+              fill="#9B59B6"
+            >
+              3
+            </text>
+
+            <circle cx="193" cy="128" r="16" fill="#F8F3FF" />
+            <text
+              x="193"
+              y="134"
+              textAnchor="middle"
+              fontSize="16"
+              fontWeight="900"
+              fill="#7418F5"
+            >
+              9
+            </text>
+
+            <circle cx="125" cy="158" r="19" fill="#F8F3FF" />
+            <text
+              x="125"
+              y="165"
+              textAnchor="middle"
+              fontSize="18"
+              fontWeight="900"
+              fill="#3A00C9"
+            >
+              5
+            </text>
+
+            <circle cx="177" cy="169" r="18" fill="#F8F3FF" />
+            <text
+              x="177"
+              y="175"
+              textAnchor="middle"
+              fontSize="17"
+              fontWeight="900"
+              fill="#9B59B6"
+            >
+              1
+            </text>
+
+            <circle cx="145" cy="207" r="16" fill="#F8F3FF" />
+            <text
+              x="145"
+              y="213"
+              textAnchor="middle"
+              fontSize="16"
+              fontWeight="900"
+              fill="#7418F5"
+            >
+              8
+            </text>
+          </g>
+
+          {/* Highlight */}
+          <ellipse
+            cx="119"
+            cy="86"
+            rx="32"
+            ry="13"
+            transform="rotate(-28 119 86)"
+            fill="#FFFFFF"
+            fillOpacity="0.24"
+          />
+        </svg>
+      </div>
+
+      {/* Floating mini balls / sparkles */}
+      <div className="absolute right-[39%] top-[20%] flex h-8 w-8 items-center justify-center rounded-full border border-[#C77AFF]/50 bg-[#1C0F2B]/90 text-[10px] font-black text-[#E8CFFF] shadow-[0_0_16px_rgba(180,92,255,.35)] sm:h-10 sm:w-10">
+        8
+      </div>
+      <div className="absolute bottom-[17%] right-[38%] flex h-7 w-7 items-center justify-center rounded-full border border-[#B45CFF]/40 bg-[#12061C]/90 text-[9px] font-black text-[#C77AFF] sm:h-9 sm:w-9">
+        2
+      </div>
+
+      <span className="absolute right-[28%] top-[18%] h-1.5 w-1.5 rounded-full bg-[#C77AFF] shadow-[0_0_12px_#C77AFF] sm:h-2 sm:w-2" />
+      <span className="absolute right-[18%] bottom-[24%] h-1.5 w-1.5 rounded-full bg-[#B45CFF] shadow-[0_0_12px_#B45CFF] sm:h-2 sm:w-2" />
+      <span className="absolute right-[46%] bottom-[12%] h-1 w-1 rounded-full bg-white shadow-[0_0_10px_white]" />
+
+      {/* Play pill */}
+      <button
+        type="button"
+        onClick={() => setHowtoPlay(true)}
+        className="absolute right-3 top-3 flex items-center gap-2 rounded-full border border-[#B45CFF]/45 bg-[#12061C]/80 px-2.5 py-1.5 shadow-[0_0_18px_rgba(180,92,255,.18)] backdrop-blur-sm sm:right-5 sm:top-4 sm:px-3 sm:py-2"
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] to-[#3A00C9] text-[10px] text-white shadow-[0_0_10px_rgba(180,92,255,.5)] sm:h-7 sm:w-7">
+          ▶
+        </span>
+        <span className="hidden text-[9px] font-black uppercase tracking-[.18em] text-[#DCC2FF] sm:block">
+          Play Win Go
+        </span>
+      </button>
+
+      {/* Bottom glow line */}
+      <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-[#B45CFF]/70 to-transparent" />
+    </div>
+  );
 
   const renderPeriodSection = () => (
-    <section
-      className="relative mt-3 h-[230px] overflow-hidden rounded-2xl py-3 border border-[#9B59B6]/40 bg-cover bg-center bg-no-repeat shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:min-h-[240px]"
-      style={{ backgroundImage: `url(${WINGO_BANNER_BG})` }}
-    >
-      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4">
-        <div className="min-w-0">
-          <p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-[#9B59B6] sm:text-xs">
+    <section className="relative mt-3 min-h-[300px] w-full overflow-hidden rounded-2xl border border-[#9B59B6]/40 bg-[radial-gradient(circle_at_75%_45%,rgba(116,24,245,.20),transparent_32%),linear-gradient(135deg,#12061C_0%,#1C0F2B_52%,#0B0410_100%)] shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:min-h-[245px] lg:min-h-[260px]">
+      <WingoBannerIllustration />
+
+      <div className="relative z-10 flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+        <div className="relative z-10 min-w-0">
+          <p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-[#B45CFF] sm:text-xs">
             Current Game
           </p>
           <h2 className="truncate font-black border-b border-[#9B59B6]/60 text-white drop-shadow-sm text-xl">
@@ -914,13 +1201,11 @@ const Wingo = () => {
         <button
           type="button"
           onClick={() => setHowtoPlay(true)}
-          className="shrink-0 px-3 py-1.5 text-[11px] font-extrabold text-[#9B59B6] transition mr-4 -mt-[2.25rem] hover:text-[#B45CFF]"
-        >
-          How to play
-        </button>
+          className="self-start w-[8.5rem] h-10 px-2 py-1.5 text-[11px] font-extrabold text-[#9B59B6] transition hover:text-[#B45CFF] sm:self-auto sm:px-3"
+        ></button>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 px-4 pb-[0.5rem] sm:grid-cols-[1fr_auto] sm:items-center sm:px-5 sm:pb-5">
+      <div className="relative z-10 flex flex-col gap-3 px-3 pb-3 sm:px-5 sm:pb-0 lg:max-w-[58%]">
         <div className="min-w-0">
           <div className="mb-1 flex items-center justify-between gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-300">
@@ -941,7 +1226,7 @@ const Wingo = () => {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[#2a1b3d] bg-[#12061C]/95 px-3 pt-1 pb-1 text-center shadow-md backdrop-blur-sm w-[180px]">
+        <div className="relative z-10 w-full rounded-xl border border-[#9B59B6]/30 bg-[#12061C]/90 px-2.5 py-2 text-center shadow-md backdrop-blur-sm sm:w-[180px]">
           <p className="text-[9px] font-extrabold uppercase tracking-[.16em] text-gray-400">
             Time remaining
           </p>
@@ -979,7 +1264,9 @@ const Wingo = () => {
   );
 
   const renderBetSection = () => (
-    <section className={`${goldCard} relative mt-3 overflow-hidden p-3 sm:p-4`}>
+    <section
+      className={`${goldCard} relative mt-3 w-full overflow-hidden p-2.5 sm:p-4`}
+    >
       {showCountdownOverlay && countdownNumber > 0 && (
         <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-[#1C0F2B]/95 backdrop-blur-[2px]">
           <span
@@ -990,7 +1277,7 @@ const Wingo = () => {
         </div>
       )}
 
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2 text-[#9B59B6]">
           <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#9B59B6]/70" />
           <h3 className="shrink-0 text-sm font-black uppercase tracking-[.1em] text-[#9B59B6] sm:text-base">
@@ -1008,7 +1295,7 @@ const Wingo = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
         {[
           {
             key: "x",
@@ -1052,7 +1339,7 @@ const Wingo = () => {
       </div>
 
       {/* ===== Pick a number + Multiplier ===== */}
-      <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-[#2a1b3d] bg-[#12061C] p-3 shadow-sm lg:grid lg:grid-cols-[1fr_auto_auto] lg:items-stretch lg:gap-4 lg:p-4">
+      <div className="mt-3 flex flex-col gap-4 rounded-2xl border border-[#2a1b3d] bg-[#12061C] p-3 shadow-sm sm:p-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(180px,200px)] lg:items-stretch lg:gap-4 lg:p-4">
         {/* Pick a number */}
         <div>
           <div className="mb-2 flex items-center justify-between">
@@ -1061,7 +1348,7 @@ const Wingo = () => {
             </span>
           </div>
           <div>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
               {ImgData.map((item, i) => (
                 <button
                   key={i}
@@ -1075,7 +1362,7 @@ const Wingo = () => {
                   <img
                     src={item}
                     alt={i}
-                    className="h-16 w-16 object-contain sm:h-9 sm:w-9"
+                    className="h-12 w-12 object-contain sm:h-9 sm:w-9 md:h-10 md:w-10"
                   />
                 </button>
               ))}
@@ -1116,14 +1403,14 @@ const Wingo = () => {
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2.5">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
         <button
           type="button"
           onClick={() => {
             setActiveBigSmall("l");
             selectBetHandle("l");
           }}
-          className={`relative flex items-center justify-center gap-1.5 overflow-hidden rounded-xl py-3.5 text-sm font-black shadow-md transition hover:-translate-y-0.5 sm:text-base ${
+          className={`relative flex min-h-[52px] items-center justify-center gap-1.5 overflow-hidden rounded-xl py-3 text-sm font-black shadow-md transition hover:-translate-y-0.5 active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
             activeBigSmall === "l"
               ? `${purpleGradient} text-white`
               : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d]"
@@ -1140,7 +1427,7 @@ const Wingo = () => {
             setActiveBigSmall("n");
             selectBetHandle("n");
           }}
-          className={`relative flex items-center justify-center gap-1.5 overflow-hidden rounded-xl py-3.5 text-sm font-black shadow-md transition hover:-translate-y-0.5 sm:text-base ${
+          className={`relative flex min-h-[52px] items-center justify-center gap-1.5 overflow-hidden rounded-xl py-3 text-sm font-black shadow-md transition hover:-translate-y-0.5 active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
             activeBigSmall === "n"
               ? `${purpleGradient} text-white`
               : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d]"
@@ -1174,7 +1461,7 @@ const Wingo = () => {
   );
 
   const renderHistoryTabs = () => (
-    <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-1.5 shadow-[0_6px_18px_rgba(0,0,0,0.5)]">
+    <div className="mt-4 grid grid-cols-3 gap-1 rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-1.5 shadow-[0_6px_18px_rgba(0,0,0,0.5)] sm:gap-1.5">
       {[
         { key: "ghistory", label: "History" },
         { key: "chart", label: "Chart" },
@@ -1183,7 +1470,7 @@ const Wingo = () => {
         <button
           key={key}
           type="button"
-          className={`rounded-xl py-2.5 text-xs font-black transition sm:text-sm ${
+          className={`min-h-[42px] rounded-xl px-1 py-2.5 text-[11px] font-black transition sm:text-sm ${
             gameHistory === key
               ? `${purpleGradient} text-white`
               : "text-gray-400 hover:bg-[#2a1b3d] hover:text-white"
@@ -1261,7 +1548,7 @@ const Wingo = () => {
     if (gameHistory === "chart") {
       return (
         <section className={`${goldCard} mt-3 overflow-hidden p-3 sm:p-4`}>
-          <div className="rounded-xl bg-[#12061C] p-2.5">
+          <div className="min-w-[360px] rounded-xl bg-[#12061C] p-2.5 sm:min-w-0">
             <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-[#9B59B6] sm:text-xs">
               <span>Period</span>
               <span>Winning Number</span>
@@ -1304,12 +1591,12 @@ const Wingo = () => {
               ))}
             </div>
           </div>
-          <div className="container2 mt-3 max-w-full overflow-x-auto rounded-xl border border-[#2a1b3d] bg-[#12061C] p-2">
+          <div className="container2 mt-3 w-full max-w-full overflow-x-auto rounded-xl border border-[#2a1b3d] bg-[#12061C] p-2">
             <ul id="trendList" className="relative space-y-1">
               {(wingoPeriodListData?.data?.gameslist || []).map((item, i) => (
                 <li
                   key={i}
-                  className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#1C0F2B] px-2"
+                  className="flex min-w-[420px] items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#1C0F2B] px-2 py-1.5"
                 >
                   <span className="w-20 shrink-0 text-[12px] ml-3 font-bold text-gray-400">
                     {item.period}
@@ -1504,17 +1791,17 @@ const Wingo = () => {
   return (
     <>
       <main className="min-h-screen w-full overflow-x-hidden bg-[#0B0410] text-white">
-        <div className="mx-auto w-full max-w-[520px] overflow-x-hidden px-3 pb-8 pt-3 sm:px-4 sm:pt-4">
-          <div className="mb-3 flex items-center justify-between px-1">
+        <div className="mx-auto w-full max-w-6xl overflow-x-hidden px-2 pb-8 pt-3 sm:px-1 sm:pt-5 lg:px-6 lg:pt-6">
+          <div className="mb-3 flex items-center justify-between gap-3 px-1 sm:mb-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#9B59B6]">
-                TopX Gaming
+                RegalClub Gaming
               </p>
               <h1 className="text-xl font-black tracking-tight text-white sm:text-2xl">
                 WIN GO
               </h1>
             </div>
-            <div className="flex items-center gap-1.5 rounded-full border border-[#9B59B6]/40 bg-[#1C0F2B] px-3 py-1.5 shadow-sm">
+            <div className="shrink-0 flex items-center gap-1.5 rounded-full border border-[#9B59B6]/40 bg-[#1C0F2B] px-2.5 py-1.5 shadow-sm sm:px-3">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#00E676]" />
               <span className="text-[10px] font-black text-[#9B59B6]">
                 LIVE
@@ -1537,7 +1824,7 @@ const Wingo = () => {
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]"
             onClick={() => setOpenPopup(false)}
           />
-          <div className="fixed bottom-[76px] left-1/2 z-50 w-[calc(100%-16px)] max-w-[500px] -translate-x-1/2 overflow-hidden rounded-t-[26px] border border-[#2a1b3d] bg-[#1C0F2B] shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
+          <div className="fixed bottom-2 left-1/2 z-50 w-[calc(100%-12px)] max-w-[560px] -translate-x-1/2 sm:bottom-[76px] overflow-hidden rounded-t-[26px] border border-[#2a1b3d] bg-[#1C0F2B] shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
             <div
               className={`p-4 text-center ${getBetClass(selectBet)} popup-select-effect`}
             >
@@ -1548,7 +1835,7 @@ const Wingo = () => {
                 Select {getBetLabel(selectBet)}
               </h2>
             </div>
-            <div className="max-h-[72vh] overflow-y-auto p-4 bg-[#12061C]">
+            <div className="max-h-[72vh] overflow-y-auto bg-[#12061C] p-3 sm:p-4">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-bold text-white">credit</span>
                 <div className="flex flex-wrap justify-end gap-1.5">
@@ -1673,7 +1960,7 @@ const Wingo = () => {
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]"
             onClick={() => setHowtoPlay(false)}
           />
-          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-24px)] max-w-[440px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] shadow-[0_15px_50px_rgba(0,0,0,0.7)]">
+          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-16px)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] shadow-[0_15px_50px_rgba(0,0,0,0.7)]">
             <div className={`${purpleGradient} px-4 py-4 text-center`}>
               <h3 className="text-lg font-black text-white">
                 How to Play — Win Go
@@ -1682,7 +1969,7 @@ const Wingo = () => {
                 {activeTime === 10 ? "30s" : `${activeTime}Min`}
               </p>
             </div>
-            <div className="max-h-[60vh] overflow-y-auto bg-[#12061C] p-5 text-sm leading-7 text-gray-300">
+            <div className="max-h-[70vh] overflow-y-auto bg-[#12061C] p-4 text-sm leading-7 text-gray-300 sm:p-5">
               <div className="[&_p]:mb-3 [&_strong]:font-extrabold [&_strong]:text-white [&_li]:mb-2 [&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:font-black [&_h3]:text-[#9B59B6]">
                 {getHowToPlayContent()}
               </div>

@@ -21,13 +21,13 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { showErrorToast, showSuccessToast } from "../hooks/toast";
-import { logout, getProfile } from "../redux/slices/authSlice";
 import {
   checkGamecredit,
   resetGameState,
   setShouldRefreshOnReturn,
 } from "../../../Client/src/redux/slices/gameSlice";
+import { showErrorToast, showSuccessToast } from "../hooks/toast";
+import { getProfile, logout } from "../redux/slices/authSlice";
 
 // ======================================================
 // COUNTRY CONFIGURATION
@@ -188,7 +188,6 @@ const Account = () => {
 
   // ======================================================
   // CHECK GAME CREDIT + REFRESH PROFILE
-  // used by both manual button + auto trigger
   // ======================================================
 
   const runCheckCredit = useCallback(async () => {
@@ -196,13 +195,8 @@ const Account = () => {
     setIsCheckingCredit(true);
     try {
       dispatch(resetGameState());
-
-      // 1️⃣ Check game credit
       const result = await dispatch(checkGamecredit()).unwrap();
-
-      // 2️⃣ Refresh profile (balance, wallet, etc.) after credit check
       await dispatch(getProfile()).unwrap();
-
       showSuccessToast(
         "Credit Updated",
         result?.message || "Game credit refreshed.",
@@ -224,13 +218,13 @@ const Account = () => {
   };
 
   // ======================================================
-  // 🔥 AUTO-HIT — when user returns from a game route
+  // AUTO-HIT when user returns from a game route
   // ======================================================
 
   useEffect(() => {
     if (shouldRefreshOnReturn) {
-      dispatch(setShouldRefreshOnReturn(false)); // clear first (avoid loop)
-      runCheckCredit();                          // then auto-hit
+      dispatch(setShouldRefreshOnReturn(false));
+      runCheckCredit();
     }
   }, [shouldRefreshOnReturn, dispatch, runCheckCredit]);
 
@@ -270,15 +264,16 @@ const Account = () => {
   // ======================================================
 
   return (
-    <div className="min-h-screen bg-[#0B0410] pb-24">
-      <div className="max-w-2xl mx-auto px-4 py-4">
-        {/* Profile Card */}
+    <div className="min-h-screen bg-[#0B0410] pb-24 sm:pb-8">
+      {/* ✅ SINGLE COLUMN — Mobile aur Desktop dono pe same layout */}
+      <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 space-y-4 sm:space-y-5">
+        {/* ===== Profile Card ===== */}
         <Link
           to="/profile"
-          className="flex items-center gap-4 rounded-2xl bg-[#1C0F2B] border border-[#9B59B6]/40 p-4 mb-4 shadow-[0_4px_16px_rgba(0,0,0,0.5)] hover:border-[#9B59B6]/60 transition-all"
+          className="flex items-center gap-3 sm:gap-4 rounded-2xl bg-[#1C0F2B] border border-[#9B59B6]/40 p-3 sm:p-4 shadow-[0_4px_16px_rgba(0,0,0,0.5)] hover:border-[#9B59B6]/60 transition-all"
         >
-          {/* Profile Picture / Avatar */}
-          <div className="w-20 h-20 rounded-full border-2 border-[#9B59B6] flex items-center justify-center flex-shrink-0 overflow-hidden bg-[#2a1b3d]">
+          {/* Avatar */}
+          <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full border-2 border-[#9B59B6] flex items-center justify-center flex-shrink-0 overflow-hidden bg-[#2a1b3d]">
             {user?.profilePic ? (
               <img
                 src={user.profilePic}
@@ -287,7 +282,7 @@ const Account = () => {
                 onError={(e) => {
                   e.target.style.display = "none";
                   e.target.parentElement.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-[#9B59B6]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-[#9B59B6]">
                       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                       <circle cx="12" cy="7" r="4"/>
                     </svg>
@@ -295,46 +290,49 @@ const Account = () => {
                 }}
               />
             ) : (
-              <User size={38} className="text-[#9B59B6]" strokeWidth={1.5} />
+              <User size={30} className="text-[#9B59B6]" strokeWidth={1.5} />
             )}
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-bold text-white truncate uppercase">
+            {/* Name */}
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+              <h2 className="text-sm sm:text-base lg:text-lg font-bold text-white truncate uppercase">
                 {getUserDisplayName()}
               </h2>
-              <span className="w-6 h-6 rounded-md bg-[#9B59B6]/20 border border-[#9B59B6]/40 flex items-center justify-center flex-shrink-0">
-                <Crown size={13} className="text-[#9B59B6]" />
+              <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-[#9B59B6]/20 border border-[#9B59B6]/40 flex items-center justify-center flex-shrink-0">
+                <Crown size={12} className="text-[#9B59B6]" />
               </span>
             </div>
 
+            {/* UID */}
             <button
               onClick={(e) => {
                 e.preventDefault();
                 copyUID();
               }}
-              className="flex items-center gap-1.5 text-sm text-gray-400 mb-1.5"
+              className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-400 mb-1"
             >
               UID: WINZOX{getUserUID()}
               <Copy
-                size={13}
+                size={11}
                 className={copied ? "text-[#00E676]" : "text-gray-500"}
               />
             </button>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1.5 text-sm text-gray-300">
-                <Phone size={14} className="text-gray-500" />
-                {getUserPhone()}
-              </span>
+            {/* Phone */}
+            <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-300 mb-1.5">
+              <Phone size={11} className="text-gray-500" />
+              {getUserPhone()}
+            </div>
 
-              <span className="flex items-center gap-1 text-xs font-bold text-[#9B59B6] border border-[#9B59B6]/40 bg-[#9B59B6]/10 rounded-full px-2.5 py-0.5">
+            {/* Badges */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] font-bold text-[#9B59B6] border border-[#9B59B6]/40 bg-[#9B59B6]/10 rounded-full px-1.5 sm:px-2 py-0.5">
                 Verified
-                <ShieldCheck size={12} />
+                <ShieldCheck size={10} />
               </span>
-
-              <span className="flex items-center gap-1 text-xs font-bold text-blue-400 border border-blue-400/40 bg-blue-400/10 rounded-full px-2.5 py-0.5">
+              <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] font-bold text-blue-400 border border-blue-400/40 bg-blue-400/10 rounded-full px-1.5 sm:px-2 py-0.5">
                 {user?.country || "IN"}
               </span>
             </div>
@@ -345,42 +343,44 @@ const Account = () => {
             onClick={handleCheckCreditClick}
             disabled={isCheckingCredit}
             title="Check Game Credit"
-            className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl bg-gradient-to-b from-[#9B59B6] to-[#7D3C98] text-white text-[10px] font-bold hover:from-[#a86bc4] hover:to-[#8a45a5] transition-all disabled:opacity-60 shadow-[0_2px_8px_rgba(155,89,182,0.4)] flex-shrink-0"
+            className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-b from-[#9B59B6] to-[#7D3C98] text-white text-[9px] sm:text-[10px] font-bold hover:from-[#a86bc4] hover:to-[#8a45a5] transition-all disabled:opacity-60 shadow-[0_2px_8px_rgba(155,89,182,0.4)] flex-shrink-0"
           >
             {isCheckingCredit ? (
               <>
-                <Circle className="animate-spin" size={16} />
+                <Circle className="animate-spin" size={14} />
                 <span>Checking</span>
               </>
             ) : (
               <>
-                <Coins size={16} />
+                <Coins size={14} />
                 <span>Credit</span>
               </>
             )}
           </button>
         </Link>
 
-        {/* Deposit / Withdrawal */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        {/* ===== Deposit / Withdrawal ===== */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {topCards.map((card) => {
             const Icon = card.icon;
             return (
               <Link
                 key={card.label}
                 to={card.path}
-                className="rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] p-4 shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-[#9B59B6]/50 transition-all"
+                className="rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] p-3 sm:p-4 shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-[#9B59B6]/50 transition-all"
               >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between mb-1.5 sm:mb-2">
                   <Icon
-                    size={26}
+                    size={22}
                     className="text-[#9B59B6]"
                     strokeWidth={1.8}
                   />
-                  <ChevronRight size={16} className="text-gray-500 mt-1" />
+                  <ChevronRight size={16} className="text-gray-500 mt-0.5" />
                 </div>
-                <p className="text-base font-bold text-white">{card.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5 leading-snug">
+                <p className="text-xs sm:text-sm lg:text-base font-bold text-white">
+                  {card.label}
+                </p>
+                <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5 leading-snug">
                   {card.description}
                 </p>
               </Link>
@@ -388,94 +388,132 @@ const Account = () => {
           })}
         </div>
 
-        {/* History */}
-        <h3 className="text-sm font-black text-[#9B59B6] tracking-wide mb-2">
-          HISTORY
-        </h3>
-        <div className="rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] mb-5 overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-          {historyItems.map((item, i) => {
-            const Icon = item.icon;
-            const isPowerhitHistory = item.label === "Powerhit History";
+        {/* ===== History ===== */}
+        <div>
+          <h3 className="text-xs sm:text-sm font-black text-[#9B59B6] tracking-wide mb-1.5 sm:mb-2">
+            HISTORY
+          </h3>
+          <div className="rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+            {historyItems.map((item, i) => {
+              const Icon = item.icon;
+              const isPowerhitHistory = item.label === "Powerhit History";
 
-            return (
-              <Link
-                key={item.label}
-                to={item.path}
-                className={`flex items-center gap-3 p-4 hover:bg-[#2a1b3d]/50 transition-colors ${
-                  i !== historyItems.length - 1
-                    ? "border-b border-[#2a1b3d]"
-                    : ""
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full border border-[#2a1b3d] bg-[#12061C] flex items-center justify-center flex-shrink-0">
-                  <Icon size={19} className={item.iconColor} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-white">{item.label}</p>
-                    {isPowerhitHistory && (
-                      <span className="text-[10px] font-semibold text-purple-400 bg-purple-500/15 px-2 py-0.5 rounded-full border border-purple-500/30">
-                        {countryPath.toUpperCase()}
-                      </span>
-                    )}
+              return (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4 hover:bg-[#2a1b3d]/50 transition-colors ${
+                    i !== historyItems.length - 1
+                      ? "border-b border-[#2a1b3d]"
+                      : ""
+                  }`}
+                >
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-[#2a1b3d] bg-[#12061C] flex items-center justify-center flex-shrink-0">
+                    <Icon size={16} className={`${item.iconColor} sm:hidden`} />
+                    <Icon
+                      size={19}
+                      className={`hidden ${item.iconColor} sm:block`}
+                    />
                   </div>
-                  <p className="text-xs text-gray-400">{item.description}</p>
-                </div>
-                <ChevronRight
-                  size={18}
-                  className="text-gray-500 flex-shrink-0"
-                />
-              </Link>
-            );
-          })}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <p className="text-xs sm:text-sm font-bold text-white truncate">
+                        {item.label}
+                      </p>
+                      {isPowerhitHistory && (
+                        <span className="text-[8px] sm:text-[10px] font-semibold text-purple-400 bg-purple-500/15 px-1.5 sm:px-2 py-0.5 rounded-full border border-purple-500/30 flex-shrink-0">
+                          {countryPath.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] sm:text-xs text-gray-400 truncate">
+                      {item.description}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    className="text-gray-500 flex-shrink-0 sm:hidden"
+                  />
+                  <ChevronRight
+                    size={18}
+                    className="hidden text-gray-500 flex-shrink-0 sm:block"
+                  />
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
-        {/* More Options */}
-        <h3 className="text-sm font-black text-[#9B59B6] tracking-wide mb-2">
-          MORE OPTIONS
-        </h3>
-        <div className="rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] mb-5 overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-          {moreOptions.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.label}
-                to={item.path}
-                className={`flex items-center gap-3 p-4 hover:bg-[#2a1b3d]/50 transition-colors ${
-                  i !== moreOptions.length - 1
-                    ? "border-b border-[#2a1b3d]"
-                    : ""
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full border border-[#2a1b3d] bg-[#12061C] flex items-center justify-center flex-shrink-0">
-                  <Icon size={18} className={item.iconColor} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white">{item.label}</p>
-                  <p className="text-xs text-gray-400">{item.description}</p>
-                </div>
-                <ChevronRight
-                  size={18}
-                  className="text-gray-500 flex-shrink-0"
-                />
-              </Link>
-            );
-          })}
+        {/* ===== More Options ===== */}
+        <div>
+          <h3 className="text-xs sm:text-sm font-black text-[#9B59B6] tracking-wide mb-1.5 sm:mb-2">
+            MORE OPTIONS
+          </h3>
+          <div className="rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+            {moreOptions.map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4 hover:bg-[#2a1b3d]/50 transition-colors ${
+                    i !== moreOptions.length - 1
+                      ? "border-b border-[#2a1b3d]"
+                      : ""
+                  }`}
+                >
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-[#2a1b3d] bg-[#12061C] flex items-center justify-center flex-shrink-0">
+                    <Icon size={16} className={`${item.iconColor} sm:hidden`} />
+                    <Icon
+                      size={18}
+                      className={`hidden ${item.iconColor} sm:block`}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-white truncate">
+                      {item.label}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 truncate">
+                      {item.description}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    className="text-gray-500 flex-shrink-0 sm:hidden"
+                  />
+                  <ChevronRight
+                    size={18}
+                    className="hidden text-gray-500 flex-shrink-0 sm:block"
+                  />
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Logout */}
+        {/* ===== Logout ===== */}
         <button
           onClick={handleLogoutClick}
-          className="w-full flex items-center gap-3 rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] p-4 shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-red-500/40 transition-all"
+          className="w-full flex items-center gap-2.5 sm:gap-3 rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] p-3 sm:p-4 shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-red-500/40 transition-all"
         >
-          <div className="w-11 h-11 rounded-full border border-red-500/40 bg-red-500/10 flex items-center justify-center flex-shrink-0">
-            <LogOut size={18} className="text-red-400" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-red-500/40 bg-red-500/10 flex items-center justify-center flex-shrink-0">
+            <LogOut size={16} className="text-red-400 sm:hidden" />
+            <LogOut size={18} className="hidden text-red-400 sm:block" />
           </div>
           <div className="flex-1 min-w-0 text-left">
-            <p className="text-sm font-bold text-red-400">Logout</p>
-            <p className="text-xs text-gray-400">Logout from your account</p>
+            <p className="text-xs sm:text-sm font-bold text-red-400">Logout</p>
+            <p className="text-[10px] sm:text-xs text-gray-400">
+              Logout from your account
+            </p>
           </div>
-          <ChevronRight size={18} className="text-gray-500 flex-shrink-0" />
+          <ChevronRight
+            size={16}
+            className="text-gray-500 flex-shrink-0 sm:hidden"
+          />
+          <ChevronRight
+            size={18}
+            className="hidden text-gray-500 flex-shrink-0 sm:block"
+          />
         </button>
       </div>
 
@@ -487,7 +525,7 @@ const Account = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] w-full max-w-xs p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
+            className="relative bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] w-full max-w-xs p-5 sm:p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
           >
             <button
               onClick={handleCancelLogout}
@@ -497,14 +535,15 @@ const Account = () => {
               <X size={14} className="text-gray-400" />
             </button>
 
-            <div className="w-14 h-14 rounded-full border border-red-500/40 bg-red-500/10 flex items-center justify-center mx-auto mb-3">
-              <LogOut size={22} className="text-red-400" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-red-500/40 bg-red-500/10 flex items-center justify-center mx-auto mb-3">
+              <LogOut size={20} className="text-red-400 sm:hidden" />
+              <LogOut size={22} className="hidden text-red-400 sm:block" />
             </div>
 
-            <h3 className="text-base font-bold text-white mb-1">
+            <h3 className="text-sm sm:text-base font-bold text-white mb-1">
               Log out of WINZOX?
             </h3>
-            <p className="text-xs text-gray-400 mb-5 leading-relaxed">
+            <p className="text-[11px] sm:text-xs text-gray-400 mb-4 sm:mb-5 leading-relaxed">
               Are you sure you want to logout? You'll need to sign in again to
               access your wallet and bets.
             </p>
@@ -513,18 +552,18 @@ const Account = () => {
               <button
                 onClick={handleCancelLogout}
                 disabled={isLoggingOut}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-[#2a1b3d] text-gray-300 font-bold text-sm hover:bg-[#2a1b3d] transition-colors disabled:opacity-50"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-[#2a1b3d] text-gray-300 font-bold text-xs sm:text-sm hover:bg-[#2a1b3d] transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmLogout}
                 disabled={isLoggingOut}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-b from-red-500 to-red-600 rounded-xl text-white font-bold text-sm hover:from-red-600 hover:to-red-700 transition-colors disabled:opacity-60 shadow-[0_2px_8px_rgba(239,68,68,0.4)]"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-b from-red-500 to-red-600 rounded-xl text-white font-bold text-xs sm:text-sm hover:from-red-600 hover:to-red-700 transition-colors disabled:opacity-60 shadow-[0_2px_8px_rgba(239,68,68,0.4)]"
               >
                 {isLoggingOut ? (
                   <>
-                    <Circle className="animate-spin" size={14} />
+                    <Circle className="animate-spin" size={13} />
                     Logging out...
                   </>
                 ) : (

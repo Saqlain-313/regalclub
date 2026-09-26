@@ -712,7 +712,7 @@ express-router@^0.0.1:
   resolved "https://registry.npmjs.org/express-router/-/express-router-0.0.1.tgz"
   integrity sha512-6d8DAAUkhihgVQAOqo3lef+B/c9Q42mxKtt6O92fPmHotnv2TQvNClM+bUtTzX8q+V1v5YDyfFdZYTi3lMK/Vg==
 
-express@^5.2.1, "express@>= 4.11":
+express@^5.2.1:
   version "5.2.1"
   resolved "https://registry.npmjs.org/express/-/express-5.2.1.tgz"
   integrity sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==

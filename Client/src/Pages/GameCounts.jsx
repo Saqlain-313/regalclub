@@ -1,4 +1,4 @@
-// GameSelection.jsx - FULLY FIXED - Manual Number Selection Working
+// GameSelection.jsx - COMPACT & MOBILE RESPONSIVE
 
 import {
   AlertCircle,
@@ -26,7 +26,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 
-// Import country-specific game count slices
 import { getGameCounts as getAustraliaGameCounts } from "../redux/slices/australia/gameCountSlice";
 import { getGameCounts as getBangladeshGameCounts } from "../redux/slices/bangladesh/gameCountSlice";
 import { getGameCounts as getIndiaGameCounts } from "../redux/slices/india/gameCountSlice";
@@ -40,19 +39,15 @@ import {
 } from "../redux/slices/gameEntrySlice";
 import { getUserTicketTypes } from "../redux/slices/ticketTypeSlice";
 
-// Countries data
 const countries = [
-  { name: "India", flag: "https://flagcdn.com/w80/in.png", code: "IN" },
-  { name: "Australia", flag: "https://flagcdn.com/w80/au.png", code: "AU" },
-  { name: "Pakistan", flag: "https://flagcdn.com/w80/pk.png", code: "PK" },
-  { name: "Bangladesh", flag: "https://flagcdn.com/w80/bd.png", code: "BD" },
-  { name: "Nepal", flag: "https://flagcdn.com/w80/np.png", code: "NP" },
-  { name: "Dubai", flag: "https://flagcdn.com/w80/ae.png", code: "UAE" },
+  { name: "India", flag: "", code: "IN" },
+  { name: "Australia", flag: "", code: "AU" },
+  { name: "Pakistan", flag: "", code: "PK" },
+  { name: "Bangladesh", flag: "", code: "BD" },
+  { name: "Nepal", flag: "", code: "NP" },
+  { name: "Dubai", flag: "", code: "UAE" },
 ];
 
-// ==========================================
-// CURRENCY CONFIGURATION
-// ==========================================
 const currencyConfig = {
   IN: { symbol: "₹", code: "INR", name: "Indian Rupee" },
   AU: { symbol: "A$", code: "AUD", name: "Australian Dollar" },
@@ -62,12 +57,10 @@ const currencyConfig = {
   UAE: { symbol: "د.إ", code: "AED", name: "UAE Dirham" },
 };
 
-// Helper function to get currency symbol
 const getCurrencySymbol = (countryCode) => {
   return currencyConfig[countryCode]?.symbol || "₹";
 };
 
-// Helper function to format price with currency
 const formatPrice = (amount, countryCode) => {
   const symbol = getCurrencySymbol(countryCode);
   return `${symbol}${amount}`;
@@ -76,46 +69,45 @@ const formatPrice = (amount, countryCode) => {
 // ===== CUSTOM MODAL COMPONENT =====
 const CustomModal = ({ isOpen, onClose, type, title, message, details }) => {
   if (!isOpen) return null;
-
   const isSuccess = type === "success";
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-3xl border-2 border-amber-300 bg-white shadow-2xl"
+        className="w-full max-w-sm overflow-hidden rounded-2xl border-2 border-[#B45CFF]/50 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className={`relative p-6 text-center ${isSuccess ? "bg-gradient-to-r from-emerald-500 to-green-600" : "bg-gradient-to-r from-red-500 to-rose-600"}`}
+          className={`relative p-4 text-center ${isSuccess ? "bg-gradient-to-r from-[#B45CFF] to-[#7418F5]" : "bg-gradient-to-r from-red-500 to-rose-600"}`}
         >
           <button
             onClick={onClose}
-            className="absolute right-3 top-3 rounded-full bg-white/20 p-2 text-white transition hover:bg-white/30"
+            className="absolute right-2 top-2 rounded-full bg-white/20 p-1.5 text-white transition hover:bg-white/30"
           >
-            <X size={19} />
+            <X size={16} />
           </button>
-          <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-xl">
-            <span className="text-4xl">{isSuccess ? "✅" : "❌"}</span>
+          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-xl">
+            <span className="text-2xl">{isSuccess ? "✅" : "❌"}</span>
           </div>
-          <h3 className="text-2xl font-black text-white">{title}</h3>
+          <h3 className="text-lg font-black text-white">{title}</h3>
         </div>
-        <div className="p-6">
-          <p className="text-center text-lg font-semibold text-gray-700">
+        <div className="p-4">
+          <p className="text-center text-sm font-semibold text-gray-600">
             {message}
           </p>
           {details && (
-            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <p className="break-all font-mono text-xs text-gray-600">
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <p className="break-all font-mono text-[10px] text-gray-500">
                 {details}
               </p>
             </div>
           )}
           <button
             onClick={onClose}
-            className={`mt-5 w-full rounded-xl py-3.5 font-black text-white shadow-lg transition hover:-translate-y-0.5 ${isSuccess ? "bg-gradient-to-r from-emerald-500 to-green-600" : "bg-gradient-to-r from-red-500 to-rose-600"}`}
+            className={`mt-4 w-full rounded-lg py-2.5 text-sm font-black text-white shadow-lg transition hover:-translate-y-0.5 ${isSuccess ? "bg-gradient-to-r from-[#B45CFF] to-[#7418F5]" : "bg-gradient-to-r from-red-500 to-rose-600"}`}
           >
             {isSuccess ? "🎉 Great!" : "Got it"}
           </button>
@@ -128,17 +120,10 @@ const CustomModal = ({ isOpen, onClose, type, title, message, details }) => {
 const GameSelection = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
-
   const urlCountry = searchParams.get("country");
-
   const { user } = useSelector((state) => state.auth || { user: null });
   const userCountry = user?.country || null;
-
   const activeCountryName = urlCountry || userCountry;
-
-  // ==========================================
-  // COUNTRY CONFIGURATION
-  // ==========================================
 
   const countryConfig = {
     india: {
@@ -185,25 +170,17 @@ const GameSelection = () => {
     },
   };
 
-  // ==========================================
-  // NORMALIZE COUNTRY
-  // ==========================================
   const countryAliases = {
     india: "india",
     in: "india",
-
     australia: "australia",
     au: "australia",
-
     pakistan: "pakistan",
     pk: "pakistan",
-
     bangladesh: "bangladesh",
     bd: "bangladesh",
-
     nepal: "nepal",
     np: "nepal",
-
     uae: "uae",
     ae: "uae",
     dubai: "uae",
@@ -218,15 +195,10 @@ const GameSelection = () => {
 
   const activeCountryConfig = countryConfig[normalizedCountry] || null;
 
-  // ==========================================
-  // REDUX SELECTORS
-  // ==========================================
-
   const { ticketTypes = [], loading: ticketLoading } = useSelector(
     (state) => state.ticketType || {},
   );
 
-  // Get all game counts from all country slices
   const indiaGameCounts = useSelector(
     (state) => state.indiaGameCount?.gameCounts || [],
   );
@@ -246,10 +218,8 @@ const GameSelection = () => {
     (state) => state.uaeGameCount?.gameCounts || [],
   );
 
-  // Get the correct game counts based on active country
   const getGameCountsByCountry = () => {
     if (!activeCountryConfig) return [];
-
     switch (activeCountryConfig.stateKey) {
       case "indiaGameCount":
         return indiaGameCounts;
@@ -270,7 +240,6 @@ const GameSelection = () => {
 
   const gameCounts = getGameCountsByCountry();
 
-  // Get loading states at the top level.
   const indiaGameCountLoading = useSelector(
     (state) => state.indiaGameCount?.loading || false,
   );
@@ -310,15 +279,9 @@ const GameSelection = () => {
     message: entryMessage,
   } = useSelector((state) => state.gameEntry || {});
 
-  // ==========================================
-  // UTILITY FUNCTIONS
-  // ==========================================
-
   const getCountryCodeFromName = (countryName) => {
     if (!countryName) return null;
-
     const value = String(countryName).trim().toLowerCase();
-
     const codeMap = {
       india: "IN",
       in: "IN",
@@ -334,15 +297,12 @@ const GameSelection = () => {
       ae: "UAE",
       dubai: "UAE",
     };
-
     return codeMap[value] || null;
   };
 
   const getCountryObject = (countryName) => {
     const code = getCountryCodeFromName(countryName);
-
     if (!code) return null;
-
     return countries.find((c) => c.code === code) || null;
   };
 
@@ -353,10 +313,6 @@ const GameSelection = () => {
   const activeCountryObject = useMemo(() => {
     return getCountryObject(activeCountryName);
   }, [activeCountryName]);
-
-  // ==========================================
-  // STATE DECLARATIONS
-  // ==========================================
 
   const [activeTicket, setActiveTicket] = useState(null);
   const [selectedGameType, setSelectedGameType] = useState(null);
@@ -370,7 +326,6 @@ const GameSelection = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [hoveredTicket, setHoveredTicket] = useState(null);
   const [allGamesExpanded, setAllGamesExpanded] = useState(false);
-  const [countryError, setCountryError] = useState(null);
 
   const [modal, setModal] = useState({
     isOpen: false,
@@ -379,10 +334,6 @@ const GameSelection = () => {
     message: "",
     details: null,
   });
-
-  // ==========================================
-  // MEMOIZED VALUES
-  // ==========================================
 
   const availableGameTypes = useMemo(() => {
     const ticket = ticketTypes.find((t) => t._id === activeTicket);
@@ -408,19 +359,10 @@ const GameSelection = () => {
     ];
   }, [ticketTypes, activeTicket]);
 
-  // ==========================================
-  // FILTER GAME COUNTS
-  // ==========================================
   const filteredGameCounts = useMemo(() => {
-    if (!Array.isArray(gameCounts) || gameCounts.length === 0) {
-      return [];
-    }
-
+    if (!Array.isArray(gameCounts) || gameCounts.length === 0) return [];
     const activeTicketId = String(activeTicket || "");
-
-    if (!activeTicketId) {
-      return [];
-    }
+    if (!activeTicketId) return [];
 
     const result = gameCounts.filter((item) => {
       const ticketId =
@@ -429,14 +371,8 @@ const GameSelection = () => {
         item?.ticketType ||
         item?.ticketTypeId ||
         "";
-
-      if (String(ticketId) !== activeTicketId) {
-        return false;
-      }
-
-      if (!selectedGameType || selectedGameType === "default") {
-        return true;
-      }
+      if (String(ticketId) !== activeTicketId) return false;
+      if (!selectedGameType || selectedGameType === "default") return true;
 
       const gameTypeId =
         item?.gameType?._id ||
@@ -445,7 +381,6 @@ const GameSelection = () => {
         item?.gameTypeId ||
         item?.gameTypeDetails?._id ||
         "";
-
       return String(gameTypeId) === String(selectedGameType);
     });
 
@@ -457,15 +392,10 @@ const GameSelection = () => {
           item?.ticketType ||
           item?.ticketTypeId ||
           "";
-
         return String(ticketId) === activeTicketId;
       });
-
-      if (anyForTicket.length > 0) {
-        return anyForTicket;
-      }
+      if (anyForTicket.length > 0) return anyForTicket;
     }
-
     return result;
   }, [gameCounts, activeTicket, selectedGameType]);
 
@@ -477,11 +407,7 @@ const GameSelection = () => {
         ) || null
       );
     }
-
-    if (filteredGameCounts.length > 0) {
-      return filteredGameCounts[0];
-    }
-
+    if (filteredGameCounts.length > 0) return filteredGameCounts[0];
     return null;
   }, [filteredGameCounts, selectedGameCount]);
 
@@ -502,7 +428,6 @@ const GameSelection = () => {
 
   const allGamesFilled = useMemo(() => {
     if (games.length === 0) return false;
-
     if (selectionMode === "quickpick") {
       return games.every(
         (game) =>
@@ -521,45 +446,24 @@ const GameSelection = () => {
     );
   }, [games, selectionMode]);
 
-  // ==========================================
-  // EFFECTS
-  // ==========================================
-
   useEffect(() => {
     dispatch(getUserTicketTypes());
   }, [dispatch]);
 
-  // ==========================================
-  // FETCH GAME COUNTS
-  // ==========================================
   const lastGameCountRequest = useRef("");
 
   useEffect(() => {
     if (!activeCountryConfig) return;
     if (!normalizedCountry) return;
-    if (!activeTicket) {
-      return;
-    }
-
+    if (!activeTicket) return;
     const ticketType = String(activeTicket).trim();
     if (!ticketType) return;
-
     const requestKey = `${normalizedCountry}:${ticketType}`;
-
-    if (lastGameCountRequest.current === requestKey) {
-      return;
-    }
-
+    if (lastGameCountRequest.current === requestKey) return;
     lastGameCountRequest.current = requestKey;
-
-    dispatch(
-      activeCountryConfig.getGameCounts({
-        ticketType,
-      }),
-    );
+    dispatch(activeCountryConfig.getGameCounts({ ticketType }));
   }, [dispatch, normalizedCountry, activeTicket, activeCountryConfig]);
 
-  // Set initial ticket
   useEffect(() => {
     if (ticketTypes.length > 0 && !activeTicket) {
       if (urlCountry) {
@@ -568,17 +472,14 @@ const GameSelection = () => {
             .toLowerCase()
             .includes(String(urlCountry).toLowerCase()),
         );
-
         if (matchingTicket) {
           setActiveTicket(matchingTicket._id);
           return;
         }
       }
-
       const firstActiveTicket =
         ticketTypes.find((ticket) => ticket?.isActive !== false) ||
         ticketTypes[0];
-
       setActiveTicket(firstActiveTicket?._id || null);
     }
   }, [ticketTypes, activeTicket, urlCountry]);
@@ -600,18 +501,16 @@ const GameSelection = () => {
       setModal({
         isOpen: true,
         type: "success",
-        title: "🎉 Entry Created Successfully!",
+        title: "🎉 Entry Created!",
         message:
           entryMessage ||
           "Your game entry has been added to cart successfully.",
-        details: `Ticket: ${activeTicketTitle} (ID: ${selectedTicket?._id?.slice(-6) || "N/A"}) | Order: ${selectedTicket?.order || 0} | ${selectedCount?.totalGames || 0} Games | ${selectionMode === "quickpick" ? "QuickPick" : "Pick Your Numbers"} | Country: ${activeCountryName} (${activeCountryCode || "N/A"})`,
+        details: `Ticket: ${activeTicketTitle} | ${selectedCount?.totalGames || 0} Games | ${selectionMode === "quickpick" ? "QuickPick" : "Manual"} | ${activeCountryName}`,
       });
-
       const timer = setTimeout(() => {
         closeModal();
         dispatch(resetGameEntryState());
       }, 5000);
-
       return () => clearTimeout(timer);
     }
   }, [entrySuccess, dispatch]);
@@ -622,16 +521,14 @@ const GameSelection = () => {
         typeof entryError === "string"
           ? entryError
           : entryError?.message || "Something went wrong. Please try again.";
-
       const isCountryError = errorMessage.toLowerCase().includes("country");
-
       setModal({
         isOpen: true,
         type: "error",
-        title: isCountryError ? "🌍 Country Error" : "❌ Error Occurred",
+        title: isCountryError ? "🌍 Country Error" : "❌ Error",
         message: errorMessage,
         details: isCountryError
-          ? `Active Country: ${activeCountryName || "Not Set"} (${activeCountryCode || "N/A"})`
+          ? `Active Country: ${activeCountryName || "Not Set"}`
           : null,
       });
     }
@@ -653,27 +550,17 @@ const GameSelection = () => {
     }
   }, [selectedGameType, filteredGameCounts, selectedGameCount]);
 
-  // ==========================================
-  // MODAL FUNCTIONS
-  // ==========================================
-
   const closeModal = () => {
     setModal((prev) => ({ ...prev, isOpen: false }));
     setShowSuccess(false);
     dispatch(resetGameEntryState());
   };
 
-  // ==========================================
-  // UTILITY FUNCTIONS
-  // ==========================================
-
   const generateRandomGameNumbers = () => {
     const numbers = [];
     while (numbers.length < 7) {
       const num = Math.floor(Math.random() * 35) + 1;
-      if (!numbers.includes(num)) {
-        numbers.push(num);
-      }
+      if (!numbers.includes(num)) numbers.push(num);
     }
     return numbers.sort((a, b) => a - b);
   };
@@ -685,7 +572,6 @@ const GameSelection = () => {
   const initializeGames = (mode) => {
     const totalGames = selectedCount?.totalGames || 6;
     const newGames = [];
-
     for (let i = 0; i < totalGames; i++) {
       if (mode === "quickpick") {
         newGames.push({
@@ -705,94 +591,80 @@ const GameSelection = () => {
         });
       }
     }
-
     setGames(newGames);
     setIsInitialized(true);
-
-    if (mode === "pick") {
-      setAllGamesExpanded(true);
-    } else {
-      setAllGamesExpanded(false);
-    }
+    setAllGamesExpanded(mode === "pick");
   };
-
-  // ==========================================
-  // GAME FUNCTIONS - FIXED
-  // ==========================================
 
   const toggleNumber = (gameIndex, num) => {
     if (selectionMode !== "pick") return;
-
     setGames((prev) => {
-      const newGames = [...prev];
-      const game = newGames[gameIndex];
-
+      const game = prev[gameIndex];
       if (!game) return prev;
-
-      const currentNumbers = game.selectedNumbers || [];
+      const currentNumbers = Array.isArray(game.selectedNumbers)
+        ? game.selectedNumbers
+        : [];
       const isSelected = currentNumbers.includes(num);
 
       if (isSelected) {
-        game.selectedNumbers = currentNumbers.filter((n) => n !== num);
-      } else {
-        if (currentNumbers.length >= 7) {
-          setModal({
-            isOpen: true,
-            type: "error",
-            title: "⚠️ Maximum Numbers Reached",
-            message: `Game #${gameIndex + 1}: You can select maximum 7 numbers per game.`,
-            details: null,
-          });
-          return prev;
-        }
-        game.selectedNumbers = [...currentNumbers, num].sort((a, b) => a - b);
-
-        if (game.selectedNumbers.length === 7 && !game.selectedPowerball) {
-          game.selectedPowerball = generateRandomPowerball();
-        }
+        return prev.map((item, index) =>
+          index === gameIndex
+            ? {
+                ...item,
+                selectedNumbers: currentNumbers.filter((n) => n !== num),
+              }
+            : item,
+        );
       }
 
-      return newGames;
+      if (currentNumbers.length >= 7) {
+        setModal({
+          isOpen: true,
+          type: "error",
+          title: "⚠️ Max Numbers",
+          message: `Game #${gameIndex + 1}: Max 7 numbers per game.`,
+          details: null,
+        });
+        return prev;
+      }
+
+      const nextNumbers = [...currentNumbers, num].sort((a, b) => a - b);
+      return prev.map((item, index) =>
+        index === gameIndex
+          ? {
+              ...item,
+              selectedNumbers: nextNumbers,
+              selectedPowerball: item.selectedPowerball ?? null,
+            }
+          : item,
+      );
     });
   };
 
   const togglePowerball = (gameIndex, num) => {
     if (selectionMode !== "pick") return;
-
-    setGames((prev) => {
-      const newGames = [...prev];
-      const game = newGames[gameIndex];
-
-      if (!game) return prev;
-
-      const isSelected = game.selectedPowerball === num;
-
-      if (isSelected) {
-        game.selectedPowerball = null;
-      } else {
-        game.selectedPowerball = num;
-      }
-
-      return newGames;
-    });
+    setGames((prev) =>
+      prev.map((item, index) =>
+        index === gameIndex
+          ? {
+              ...item,
+              selectedPowerball: item.selectedPowerball === num ? null : num,
+            }
+          : item,
+      ),
+    );
   };
 
   const autoFillGame = (gameIndex) => {
     if (selectionMode !== "pick") return;
-
     setGames((prev) => {
       const newGames = [...prev];
       const game = newGames[gameIndex];
-
       if (!game) return prev;
-
-      const numbers = generateRandomGameNumbers();
-      game.selectedNumbers = numbers;
-
+      game.selectedNumbers = generateRandomGameNumbers();
       if (!game.selectedPowerball) {
         game.selectedPowerball = generateRandomPowerball();
       }
-
       return newGames;
     });
   };
@@ -801,11 +673,8 @@ const GameSelection = () => {
     setGames((prev) => {
       const newGames = [...prev];
       const game = newGames[gameIndex];
-
       if (!game) return prev;
-
       const numbers = generateRandomGameNumbers();
-
       if (selectionMode === "pick") {
         game.selectedNumbers = numbers;
         game.selectedPowerball = generateRandomPowerball();
@@ -813,20 +682,16 @@ const GameSelection = () => {
         game.numbers = numbers;
         game.powerball = generateRandomPowerball();
       }
-
       return newGames;
     });
   };
 
   const clearGame = (gameIndex) => {
     if (selectionMode !== "pick") return;
-
     setGames((prev) => {
       const newGames = [...prev];
       const game = newGames[gameIndex];
-
       if (!game) return prev;
-
       game.selectedNumbers = [];
       game.selectedPowerball = null;
       return newGames;
@@ -862,18 +727,13 @@ const GameSelection = () => {
     }
   };
 
-  // ==========================================
-  // HANDLE ADD TO CART
-  // ==========================================
-
   const handleAddToCart = async () => {
     if (!activeCountryName) {
       setModal({
         isOpen: true,
         type: "error",
         title: "🌍 Country Not Set",
-        message:
-          "Please set your country before playing. Update your profile to continue.",
+        message: "Please set your country before playing.",
         details: "Go to Profile → Edit Profile → Select Country",
       });
       return;
@@ -885,8 +745,8 @@ const GameSelection = () => {
         isOpen: true,
         type: "error",
         title: "🌍 Unsupported Country",
-        message: `"${activeCountryName}" is not a supported country. Please select a valid country.`,
-        details: `Supported countries: ${countries.map((c) => c.name).join(", ")}`,
+        message: `"${activeCountryName}" is not supported.`,
+        details: `Supported: ${countries.map((c) => c.name).join(", ")}`,
       });
       return;
     }
@@ -897,9 +757,8 @@ const GameSelection = () => {
       setModal({
         isOpen: true,
         type: "error",
-        title: "⚠️ Selection Mode Required",
-        message:
-          'Please select either "Pick Your Numbers" or "QuickPick" mode.',
+        title: "⚠️ Mode Required",
+        message: 'Please select "Pick Your Numbers" or "QuickPick" mode.',
         details: null,
       });
       return;
@@ -923,12 +782,11 @@ const GameSelection = () => {
         }
         return !(g.selectedNumbers?.length === 7 && g.selectedPowerball);
       });
-
       setModal({
         isOpen: true,
         type: "error",
         title: "⚠️ Incomplete Games",
-        message: `Please fill all ${games.length} games with 7 numbers and a Powerball before adding to cart. ${incompleteGames.length} game(s) incomplete.`,
+        message: `Please fill all ${games.length} games with 7 numbers + Powerball. ${incompleteGames.length} incomplete.`,
         details: null,
       });
       return;
@@ -938,7 +796,7 @@ const GameSelection = () => {
       setModal({
         isOpen: true,
         type: "error",
-        title: "⚠️ No Package Selected",
+        title: "⚠️ No Package",
         message: "Please select a game package.",
         details: null,
       });
@@ -949,7 +807,7 @@ const GameSelection = () => {
       setModal({
         isOpen: true,
         type: "error",
-        title: "⚠️ No Ticket Selected",
+        title: "⚠️ No Ticket",
         message: "Please select a ticket type.",
         details: null,
       });
@@ -975,7 +833,7 @@ const GameSelection = () => {
       setModal({
         isOpen: true,
         type: "error",
-        title: "⚠️ Invalid Game Data",
+        title: "⚠️ Invalid Data",
         message: "All games must have 7 numbers and a Powerball.",
         details: null,
       });
@@ -1007,7 +865,6 @@ const GameSelection = () => {
         typeof error === "string"
           ? error
           : error?.message || "Failed to create game entry. Please try again.";
-
       setModal({
         isOpen: true,
         type: "error",
@@ -1017,10 +874,6 @@ const GameSelection = () => {
       });
     }
   };
-
-  // ==========================================
-  // UI HELPERS
-  // ==========================================
 
   const getTicketIcon = (title) => {
     const lower = title?.toLowerCase() || "";
@@ -1032,19 +885,15 @@ const GameSelection = () => {
     return Sparkles;
   };
 
-  // ==========================================
-  // RENDER
-  // ==========================================
-
   if (ticketLoading || gameCountLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fffaf0]">
+      <div className="flex min-h-screen items-center justify-center bg-[#0B0410]">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-4 border-amber-400 border-t-transparent animate-spin">
-            <Crown className="text-amber-500" size={28} />
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border-4 border-[#B45CFF] border-t-transparent animate-spin">
+            <Crown className="text-[#B45CFF]" size={22} />
           </div>
-          <p className="font-semibold text-gray-600">
-            Loading your Wingox dashboard…
+          <p className="text-sm font-semibold text-gray-400">
+            Loading Wingox...
           </p>
         </div>
       </div>
@@ -1052,26 +901,10 @@ const GameSelection = () => {
   }
 
   const ticketVisuals = [
-    {
-      icon: "https://i.ibb.co/hxmPYBfh/icon1.png",
-      title: "STANDARD",
-      subtitle: "Most Popular",
-    },
-    {
-      icon: "https://i.ibb.co/8Lspfbsd/icon2.png",
-      title: "POWERHIT",
-      subtitle: "High Rewards",
-    },
-    {
-      icon: "https://i.ibb.co/cSgM060K/icon3.png",
-      title: "SYSTEM",
-      subtitle: "Smart Play",
-    },
-    {
-      icon: "https://i.ibb.co/WvZct5CP/icon4.png",
-      title: "LOTTO PARTY",
-      subtitle: "Group Play",
-    },
+    { title: "STANDARD", subtitle: "Most Popular" },
+    { title: "POWERHIT", subtitle: "High Rewards" },
+    { title: "SYSTEM", subtitle: "Smart Play" },
+    { title: "LOTTO PARTY", subtitle: "Group Play" },
   ];
 
   const selectGameType = (gameTypeId) => {
@@ -1098,8 +931,8 @@ const GameSelection = () => {
       setModal({
         isOpen: true,
         type: "error",
-        title: "⚠️ Select Package First",
-        message: "Please select a game package before choosing numbers.",
+        title: "⚠️ Select Package",
+        message: "Please select a game package first.",
         details: null,
       });
       return;
@@ -1113,7 +946,6 @@ const GameSelection = () => {
   const getGameDisplayData = (gameIndex) => {
     const game = games[gameIndex];
     if (!game) return { numbers: [], powerball: null, isComplete: false };
-
     const numbers =
       selectionMode === "quickpick"
         ? game.numbers || []
@@ -1122,39 +954,42 @@ const GameSelection = () => {
       selectionMode === "quickpick" ? game.powerball : game.selectedPowerball;
     const isComplete =
       numbers.length === 7 && powerball !== null && powerball !== undefined;
-
     return { numbers, powerball, isComplete };
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-[#fffdf8] to-[#fff7e8] pb-28 text-[#111]">
+    <div className="min-h-screen bg-[#0B0410] pb-24 text-white overflow-x-hidden">
       <CustomModal {...modal} onClose={closeModal} />
 
-      {/* HERO */}
-      <section className="mx-auto max-w-[860px] sm:pt-4">
-        <div className="relative overflow-hidden sm:h-[352px]">
+      {/* HERO - Compact */}
+      <section className="mx-auto max-w-[980px] px-2 pt-2 sm:px-4 sm:pt-3">
+        <div className="relative h-[140px] overflow-hidden rounded-xl border border-[#2a1b3d] shadow-[0_0_20px_rgba(116,24,245,0.18)] sm:h-[260px] md:h-[320px]">
           <img
             src="https://i.ibb.co/60g6N1Fp/banner1.png"
             alt="WinLuxury Powerball"
             className="h-full w-full object-cover"
           />
-          <div className="absolute bottom-4 left-2 flex min-w-[130px] items-center gap-3 rounded-2xl border border-amber-500 bg-black/90 px-3 py-2.5 text-white shadow-2xl sm:bottom-6 sm:left-7 sm:min-w-[40px] sm:px-4">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white sm:h-12 sm:w-12">
-              {activeCountryObject ? (
-                <img
-                  src={activeCountryObject.flag}
-                  alt={activeCountryObject.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-2xl">🇮🇳</span>
-              )}
+          <div className="absolute bottom-2 left-2 flex items-center gap-2 rounded-xl border border-[#B45CFF]/70 bg-[#0B0410]/90 px-2.5 py-1.5 text-white shadow-xl sm:bottom-4 sm:left-5 sm:gap-3 sm:px-3.5 sm:py-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white sm:h-10 sm:w-10">
+              <span className="text-lg sm:text-2xl">
+                {activeCountryObject?.code === "IN"
+                  ? "🇮🇳"
+                  : activeCountryObject?.code === "AU"
+                    ? "🇦🇺"
+                    : activeCountryObject?.code === "PK"
+                      ? "🇵🇰"
+                      : activeCountryObject?.code === "BD"
+                        ? "🇧🇩"
+                        : activeCountryObject?.code === "NP"
+                          ? "🇳🇵"
+                          : "🇦🇪"}
+              </span>
             </div>
             <div>
-              <div className="text-xs font-bold text-amber-300">
+              <div className="text-[9px] font-bold text-[#C77AFF] sm:text-[11px]">
                 Playing from
               </div>
-              <div className="text-sm font-black sm:text-xl">
+              <div className="text-[11px] font-black sm:text-base">
                 {activeCountryObject?.name || activeCountryName || "INDIA"}
               </div>
             </div>
@@ -1163,18 +998,18 @@ const GameSelection = () => {
       </section>
 
       {!activeCountryName && (
-        <div className="mx-auto mt-3 flex max-w-[860px] items-center gap-3 px-4">
-          <div className="flex w-full items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-            <AlertCircle size={22} />
+        <div className="mx-auto mt-2 flex max-w-[980px] items-center gap-2 px-2 sm:px-4">
+          <div className="flex w-full items-center gap-2 rounded-xl border border-red-200 bg-red-500/10 p-2.5 text-red-400">
+            <AlertCircle size={18} />
             <div className="flex-1">
-              <strong className="block">Country not set</strong>
-              <span className="text-sm">
+              <strong className="block text-xs">Country not set</strong>
+              <span className="text-[10px]">
                 Update your profile before playing.
               </span>
             </div>
             <button
               onClick={() => (window.location.href = "/profile")}
-              className="rounded-lg bg-red-500 px-3 py-2 text-sm font-bold text-white"
+              className="rounded-lg bg-red-500 px-2.5 py-1.5 text-[10px] font-bold text-white"
             >
               Update
             </button>
@@ -1182,61 +1017,56 @@ const GameSelection = () => {
         </div>
       )}
 
-      <main className="mx-auto max-w-[860px] px-3 sm:px-5">
-        {/* STEP 1: SELECT TICKET TYPE */}
-        <section className="mt-3 rounded-[21px] border border-[#f0e6d5] bg-white/95 p-4 shadow-[0_5px_18px_rgba(103,77,29,0.07)] sm:p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#FFF19A] via-[#FFC928] to-[#D99200] border border-[#FFD75A] shadow-[inset_0_1px_2px_rgba(255,255,255,0.95),0_2px_7px_rgba(210,145,0,0.45)] text-xl font-black text-black">
+      <main className="mx-auto max-w-[980px] px-2 sm:px-2 md:px-5">
+        {/* STEP 1: SELECT TICKET TYPE - Compact */}
+        <section className="mt-2 rounded-xl border border-[#2a1b3d] bg-[#12061C]/95 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.45)] sm:rounded-[18px] sm:p-1">
+          <div className="mb-2.5 flex items-center gap-2 sm:mb-3 sm:gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_rgba(180,92,255,0.55)] text-sm font-black text-white sm:h-10 sm:w-10 sm:text-base">
               1
             </div>
-            <div>
-              <h2 className="text-[21px] font-black leading-none sm:text-[23px]">
+            <div className="min-w-0">
+              <h2 className="text-sm font-black leading-none sm:text-lg">
                 SELECT TICKET TYPE
               </h2>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-0.5 text-[10px] text-gray-400 sm:text-xs">
                 Choose your preferred ticket
               </p>
             </div>
-            <div className="ml-auto hidden items-center gap-1.5 rounded-full border border-red-100 bg-red-50 px-3 py-2 text-sm font-black text-red-600 sm:flex">
-              <Flame size={16} fill="currentColor" /> Best Value
+            <div className="ml-auto hidden items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] font-black text-red-400 sm:flex">
+              <Flame size={12} fill="currentColor" /> Best Value
             </div>
           </div>
-          <div className="grid gap-3 grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
             {ticketTypes.slice(0, 4).map((ticket, index) => {
               const isActive = activeTicket === ticket._id;
               const visual = ticketVisuals[index % ticketVisuals.length];
-
               return (
                 <button
                   key={ticket._id}
                   onClick={() => setActiveTicket(ticket._id)}
                   onMouseEnter={() => setHoveredTicket(ticket._id)}
                   onMouseLeave={() => setHoveredTicket(null)}
-                  className={`relative flex flex-col items-center justify-center rounded-[17px] border-2 bg-gradient-to-b from-white to-[#fffdf8] text-center pb-3 transition ${
+                  className={`relative flex flex-col items-center justify-center rounded-xl border-2 bg-gradient-to-b from-[#1C0F2B] to-[#12061C] text-center pb-2 pt-1.5 transition sm:rounded-[14px] sm:pb-3 sm:pt-2 ${
                     isActive
-                      ? "border-amber-500 shadow-[0_6px_15px_rgba(229,163,18,0.18)]"
-                      : "border-[#f1d7a3] hover:-translate-y-0.5 hover:shadow-lg"
+                      ? "border-[#B45CFF] shadow-[0_0_14px_rgba(180,92,255,0.22)]"
+                      : "border-[#2a1b3d] hover:-translate-y-0.5 hover:border-[#B45CFF]/60"
                   }`}
                 >
                   {isActive && (
-                    <span className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-amber-500 font-black text-white shadow">
+                    <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-[#B45CFF] text-[9px] font-black text-white shadow sm:h-6 sm:w-6 sm:text-xs">
                       ✓
                     </span>
                   )}
-
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full p-2">
-                    <img
-                      src={visual.icon}
-                      alt={ticket.title || visual.title}
-                      className="h-10 w-10 object-contain"
-                      loading="lazy"
-                    />
+                  <span className="mt-1.5 flex h-9 w-9 items-center justify-center rounded-xl border border-[#B45CFF]/30 bg-[#B45CFF]/10 text-[#C77AFF] shadow-[0_0_10px_rgba(180,92,255,0.16)] sm:mt-2 sm:h-11 sm:w-11">
+                    {(() => {
+                      const Icon = getTicketIcon(ticket.title || visual.title);
+                      return <Icon size={20} strokeWidth={2.2} />;
+                    })()}
                   </span>
-
-                  <strong className="text-sm font-medium -mt-3">
+                  <strong className="mt-1 text-[10px] font-bold leading-tight sm:text-xs">
                     {ticket.title || visual.title}
                   </strong>
-                  <small className="text-xs text-amber-700 sm:text-sm">
+                  <small className="text-[8px] text-[#C77AFF] sm:text-[10px]">
                     {ticket.subTitle || visual.subtitle}
                   </small>
                 </button>
@@ -1245,48 +1075,41 @@ const GameSelection = () => {
           </div>
         </section>
 
-        {/* STEP 2: SELECT GAME TYPE */}
-        <section className="mt-2 rounded-[21px] border border-[#f0e6d5] bg-white/95 p-2 shadow-[0_5px_18px_rgba(103,77,29,0.07)] sm:p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#FFF19A] via-[#FFC928] to-[#D99200] border border-[#FFD75A] shadow-[inset_0_1px_2px_rgba(255,255,255,0.95),0_2px_7px_rgba(210,145,0,0.45)] text-black text-xl font-black">
+        {/* STEP 2: SELECT GAME TYPE - Compact */}
+        <section className="mt-2 rounded-xl border border-[#2a1b3d] bg-[#12061C]/95 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.45)] sm:rounded-[18px] sm:p-1">
+          <div className="mb-2.5 flex items-center gap-2 sm:mb-3 sm:gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_rgba(180,92,255,0.55)] text-sm font-black text-white sm:h-10 sm:w-10 sm:text-base">
               2
             </div>
-            <div>
-              <h2 className="text-[21px] font-black leading-none sm:text-[23px]">
+            <div className="min-w-0">
+              <h2 className="text-sm font-black leading-none sm:text-lg">
                 SELECT GAME TYPE
               </h2>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-0.5 text-[10px] text-gray-400 sm:text-xs">
                 Choose your game type
               </p>
             </div>
           </div>
-          <div
-            style={{
-              backgroundImage: "url('https://i.ibb.co/WNQ1Y9Gs/banner2.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-            className="relative flex min-h-[95px] items-center overflow-hidden shadow-[0_5px_14px_rgba(230,166,0,0.13)] sm:p-4"
-          >
-            <div className="min-w-0 ml-11 px-6">
-              <strong className="block text-lg font-black sm:text-[28px]">
+          <div className="relative flex min-h-[70px] items-center overflow-hidden rounded-xl border border-[#B45CFF]/35 bg-gradient-to-r from-[#1C0F2B] via-[#12061C] to-[#1C0F2B] p-2 shadow-[0_0_18px_rgba(116,24,245,0.12)] sm:min-h-[90px] sm:p-3">
+            <div className="min-w-0 pl-2 pr-10 sm:pl-4 sm:pr-12">
+              <strong className="block text-sm font-black text-white sm:text-xl">
                 {selectedGameTypeTitle || "POWERBALL"}
               </strong>
-              <span className="text-sm text-amber-700 sm:text-lg">
+              <span className="text-[10px] text-[#C77AFF] sm:text-sm">
                 Win Big. Dream Bigger.
               </span>
             </div>
-            <div className="mx-2 hidden h-20 w-px bg-amber-300 sm:block" />
-            <div className="hidden items-center gap-3 sm:flex">
-              <Trophy size={38} className="text-amber-500" />
+            <div className="mx-2 hidden h-14 w-px bg-[#B45CFF]/40 sm:block" />
+            <div className="hidden items-center gap-2 sm:flex">
+              <Trophy size={28} className="text-[#B45CFF]" />
               <div>
-                <small className="block text-xs font-bold text-amber-900">
+                <small className="block text-[9px] font-bold text-[#C77AFF]">
                   JACKPOT
                 </small>
-                <strong className="block text-2xl font-black">
-                  {/* jackpotAmount */}
-                </strong>
-                <span className="text-xs text-gray-600">Estimated Jackpot</span>
+                <strong className="block text-lg font-black"></strong>
+                <span className="text-[9px] text-gray-400">
+                  Estimated Jackpot
+                </span>
               </div>
             </div>
             <select
@@ -1304,49 +1127,42 @@ const GameSelection = () => {
               ))}
             </select>
             <ChevronDown
-              size={24}
-              className="ml-auto shrink-0 text-amber-600"
+              size={18}
+              className="ml-auto shrink-0 text-[#B45CFF]"
             />
           </div>
         </section>
 
-        {/* STEP 3: SELECT GAME PACKAGE */}
-        <section className="mt-2 rounded-[21px] border border-[#f0e6d5] bg-white/95 p-1 shadow-[0_5px_18px_rgba(103,77,29,0.07)] sm:p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#FFF19A] via-[#FFC928] to-[#D99200] border border-[#FFD75A] shadow-[inset_0_1px_2px_rgba(255,255,255,0.95),0_2px_7px_rgba(210,145,0,0.45)] text-black font-black text-xl">
+        {/* STEP 3: SELECT GAME PACKAGE - Compact */}
+        <section className="mt-2 rounded-xl border border-[#2a1b3d] bg-[#12061C]/95 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.45)] sm:rounded-[18px] sm:p-1">
+          <div className="mb-2.5 flex items-center gap-2 sm:mb-3 sm:gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_rgba(180,92,255,0.55)] text-sm font-black text-white sm:h-10 sm:w-10 sm:text-base">
               3
             </div>
-            <div>
-              <h2 className="text-[21px] font-black leading-none sm:text-[23px]">
+            <div className="min-w-0">
+              <h2 className="text-sm font-black leading-none sm:text-lg">
                 SELECT GAME PACKAGE
               </h2>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-0.5 text-[10px] text-gray-400 sm:text-xs">
                 Choose your game package
               </p>
             </div>
-            <div className="ml-auto hidden bg-gradient-to-r from-red-500 to-red-700 px-4 py-2 text-xs font-black text-white sm:block [clip-path:polygon(8%_0,100%_0,93%_100%,0_100%)]">
+            <div className="ml-auto hidden bg-gradient-to-r from-red-500 to-red-700 px-3 py-1.5 text-[10px] font-black text-white sm:block [clip-path:polygon(8%_0,100%_0,93%_100%,0_100%)]">
               BEST ODDS
             </div>
           </div>
-          <div
-            style={{
-              backgroundImage: "url('https://i.ibb.co/nsXWsYZs/banner3.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-            className="relative flex min-h-[76px] items-center overflow-hidden rounded-[18px] shadow-[0_5px_14px_rgba(230,166,0,0.1)]"
-          >
-            <div className="ml-20">
-              <strong className="block text-sm font-black sm:text-lg">
+          <div className="relative flex min-h-[60px] items-center overflow-hidden rounded-xl border border-[#B45CFF]/35 bg-gradient-to-r from-[#1C0F2B] via-[#12061C] to-[#1C0F2B] px-2.5 shadow-[0_0_18px_rgba(116,24,245,0.12)] sm:min-h-[75px] sm:px-4">
+            <div className="ml-1 min-w-0 pl-1 sm:ml-2 sm:pl-2">
+              <strong className="block text-xs font-black text-white sm:text-base">
                 POWER PACK ({selectedCount?.totalGames || 6} GAMES)
               </strong>
-              <span className="text-xs text-amber-700 sm:text-sm">
+              <span className="text-[9px] text-[#C77AFF] sm:text-xs">
                 {selectedCount?.discount
                   ? `${selectedCount.discount}% Off · Best Odds`
                   : "Best Odds - Max Wins"}
               </span>
             </div>
-            <span className="ml-auto mr-4 hidden font-black text-gray-700 sm:block">
+            <span className="ml-auto mr-3 hidden text-sm font-black text-gray-300 sm:block">
               {selectedCount
                 ? formatPrice(selectedCount.price, activeCountryCode)
                 : "—"}
@@ -1370,49 +1186,49 @@ const GameSelection = () => {
           </div>
         </section>
 
-        {/* STEP 4: SELECT NUMBERS */}
+        {/* STEP 4: SELECT NUMBERS - Compact */}
         {activeTicket && activeCountryName && (
-          <section className="mt-2 rounded-[21px] border border-[#f0e6d5] bg-white/95 p-4 shadow-[0_5px_18px_rgba(103,77,29,0.07)] sm:p-5">
-            <div className="mb-3 flex flex-wrap items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#FFF19A] via-[#FFC928] to-[#D99200] border border-[#FFD75A] shadow-[inset_0_1px_2px_rgba(255,255,255,0.95),0_2px_7px_rgba(210,145,0,0.45)] text-black text-xl font-black">
+          <section className="mt-2 rounded-xl border border-[#2a1b3d] bg-[#12061C]/95 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.45)] sm:rounded-[18px] sm:p-1">
+            <div className="mb-2 grid grid-cols-[32px_minmax(0,1fr)] items-center gap-x-2 gap-y-2 sm:flex sm:items-center sm:gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_rgba(180,92,255,0.55)] text-sm font-black text-white sm:h-10 sm:w-10 sm:text-base">
                 4
               </div>
-              <div>
-                <h2 className="text-[21px] font-black leading-none sm:text-[23px]">
+              <div className="min-w-0">
+                <h2 className="text-sm font-black leading-tight sm:text-lg sm:leading-none">
                   SELECT NUMBERS
                 </h2>
-                <p className="mt-1 text-sm text-gray-600">
-                  Choose 7 numbers + 1 Powerball for each game
+                <p className="mt-0.5 text-[9px] leading-3 text-gray-400 sm:mt-1 sm:text-xs">
+                  Choose 7 numbers + 1 Powerball
                 </p>
               </div>
-              <div className="ml-auto flex gap-2">
+              <div className="col-span-2 flex w-full gap-1.5 sm:ml-auto sm:w-auto">
                 <button
                   onClick={() => handleModeSelect("pick")}
                   disabled={!selectedCount}
-                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black shadow transition ${
+                  className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black shadow transition sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs ${
                     selectionMode === "pick"
-                      ? "bg-gradient-to-b from-amber-400 to-amber-600 text-white"
-                      : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                  } sm:px-4 sm:text-sm`}
+                      ? "bg-gradient-to-b from-[#B45CFF] to-[#7418F5] text-white"
+                      : "bg-[#1C0F2B] text-gray-400 hover:bg-[#2a1b3d]"
+                  }`}
                 >
-                  <ClipboardList size={16} /> PICK
+                  <ClipboardList size={12} /> PICK
                 </button>
                 <button
                   onClick={() => handleModeSelect("quickpick")}
                   disabled={!selectedCount}
-                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black shadow transition ${
+                  className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black shadow transition sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs ${
                     selectionMode === "quickpick"
-                      ? "bg-gradient-to-b from-yellow-400 to-amber-500 text-white"
-                      : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                  } sm:px-4 sm:text-sm`}
+                      ? "bg-gradient-to-b from-[#B45CFF] to-[#7418F5] text-white"
+                      : "bg-[#1C0F2B] text-gray-400 hover:bg-[#2a1b3d]"
+                  }`}
                 >
-                  <Zap size={16} fill="currentColor" /> QUICK
+                  <Zap size={12} fill="currentColor" /> QUICK
                 </button>
               </div>
             </div>
 
             {!selectionMode && selectedCount && (
-              <div className="mb-3 rounded-xl bg-amber-50 p-3 text-center text-sm text-amber-700">
+              <div className="mb-2 rounded-lg bg-[#B45CFF]/10 p-2 text-center text-[10px] text-[#C77AFF] sm:text-xs">
                 👆 Select "PICK" to choose numbers manually or "QUICK" for
                 random numbers
               </div>
@@ -1420,14 +1236,14 @@ const GameSelection = () => {
 
             {selectionMode && (
               <>
-                {/* Games Summary Bar */}
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gray-50 p-3">
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="font-bold text-gray-700">
+                {/* Games Summary Bar - Compact */}
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5 rounded-lg bg-[#1C0F2B] px-2 py-1.5 sm:mb-3 sm:gap-2 sm:p-2.5">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[9px] sm:gap-2 sm:text-xs">
+                    <span className="font-bold text-gray-300">
                       {games.length} Games
                     </span>
-                    <span className="text-gray-400">|</span>
-                    <span className="text-green-600 font-medium">
+                    <span className="text-gray-500">|</span>
+                    <span className="text-[#00E676] font-medium">
                       ✅{" "}
                       {
                         games.filter((g) => {
@@ -1440,27 +1256,23 @@ const GameSelection = () => {
                           );
                         }).length
                       }{" "}
-                      Complete
+                      Done
                     </span>
-                    <span className="text-gray-400">|</span>
-                    <span className="text-amber-600 font-medium">
-                      {selectionMode === "quickpick"
-                        ? "QuickPick"
-                        : "Manual Mode"}
+                    <span className="text-gray-500">|</span>
+                    <span className="text-[#B45CFF] font-medium">
+                      {selectionMode === "quickpick" ? "QuickPick" : "Manual"}
                     </span>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleReshuffleAll}
-                      className="rounded-lg bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700 hover:bg-amber-200"
-                    >
-                      🔄 Reshuffle All
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleReshuffleAll}
+                    className="rounded-md bg-[#B45CFF]/15 px-2 py-1 text-[9px] font-bold text-[#C77AFF] hover:bg-[#B45CFF]/25 sm:px-2.5 sm:text-[10px]"
+                  >
+                    🔄 Reshuffle
+                  </button>
                 </div>
 
-                {/* Individual Games */}
-                <div className="space-y-4">
+                {/* Individual Games - Compact */}
+                <div className="space-y-2 sm:space-y-3">
                   {games.map((game, gameIndex) => {
                     const { numbers, powerball, isComplete } =
                       getGameDisplayData(gameIndex);
@@ -1470,87 +1282,73 @@ const GameSelection = () => {
                     return (
                       <div
                         key={game.id}
-                        className={`rounded-xl border-2 transition-all duration-300 overflow-hidden ${
+                        className={`rounded-lg border transition-all duration-300 overflow-hidden sm:rounded-xl sm:border-2 ${
                           isComplete
-                            ? "border-green-400 shadow-lg shadow-green-100"
-                            : "border-gray-200 hover:border-amber-200 hover:shadow-lg"
+                            ? "border-[#00E676]/50 shadow-md shadow-green-900/20"
+                            : "border-[#2a1b3d] hover:border-[#B45CFF]/50"
                         }`}
                       >
-                        {/* Game Header */}
+                        {/* Game Header - Compact */}
                         <div
-                          className="p-3 cursor-pointer hover:bg-amber-50/30 transition-colors duration-200"
+                          className="cursor-pointer px-2 py-1.5 hover:bg-[#B45CFF]/5 transition-colors duration-200 sm:p-2.5"
                           onClick={() => {
                             if (selectionMode === "pick") {
                               toggleExpand(gameIndex);
                             }
                           }}
                         >
-                          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-                            <div className="flex items-center gap-3 flex-wrap">
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1.5">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span
-                                className={`font-bold text-base min-w-[32px] ${
+                                className={`text-xs font-bold min-w-[26px] sm:text-sm sm:min-w-[30px] ${
                                   isComplete
-                                    ? "text-green-600"
-                                    : "text-gray-700"
+                                    ? "text-[#00E676]"
+                                    : "text-gray-300"
                                 }`}
                               >
                                 #{game.id}
                               </span>
 
                               {numbers.length > 0 || powerball ? (
-                                <div className="flex items-center gap-1 flex-wrap">
+                                <div className="flex items-center gap-0.5 flex-wrap sm:gap-1">
                                   {numbers.map((num, idx) => (
                                     <span
                                       key={idx}
-                                      style={{
-                                        backgroundImage:
-                                          "url('https://i.ibb.co/rGfVhpYT/circle1.png')",
-                                        backgroundSize: "cover",
-                                        backgroundPosition: "center",
-                                      }}
-                                      className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-black"
+                                      className="flex h-5 w-5 items-center justify-center rounded-full border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] text-[8px] font-bold text-white shadow-[0_0_5px_rgba(180,92,255,0.35)] sm:h-7 sm:w-7 sm:text-[10px]"
                                     >
                                       {num}
                                     </span>
                                   ))}
                                   {numbers.length > 0 && numbers.length < 7 && (
-                                    <span className="text-xs text-gray-400 font-medium">
+                                    <span className="text-[9px] text-gray-400 font-medium sm:text-[10px]">
                                       ({numbers.length}/7)
                                     </span>
                                   )}
                                   {powerball && (
                                     <>
-                                      <span className="text-gray-300 font-bold">
+                                      <span className="text-gray-400 font-bold text-[9px] sm:text-[10px]">
                                         |
                                       </span>
-                                      <span
-                                        style={{
-                                          backgroundImage:
-                                            "url('https://i.ibb.co/r2ztZKWD/Red-circle.png')",
-                                          backgroundSize: "cover",
-                                          backgroundPosition: "center",
-                                        }}
-                                        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
-                                      >
+                                      <span className="flex h-5 w-5 items-center justify-center rounded-full border border-red-300 bg-[radial-gradient(circle_at_30%_25%,#ff7777_0%,#ef2020_30%,#b40000_65%,#560000_100%)] text-[8px] font-bold text-white shadow-[0_0_5px_rgba(239,68,68,0.45)] sm:h-6 sm:w-6 sm:text-[10px]">
                                         {powerball}
                                       </span>
                                     </>
                                   )}
                                   {isComplete && (
-                                    <span className="ml-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                                      ✅ Complete
+                                    <span className="ml-1 text-[8px] bg-[#00E676]/10 text-[#00E676] px-1.5 py-0.5 rounded-full font-medium sm:text-[9px]">
+                                      ✅
                                     </span>
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-gray-400 text-xs flex items-center gap-2">
-                                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
-                                  Click to expand and select numbers
+                                <span className="text-gray-400 text-[9px] flex items-center gap-1 sm:text-[10px]">
+                                  <span className="w-1 h-1 bg-[#B45CFF] rounded-full animate-pulse"></span>
+                                  Tap to expand
                                 </span>
                               )}
                             </div>
 
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                            <div className="flex items-center gap-1 flex-wrap">
                               {selectionMode === "pick" && (
                                 <>
                                   <button
@@ -1558,9 +1356,9 @@ const GameSelection = () => {
                                       e.stopPropagation();
                                       quickPickGame(gameIndex);
                                     }}
-                                    className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg transition-colors duration-200 flex items-center gap-1 font-medium"
+                                    className="text-[9px] bg-[#B45CFF]/10 hover:bg-[#B45CFF]/15 text-[#C77AFF] px-1.5 py-0.5 rounded transition-colors flex items-center gap-0.5 font-medium sm:px-2 sm:py-1 sm:text-[10px]"
                                   >
-                                    <Zap size={12} />
+                                    <Zap size={10} />
                                     Quick
                                   </button>
                                   <button
@@ -1568,19 +1366,18 @@ const GameSelection = () => {
                                       e.stopPropagation();
                                       autoFillGame(gameIndex);
                                     }}
-                                    className="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-2.5 py-1 rounded-lg transition-colors duration-200 flex items-center gap-1 font-medium"
+                                    className="text-[9px] bg-[#00E676]/10 hover:bg-[#00E676]/15 text-[#00E676] px-1.5 py-0.5 rounded transition-colors flex items-center gap-0.5 font-medium sm:px-2 sm:py-1 sm:text-[10px]"
                                   >
-                                    <span>+</span>
-                                    Fill
+                                    <span>+</span>Fill
                                   </button>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       clearGame(gameIndex);
                                     }}
-                                    className="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-2.5 py-1 rounded-lg transition-colors duration-200 flex items-center gap-1 font-medium"
+                                    className="text-[9px] bg-red-500/10 hover:bg-red-500/15 text-red-400 px-1.5 py-0.5 rounded transition-colors flex items-center gap-0.5 font-medium sm:px-2 sm:py-1 sm:text-[10px]"
                                   >
-                                    <X size={12} />
+                                    <X size={10} />
                                     Clear
                                   </button>
                                 </>
@@ -1591,29 +1388,28 @@ const GameSelection = () => {
                                     e.stopPropagation();
                                     quickPickGame(gameIndex);
                                   }}
-                                  className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg transition-colors duration-200 flex items-center gap-1 font-medium"
+                                  className="text-[9px] bg-[#B45CFF]/10 hover:bg-[#B45CFF]/15 text-[#C77AFF] px-1.5 py-0.5 rounded transition-colors flex items-center gap-0.5 font-medium sm:px-2 sm:py-1 sm:text-[10px]"
                                 >
-                                  <RefreshCw size={12} />
-                                  Re-Generate
+                                  <RefreshCw size={10} />
+                                  Regen
                                 </button>
                               )}
-
                               {selectionMode === "pick" && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     toggleExpand(gameIndex);
                                   }}
-                                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                                  className="p-0.5 hover:bg-[#1C0F2B] rounded transition-colors"
                                 >
                                   {isExpanded ? (
                                     <ChevronUp
-                                      size={18}
-                                      className="text-amber-600"
+                                      size={14}
+                                      className="text-[#B45CFF]"
                                     />
                                   ) : (
                                     <ChevronDown
-                                      size={18}
+                                      size={14}
                                       className="text-gray-400"
                                     />
                                   )}
@@ -1623,44 +1419,50 @@ const GameSelection = () => {
                           </div>
                         </div>
 
-                        {/* Expanded Content - Number Selection Grid - FIXED */}
+                        {/* Expanded Content - Compact Number Grid */}
                         {selectionMode === "pick" && isExpanded && (
-                          <div className="p-4 border-t border-gray-100 bg-amber-50/20">
-                            <div className="mb-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs font-semibold text-gray-700 flex items-center gap-2">
-                                  <span className="w-2 h-2 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full"></span>
-                                  Select 7 numbers (1-35)
-                                  <span className="text-gray-400 font-normal ml-2">
-                                    ({numbers.length}/7 selected)
+                          <div className="border-t border-[#2a1b3d] bg-[#0B0410] p-2 sm:p-4">
+                            {/* Main numbers */}
+
+                            <div className="rounded-lg border border-[#2a1b3d] bg-[#12061C] p-2 sm:rounded-xl sm:p-3">
+                              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1 sm:mb-2 sm:gap-2">
+                                <p className="flex items-center gap-1 text-[9px] font-bold text-gray-200 sm:gap-1.5 sm:text-xs">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-[#B45CFF] shadow-[0_0_6px_rgba(180,92,255,0.9)] sm:h-2 sm:w-2" />
+                                  Select 7 Numbers
+                                  <span className="font-normal text-gray-500">
+                                    (1–35)
                                   </span>
                                 </p>
-                                {numbers.length === 7 && (
-                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                    ✅ Full
-                                  </span>
-                                )}
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[8px] font-black sm:px-2 sm:py-0.5 sm:text-[10px] ${
+                                    numbers.length === 7
+                                      ? "bg-[#00E676]/10 text-[#00E676] border border-[#00E676]/25"
+                                      : "bg-[#B45CFF]/10 text-[#C77AFF] border border-[#B45CFF]/25"
+                                  }`}
+                                >
+                                  {numbers.length}/7
+                                </span>
                               </div>
-                              <div className="grid grid-cols-7 sm:grid-cols-10 gap-1.5">
+
+                              {/* ✅ CHANGED: grid-cols-6 (mobile) instead of grid-cols-7 */}
+                              <div className="grid grid-cols-6 gap-1.5 md:grid-cols-10 md:gap-2">
                                 {Array.from(
                                   { length: 35 },
                                   (_, i) => i + 1,
                                 ).map((num) => {
                                   const isSelected = numbers.includes(num);
-
                                   return (
                                     <button
                                       key={num}
                                       type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        toggleNumber(gameIndex, num);
-                                      }}
-                                      className={`h-9 w-9 rounded-full font-semibold transition-all duration-200 text-sm ${
+                                      onClick={() =>
+                                        toggleNumber(gameIndex, num)
+                                      }
+                                      aria-pressed={isSelected}
+                                      className={`flex h-8 w-8 items-center justify-center justify-self-center rounded-full border text-[10px] font-black transition-all duration-150 sm:h-10 sm:w-10 sm:text-sm ${
                                         isSelected
-                                          ? "bg-gradient-to-b from-[#FFF19A] via-[#FFC928] to-[#D99200] border border-[#FFD75A] shadow-[inset_0_1px_2px_rgba(255,255,255,0.95),0_2px_7px_rgba(210,145,0,0.45)] text-black scale-105"
-                                          : "bg-white hover:bg-gray-100 text-gray-700 border-2 border-gray-200 hover:border-amber-300"
+                                          ? "border-[#C77AFF] bg-gradient-to-br from-[#C77AFF] via-[#8B2BFF] to-[#3A00C9] text-white shadow-[0_0_8px_rgba(180,92,255,0.55)] scale-105"
+                                          : "border-[#3a2550] bg-[#1C0F2B] text-gray-300 hover:border-[#B45CFF] hover:bg-[#251238] hover:text-white active:scale-95"
                                       }`}
                                     >
                                       {num}
@@ -1670,43 +1472,48 @@ const GameSelection = () => {
                               </div>
                             </div>
 
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs font-semibold text-gray-700 flex items-center gap-2">
-                                  <span className="w-2 h-2 bg-gradient-to-r from-red-500 to-red-300 rounded-full"></span>
-                                  Select Powerball (1-20)
-                                  <span className="text-gray-400 font-normal ml-2">
-                                    {powerball
-                                      ? `Selected: ${powerball}`
-                                      : "Not selected"}
+                            {/* Red Powerball */}
+                            <div className="mt-2 rounded-lg border border-red-500/20 bg-[#12061C] p-2 sm:mt-2.5 sm:rounded-xl sm:p-3">
+                              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1 sm:mb-2 sm:gap-2">
+                                <p className="flex items-center gap-1 text-[9px] font-bold text-gray-200 sm:gap-1.5 sm:text-xs">
+                                  <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                                  Powerball
+                                  <span className="font-normal text-gray-500">
+                                    (1–20)
                                   </span>
                                 </p>
-                                {powerball && (
-                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                    ✅ Set
-                                  </span>
-                                )}
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[8px] font-black sm:px-2 sm:py-0.5 sm:text-[10px] ${
+                                    powerball
+                                      ? "border border-red-400/30 bg-red-500/10 text-red-400"
+                                      : "border border-red-500/15 bg-red-500/5 text-red-300/70"
+                                  }`}
+                                >
+                                  {powerball
+                                    ? `PB ${powerball}`
+                                    : "NOT SELECTED"}
+                                </span>
                               </div>
-                              <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+
+                              {/* ✅ CHANGED: grid-cols-6 (mobile) instead of grid-cols-7 */}
+                              <div className="grid grid-cols-6 gap-1.5 md:grid-cols-10 md:gap-2">
                                 {Array.from(
                                   { length: 20 },
                                   (_, i) => i + 1,
                                 ).map((num) => {
                                   const isSelected = powerball === num;
-
                                   return (
                                     <button
                                       key={num}
                                       type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        togglePowerball(gameIndex, num);
-                                      }}
-                                      className={`h-9 w-9 rounded-full font-semibold transition-all duration-200 text-sm ${
+                                      onClick={() =>
+                                        togglePowerball(gameIndex, num)
+                                      }
+                                      aria-pressed={isSelected}
+                                      className={`flex h-8 w-8 items-center justify-center justify-self-center rounded-full border text-[10px] font-black transition-all duration-150 sm:h-10 sm:w-10 sm:text-sm ${
                                         isSelected
-                                          ? "bg-[radial-gradient(circle_at_30%_25%,#ff6666_0%,#ed0000_25%,#a80000_55%,#420000_100%)] border border-red-300/40 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-4px_8px_rgba(40,0,0,0.7),0_4px_10px_rgba(120,0,0,0.4)] text-white scale-105"
-                                          : "bg-white hover:bg-red-50 text-red-600 border-2 border-red-200 hover:border-red-400"
+                                          ? "border-red-300 bg-[radial-gradient(circle_at_30%_25%,#ff7777_0%,#ef2020_30%,#b40000_65%,#560000_100%)] text-white shadow-[0_0_10px_rgba(239,68,68,0.6)] scale-105"
+                                          : "border-red-500/30 bg-[#2a0d15] text-red-300 hover:border-red-400 hover:bg-[#40101b] hover:text-red-100 active:scale-95"
                                       }`}
                                     >
                                       {num}
@@ -1716,35 +1523,35 @@ const GameSelection = () => {
                               </div>
                             </div>
 
-                            {/* Game Status */}
-                            <div className="mt-3 flex items-center justify-between pt-2 border-t border-gray-200">
-                              <span className="text-xs text-gray-500">
-                                Game #{game.id} • {numbers.length}/7 numbers •{" "}
-                                {powerball ? "Powerball ✓" : "Powerball ✗"}
+                            {/* Game Status - Compact */}
+                            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-1 border-t border-[#2a1b3d] pt-1.5 sm:mt-2 sm:gap-2 sm:pt-2">
+                              <span className="text-[9px] text-gray-500 sm:text-[10px]">
+                                Game #{game.id} • {numbers.length}/7 •{" "}
+                                {powerball ? "PB ✓" : "PB ✗"}
                               </span>
                               {isComplete ? (
-                                <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
-                                  ✅ Ready to Play
+                                <span className="rounded-full border border-[#00E676]/25 bg-[#00E676]/10 px-2 py-0.5 text-[8px] font-bold text-[#00E676] sm:text-[10px]">
+                                  ✓ READY
                                 </span>
                               ) : (
-                                <span className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">
-                                  ⚠️ Incomplete
+                                <span className="rounded-full border border-[#B45CFF]/25 bg-[#B45CFF]/10 px-2 py-0.5 text-[8px] font-bold text-[#C77AFF] sm:text-[10px]">
+                                  INCOMPLETE
                                 </span>
                               )}
                             </div>
                           </div>
                         )}
 
-                        {/* QuickPick mode - show numbers only */}
+                        {/* QuickPick mode */}
                         {selectionMode === "quickpick" && (
-                          <div className="px-3 pb-3 pt-0 flex items-center gap-2 text-xs text-gray-500">
-                            <span>🎲 QuickPick numbers</span>
+                          <div className="px-2.5 pb-2 pt-0 flex items-center gap-1.5 text-[9px] text-gray-400 sm:text-[10px]">
+                            <span>🎲 QuickPick</span>
                             {isComplete ? (
-                              <span className="text-green-600 font-medium">
+                              <span className="text-[#00E676] font-medium">
                                 ✅ Ready
                               </span>
                             ) : (
-                              <span className="text-amber-600">
+                              <span className="text-[#B45CFF]">
                                 ⏳ Generating...
                               </span>
                             )}
@@ -1755,14 +1562,14 @@ const GameSelection = () => {
                   })}
                 </div>
 
-                {/* Toggle All Games */}
+                {/* Toggle All Games - Compact */}
                 {selectionMode === "pick" && games.length > 1 && (
                   <button
                     onClick={() => setAllGamesExpanded(!allGamesExpanded)}
-                    className="mt-3 w-full rounded-xl bg-gray-100 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+                    className="mt-2 w-full rounded-lg bg-[#1C0F2B] py-1.5 text-[10px] font-medium text-gray-300 hover:bg-[#2a1b3d] transition-colors sm:text-xs"
                   >
                     {allGamesExpanded
-                      ? "🔼 Collapse All Games"
+                      ? "🔼 Collapse All"
                       : "🔽 Expand All Games"}
                   </button>
                 )}
@@ -1771,246 +1578,165 @@ const GameSelection = () => {
           </section>
         )}
 
-        {/* SUMMARY */}
+        {/* SUMMARY - Compact */}
         {selectedCount &&
           games.length > 0 &&
           allGamesFilled &&
           activeCountryName && (
-            <section className="mt-3 overflow-hidden rounded-2xl border border-[#c89b3c]/50 bg-white text-[#241b0b] shadow-[0_10px_35px_rgba(80,55,10,0.18)]">
-              {/* Premium Header */}
-              <div className="relative overflow-hidden bg-[linear-gradient(135deg,#fffdf5_0%,#f8edc9_35%,#d4aa4c_65%,#9b6b18_100%)] px-4 py-4 sm:px-5">
-                {/* Gloss */}
-                <div className="pointer-events-none absolute -top-20 left-1/4 h-32 w-1/2 rounded-full bg-white/40 blur-3xl" />
-
-                <div className="relative flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/30 shadow-inner">
-                        <span className="text-sm">✦</span>
-                      </div>
-
-                      <div>
-                        <h3 className="text-sm font-black tracking-wide text-[#3b2807] sm:text-base">
-                          YOUR SELECTION SUMMARY
-                        </h3>
-
-                        <p className="mt-0.5 text-[10px] font-semibold text-[#654b17] sm:text-xs">
-                          Review all your selected games
-                        </p>
-                      </div>
+            <section className="mt-2 overflow-hidden rounded-xl border border-[#B45CFF]/40 bg-[#12061C] text-white shadow-[0_8px_25px_rgba(0,0,0,0.45)] sm:rounded-2xl">
+              {/* Header - Compact */}
+              <div className="relative overflow-hidden bg-gradient-to-r from-[#1C0F2B] via-[#7418F5]/35 to-[#12061C] px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="pointer-events-none absolute -top-16 left-1/4 h-24 w-1/2 rounded-full bg-white/30 blur-3xl" />
+                <div className="relative flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full border border-[#B45CFF]/30 bg-[#B45CFF]/10 shadow-inner">
+                      <span className="text-[10px]">✦</span>
+                    </div>
+                    <div>
+                      <h3 className="text-[10px] font-black tracking-wide text-white sm:text-xs">
+                        SELECTION SUMMARY
+                      </h3>
+                      <p className="mt-0.5 text-[8px] font-semibold text-[#C77AFF] sm:text-[9px]">
+                        Review your games
+                      </p>
                     </div>
                   </div>
-
-                  {/* Mode */}
-                  <span className="rounded-full border border-white/60 bg-white/35 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#4b3509] shadow-sm backdrop-blur-sm">
+                  <span className="rounded-full border border-[#B45CFF]/30 bg-white/5 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-[#C77AFF] shadow-sm backdrop-blur-sm sm:text-[9px]">
                     {selectionMode === "quickpick" ? "QuickPick" : "Manual"}
                   </span>
                 </div>
 
-                {/* Stats */}
-                <div className="relative mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  <div className="rounded-xl border border-white/50 bg-white/35 px-3 py-2 backdrop-blur-sm">
-                    <span className="block text-[9px] font-bold uppercase tracking-wider text-[#72561b]">
+                {/* Stats - Compact */}
+                <div className="relative mt-2 grid grid-cols-3 gap-1.5 sm:gap-2">
+                  <div className="rounded-lg border border-[#B45CFF]/20 bg-white/5 px-2 py-1.5 backdrop-blur-sm">
+                    <span className="block text-[7px] font-bold uppercase tracking-wider text-gray-400 sm:text-[8px]">
                       Games
                     </span>
-                    <strong className="text-lg font-black text-[#2e2007]">
+                    <strong className="text-sm font-black text-white sm:text-base">
                       {games.length}
                     </strong>
                   </div>
-
-                  <div className="rounded-xl border border-white/50 bg-white/35 px-3 py-2 backdrop-blur-sm">
-                    <span className="block text-[9px] font-bold uppercase tracking-wider text-[#72561b]">
+                  <div className="rounded-lg border border-[#B45CFF]/20 bg-white/5 px-2 py-1.5 backdrop-blur-sm">
+                    <span className="block text-[7px] font-bold uppercase tracking-wider text-gray-400 sm:text-[8px]">
                       Complete
                     </span>
-                    <strong className="text-lg font-black text-green-700">
+                    <strong className="text-sm font-black text-[#00E676] sm:text-base">
                       {
                         games.filter((g) => {
                           if (selectionMode === "quickpick") {
                             return g.numbers?.length === 7 && g.powerball;
                           }
-
                           return (
                             g.selectedNumbers?.length === 7 &&
                             g.selectedPowerball
                           );
                         }).length
                       }
-                      <span className="text-xs font-bold text-[#72561b]">
+                      <span className="text-[9px] font-bold text-gray-400">
                         /{games.length}
                       </span>
                     </strong>
                   </div>
-
-                  <div className="hidden rounded-xl border border-white/50 bg-white/35 px-3 py-2 backdrop-blur-sm sm:block">
-                    <span className="block text-[9px] font-bold uppercase tracking-wider text-[#72561b]">
+                  <div className="rounded-lg border border-[#B45CFF]/20 bg-white/5 px-2 py-1.5 backdrop-blur-sm">
+                    <span className="block text-[7px] font-bold uppercase tracking-wider text-gray-400 sm:text-[8px]">
                       Status
                     </span>
-
-                    <strong className="text-sm font-black text-green-700">
+                    <strong className="text-[10px] font-black text-[#00E676] sm:text-xs">
                       {allGamesFilled ? "READY" : "INCOMPLETE"}
                     </strong>
                   </div>
                 </div>
               </div>
 
-              {/* Game Selection Area */}
-              <div className="border-b border-[#d9bd79]/40 bg-[linear-gradient(180deg,#fffdf8_0%,#fff_100%)] p-3 sm:p-4">
-                <div className="mb-3 flex items-center justify-between">
+              {/* Games List - Compact with max height */}
+              <div className="border-b border-[#2a1b3d] bg-[#0B0410] p-2 sm:p-3">
+                <div className="mb-2 flex items-center justify-between">
                   <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-[#5b4310]">
+                    <h4 className="text-[9px] font-black uppercase tracking-wider text-gray-200 sm:text-[10px]">
                       Selected Games
                     </h4>
-
-                    <p className="mt-0.5 text-[9px] font-medium text-gray-500">
-                      {games.length} game{games.length !== 1 ? "s" : ""}{" "}
-                      selected
+                    <p className="mt-0.5 text-[8px] font-medium text-gray-400 sm:text-[9px]">
+                      {games.length} game{games.length !== 1 ? "s" : ""}
                     </p>
                   </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
-                    <span className="text-[9px] font-bold text-gray-500">
+                  <div className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#00E676] shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+                    <span className="text-[8px] font-bold text-gray-400 sm:text-[9px]">
                       Completed
                     </span>
                   </div>
                 </div>
 
-                {/* 
-          IMPORTANT:
-          max-height prevents 40-50 games from making the whole page huge.
-          Grid automatically adapts to the screen.
-        */}
-                <div
-                  className="
-            max-h-[360px]
-            overflow-y-auto
-            pr-1
-            scrollbar-thin
-            scrollbar-thumb-[#c89b3c]
-            scrollbar-track-[#f7f1df]
-          "
-                >
-                  <div
-                    className="
-              grid
-              grid-cols-1
-              gap-2
-              sm:grid-cols-2
-              lg:grid-cols-3
-              xl:grid-cols-4
-            "
-                  >
+                {/* Scrollable games grid - Compact */}
+                <div className="max-h-[200px] overflow-y-auto pr-0.5 scrollbar-thin scrollbar-thumb-[#7418F5] scrollbar-track-[#1C0F2B] sm:max-h-[300px]">
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2 lg:grid-cols-3">
                     {games.map((game, idx) => {
                       const nums =
                         selectionMode === "quickpick"
                           ? game.numbers || []
                           : game.selectedNumbers || [];
-
                       const pb =
                         selectionMode === "quickpick"
                           ? game.powerball
                           : game.selectedPowerball;
-
                       const isComplete = nums.length === 7 && pb;
 
                       return (
                         <div
                           key={idx}
-                          className={`
-                    group relative overflow-hidden rounded-xl border
-                    bg-white
-                    p-2.5
-                    transition-all duration-200
-                    hover:-translate-y-0.5
-                    hover:shadow-[0_6px_18px_rgba(160,120,30,0.16)]
-                    ${isComplete ? "border-[#d1a63f]/60" : "border-gray-200"}
-                  `}
+                          className={`group relative overflow-hidden rounded-lg border bg-[#12061C] p-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(180,92,255,0.12)] sm:p-2.5 ${
+                            isComplete
+                              ? "border-[#d1a63f]/60"
+                              : "border-[#2a1b3d]"
+                          }`}
                         >
-                          {/* Gold accent */}
+                          {/* Accent bar */}
                           <div
-                            className={`
-                      absolute left-0 top-0 h-full w-1
-                      ${
-                        isComplete
-                          ? "bg-[linear-gradient(180deg,#fff2a8,#d4a72c,#8c6114)]"
-                          : "bg-gray-200"
-                      }
-                    `}
+                            className={`absolute left-0 top-0 h-full w-0.5 ${
+                              isComplete
+                                ? "bg-[linear-gradient(180deg,#fff2a8,#d4a72c,#8c6114)]"
+                                : "bg-[#1C0F2B]"
+                            }`}
                           />
 
                           <div className="flex items-center justify-between pl-1">
-                            <div className="flex items-center gap-2">
-                              {/* Game number */}
-
-                              <span className="text-[10px] font-black uppercase tracking-wide text-[#5a4517]">
-                                Game #{idx + 1}
-                              </span>
-                            </div>
-
+                            <span className="text-[8px] font-black uppercase tracking-wide text-gray-300 sm:text-[9px]">
+                              Game #{idx + 1}
+                            </span>
                             {isComplete ? (
-                              <span className="rounded-full bg-green-50 px-1.5 py-0.5 text-[8px] font-black text-green-600">
+                              <span className="rounded-full bg-[#00E676]/10 px-1.5 py-0.5 text-[7px] font-black text-[#00E676] sm:text-[8px]">
                                 ✓ READY
                               </span>
                             ) : (
-                              <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[8px] font-black text-amber-600">
+                              <span className="rounded-full bg-[#B45CFF]/10 px-1.5 py-0.5 text-[7px] font-black text-[#B45CFF] sm:text-[8px]">
                                 PENDING
                               </span>
                             )}
                           </div>
 
-                          {/* Numbers */}
-                          <div className="mt-2 flex flex-wrap items-center gap-1 pl-1">
+                          {/* Numbers - Compact */}
+                          <div className="mt-1.5 flex flex-wrap items-center gap-0.5 pl-1 sm:gap-1">
                             {nums.length > 0 ? (
                               nums.map((n, i) => (
                                 <span
                                   key={i}
-                                  className="
-                            flex h-7 min-w-7 items-center justify-center
-                            rounded-full
-                            border border-[#FFD75A]
-  bg-[radial-gradient(circle_at_32%_25%,#FFFDE8_0%,#FFF19A_10%,#FFC928_35%,#E5A400_62%,#B96D00_100%)]
-  text-[12px]
-  font-black
-  text-black
-  shadow-[
-    inset_2px_2px_4px_rgba(255,255,255,0.9),
-    inset_-3px_-4px_6px_rgba(100,55,0,0.6),
-    inset_0_1px_2px_rgba(255,255,255,0.95),
-    0_2px_7px_rgba(210,145,0,0.45)
-  ] text-black
-                            px-1
-                            text-[8px]
-                            font-black
-                            
-                          "
+                                  className="flex h-5 min-w-5 items-center justify-center rounded-full border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] px-0.5 text-[8px] font-black text-white shadow-[0_0_5px_rgba(180,92,255,0.35)] sm:h-6 sm:min-w-6 sm:text-[9px]"
                                 >
                                   {n}
                                 </span>
                               ))
                             ) : (
-                              <span className="text-[9px] italic text-gray-400">
+                              <span className="text-[8px] italic text-gray-400">
                                 Not selected
                               </span>
                             )}
 
                             {pb && (
                               <>
-                                <span className="mx-0.5 text-[10px] font-black text-gray-300">
+                                <span className="mx-0.5 text-[8px] font-black text-gray-300 sm:text-[9px]">
                                   +
                                 </span>
-
-                                <span
-                                  className="
-                            flex h-7 min-w-7 items-center justify-center
-                            rounded-full
-                            bg-[radial-gradient(circle_at_30%_25%,#ff6666_0%,#ed0000_25%,#a80000_55%,#420000_100%)] border border-red-300/40 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-4px_8px_rgba(40,0,0,0.7),0_4px_10px_rgba(120,0,0,0.4)]
-                            px-1
-                            text-[12px]
-                            font-black
-                            text-white
-                          
-                          "
-                                >
+                                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-br from-[#C77AFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] px-0.5 text-[8px] font-black text-white shadow-[0_0_5px_rgba(180,92,255,0.35)] sm:h-6 sm:min-w-6 sm:text-[9px]">
                                   {pb}
                                 </span>
                               </>
@@ -2022,19 +1748,19 @@ const GameSelection = () => {
                   </div>
                 </div>
 
-                {/* Scroll hint for many games */}
-                {games.length > 12 && (
-                  <div className="mt-2 text-center">
-                    <span className="text-[9px] font-semibold text-gray-400">
+                {/* Scroll hint */}
+                {games.length > 8 && (
+                  <div className="mt-1.5 text-center">
+                    <span className="text-[8px] font-semibold text-gray-400 sm:text-[9px]">
                       ↕ Scroll to view all {games.length} games
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Bottom Information */}
-              <div className="bg-[#fffdf8] p-3 sm:p-4">
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {/* Bottom Info - Compact */}
+              <div className="bg-[#0B0410] p-2 sm:p-3">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {[
                     ["Game Type", selectedGameTypeTitle || "POWERBALL"],
                     ["Package", `POWER PACK (${selectedCount.totalGames})`],
@@ -2042,18 +1768,12 @@ const GameSelection = () => {
                   ].map(([label, value]) => (
                     <div
                       key={label}
-                      className="
-                rounded-xl
-                border border-[#e0c77e]/50
-                bg-[linear-gradient(135deg,#fff,#fffaf0)]
-                px-3 py-2.5
-              "
+                      className="rounded-lg border border-[#2a1b3d] bg-[#1C0F2B] px-2 py-1.5"
                     >
-                      <small className="block text-[9px] font-black uppercase tracking-wider text-[#a07820]">
+                      <small className="block text-[7px] font-black uppercase tracking-wider text-[#B45CFF] sm:text-[8px]">
                         {label}
                       </small>
-
-                      <strong className="mt-0.5 block truncate text-xs font-black text-[#30230b] sm:text-sm">
+                      <strong className="mt-0.5 block truncate text-[9px] font-black text-white sm:text-[10px]">
                         {value}
                       </strong>
                     </div>
@@ -2063,7 +1783,7 @@ const GameSelection = () => {
             </section>
           )}
 
-        {/* PLAY NOW */}
+        {/* PLAY NOW - Compact */}
         {selectedCount &&
           allGamesFilled &&
           selectionMode !== null &&
@@ -2073,25 +1793,19 @@ const GameSelection = () => {
               <button
                 onClick={handleAddToCart}
                 disabled={entryLoading}
-                className="group relative mt-3 block h-[86px] w-full overflow-hidden disabled:opacity-70"
+                className="group relative mt-2 flex h-[52px] w-full items-center justify-center overflow-hidden rounded-xl border border-[#C77AFF] bg-gradient-to-r from-[#B45CFF] via-[#7418F5] to-[#3A00C9] text-base font-black tracking-wide text-white shadow-[0_0_10px_rgba(180,92,255,0.45),0_6px_20px_rgba(0,0,0,0.35)] transition hover:scale-[1.01] hover:brightness-110 active:scale-[0.99] disabled:opacity-70 sm:h-[70px] sm:rounded-2xl sm:text-2xl"
               >
-                <img
-                  src="https://i.ibb.co/39SJT6f1/banner6.png"
-                  alt="Play Now"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-                <span className="absolute inset-0 flex items-center justify-center gap-5 text-xl font-black tracking-wide text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)] sm:text-4xl">
-                  {entryLoading ? (
-                    "PROCESSING…"
-                  ) : (
-                    <>
-                      <span>»</span> PLAY NOW <span>«</span>
-                    </>
-                  )}
-                </span>
+                {entryLoading ? (
+                  "PROCESSING…"
+                ) : (
+                  <>
+                    <span className="mr-3 opacity-70">»</span> PLAY NOW{" "}
+                    <span className="ml-3 opacity-70">«</span>
+                  </>
+                )}
               </button>
 
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+              <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4 sm:gap-2.5">
                 {[
                   [Calendar, "DRAW TIME", "Today", "10:30 PM"],
                   [BarChart3, "ODDS", "1 in 292M", "Win Probability"],
@@ -2100,16 +1814,21 @@ const GameSelection = () => {
                 ].map(([Icon, label, value, sub]) => (
                   <div
                     key={label}
-                    className="rounded-xl border border-amber-100 bg-white p-3 shadow-sm"
+                    className="rounded-lg border border-[#2a1b3d] bg-white p-2 shadow-sm sm:rounded-xl sm:p-2.5"
                   >
-                    <Icon size={21} className="mb-1 text-amber-500" />
-                    <small className="block text-[9px] font-bold text-gray-500">
+                    <Icon
+                      size={16}
+                      className="mb-0.5 text-[#B45CFF] sm:mb-1 sm:size={18}"
+                    />
+                    <small className="block text-[7px] font-bold text-gray-400 sm:text-[8px]">
                       {label}
                     </small>
-                    <strong className="block text-sm sm:text-base">
+                    <strong className="block text-[10px] sm:text-xs">
                       {value}
                     </strong>
-                    <span className="text-[9px] text-gray-500">{sub}</span>
+                    <span className="text-[7px] text-gray-400 sm:text-[8px]">
+                      {sub}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -2117,27 +1836,27 @@ const GameSelection = () => {
           )}
       </main>
 
-      {/* FIXED BOTTOM NAV */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex h-[78px] max-w-[860px] items-center justify-around rounded-t-[26px] border border-amber-100 bg-white/95 px-2 shadow-[0_-6px_25px_rgba(0,0,0,0.08)] backdrop-blur">
-        <button className="flex flex-col items-center gap-1 text-amber-600">
-          <Home size={24} />
-          <span className="text-xs font-bold">Home</span>
+      {/* FIXED BOTTOM NAV - Compact */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex h-[60px] max-w-[860px] items-center justify-around rounded-t-2xl border border-[#2a1b3d] bg-[#12061C]/95 px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur sm:h-[72px] sm:rounded-t-[22px]">
+        <button className="flex flex-col items-center gap-0.5 text-[#B45CFF] sm:gap-1">
+          <Home size={18} className="sm:size={22}" />
+          <span className="text-[9px] font-bold sm:text-xs">Home</span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-gray-500">
-          <BarChart3 size={24} />
-          <span className="text-xs font-bold">Activity</span>
+        <button className="flex flex-col items-center gap-0.5 text-gray-400 sm:gap-1">
+          <BarChart3 size={18} className="sm:size={22}" />
+          <span className="text-[9px] font-bold sm:text-xs">Activity</span>
         </button>
-        <button className="-mt-9 flex h-16 w-16 flex-col items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-300 to-amber-500 text-black shadow-[0_5px_20px_rgba(218,151,0,0.4)]">
-          <Gift size={24} />
-          <span className="text-[9px] font-black">PROMO</span>
+        <button className="-mt-6 flex h-12 w-12 flex-col items-center justify-center rounded-full border-2 border-[#12061C] bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white shadow-[0_0_18px_rgba(180,92,255,0.45)] sm:-mt-8 sm:h-14 sm:w-14 sm:border-4">
+          <Gift size={18} className="sm:size={22}" />
+          <span className="text-[7px] font-black sm:text-[8px]">PROMO</span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-gray-500">
-          <WalletCards size={24} />
-          <span className="text-xs font-bold">Wallet</span>
+        <button className="flex flex-col items-center gap-0.5 text-gray-400 sm:gap-1">
+          <WalletCards size={18} className="sm:size={22}" />
+          <span className="text-[9px] font-bold sm:text-xs">Wallet</span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-gray-500">
-          <UserCircle size={24} />
-          <span className="text-xs font-bold">Account</span>
+        <button className="flex flex-col items-center gap-0.5 text-gray-400 sm:gap-1">
+          <UserCircle size={18} className="sm:size={22}" />
+          <span className="text-[9px] font-bold sm:text-xs">Account</span>
         </button>
       </nav>
     </div>

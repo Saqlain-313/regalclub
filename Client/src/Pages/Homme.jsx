@@ -5,11 +5,9 @@ import StatsSection2 from "../components/StatsSection2";
 import TopWinners from "../components/TopWinners";
 import Footer from "../Pages/Footer";
 
-import AviatorGames from "../Pages/games/AviatorGames.jsx";
 import CasinoSlotGames from "../Pages/games/CasinoGames.jsx";
-import ChickenGames from "../Pages/games/ChickenGames.jsx";
-import MinesPage from "../Pages/games/Mines.jsx";
 import Slotgame from "../Pages/games/Slotgame.jsx";
+import AllGames from "./games/GamesPages/Allgames .jsx";
 
 import PopularGamesCards from "./PopularGamesCards";
 
@@ -20,11 +18,13 @@ const Homme = () => {
 
       <PopularGamesCards />
 
-      <ChickenGames isHome={true} />
+      <AllGames isHome={true} />
 
-      <MinesPage isHome={true} />
+      {/* <ChickenGames isHome={true} /> */}
 
-      <AviatorGames isHome={true} />
+      {/* <MinesPage isHome={true} /> */}
+
+      {/* <AviatorGames isHome={true} /> */}
 
       <CasinoSlotGames
         isHome={true}

@@ -8,7 +8,7 @@ import {
 } from "react-icons/fa";
 import { MdPlayCircle } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { liveCasino } from "../../Data/GamesData";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -67,7 +67,7 @@ const CasinoGames = ({
         page: 1,
         limit: 1000,
         game_type: "CasinoLive",
-      })
+      }),
     );
   }, [dispatch]);
 
@@ -88,10 +88,7 @@ const CasinoGames = ({
    * ============================================================
    */
   const sourceGames = useMemo(() => {
-    if (
-      Array.isArray(gamesByGameType) &&
-      gamesByGameType.length > 0
-    ) {
+    if (Array.isArray(gamesByGameType) && gamesByGameType.length > 0) {
       return gamesByGameType;
     }
 
@@ -128,9 +125,7 @@ const CasinoGames = ({
       return;
     }
 
-    const game = sourceGames.find(
-      (g) => g.game_uid === location.state.gameUid
-    );
+    const game = sourceGames.find((g) => g.game_uid === location.state.gameUid);
 
     if (!game) {
       return;
@@ -143,7 +138,7 @@ const CasinoGames = ({
     dispatch(
       launchGame({
         gameId: game.game_uid,
-      })
+      }),
     );
   }, [dispatch, isHome, location.state, sourceGames]);
 
@@ -153,18 +148,14 @@ const CasinoGames = ({
    * ============================================================
    */
   const filteredGames = useMemo(() => {
-    const limitedGames = limit
-      ? sourceGames.slice(0, limit)
-      : sourceGames;
+    const limitedGames = limit ? sourceGames.slice(0, limit) : sourceGames;
 
     if (!searchTerm.trim()) {
       return limitedGames;
     }
 
     return limitedGames.filter((game) =>
-      game.game_name
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase())
+      game.game_name?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [searchTerm, sourceGames, limit]);
 
@@ -173,17 +164,12 @@ const CasinoGames = ({
    * PAGINATION
    * ============================================================
    */
-  const totalPages = Math.ceil(
-    filteredGames.length / gamesPerPage
-  );
+  const totalPages = Math.ceil(filteredGames.length / gamesPerPage);
 
   const indexOfLastGame = currentPage * gamesPerPage;
   const indexOfFirstGame = indexOfLastGame - gamesPerPage;
 
-  const currentGames = filteredGames.slice(
-    indexOfFirstGame,
-    indexOfLastGame
-  );
+  const currentGames = filteredGames.slice(indexOfFirstGame, indexOfLastGame);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -218,7 +204,7 @@ const CasinoGames = ({
       await dispatch(
         launchGame({
           gameId: game.game_uid,
-        })
+        }),
       ).unwrap();
     } catch (err) {
       alert(err || "Failed to launch game");
@@ -266,16 +252,10 @@ const CasinoGames = ({
       }
     } else {
       let start = Math.max(1, currentPage - 2);
-      let end = Math.min(
-        totalPages,
-        start + maxVisiblePages - 1
-      );
+      let end = Math.min(totalPages, start + maxVisiblePages - 1);
 
       if (end - start + 1 < maxVisiblePages) {
-        start = Math.max(
-          1,
-          end - maxVisiblePages + 1
-        );
+        start = Math.max(1, end - maxVisiblePages + 1);
       }
 
       if (start > 1) {
@@ -332,7 +312,6 @@ const CasinoGames = ({
       {isAutoLaunching && (
         <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
           <div className="flex flex-col items-center justify-center px-6 text-center">
-
             {/* CASINO ICON */}
             <div className="relative flex items-center justify-center">
               <div className="absolute h-24 w-24 animate-ping rounded-full bg-[#B45CFF]/20" />
@@ -370,7 +349,6 @@ const CasinoGames = ({
           MAIN CASINO PAGE
           ======================================================== */}
       <div className="bg-[#0B0410] p-4 md:p-6">
-
         {/* API LOADING */}
         {loading && (
           <div className="flex h-96 items-center justify-center">
@@ -379,15 +357,12 @@ const CasinoGames = ({
         )}
 
         <div className="mx-auto">
-
           {/* ====================================================
               DESKTOP / FULL CASINO HEADER
               ==================================================== */}
           {!isHome && (
             <div className="mb-8 flex flex-col items-center justify-between gap-4 md:flex-row">
-
               <div className="flex w-full items-center gap-4 md:w-auto">
-
                 <button
                   onClick={() => navigate(-1)}
                   className="flex items-center gap-2 rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] px-4 py-2 text-sm font-bold text-gray-300 transition-colors hover:border-[#9B59B6]/50 hover:bg-[#2a1b3d] hover:text-white"
@@ -419,9 +394,7 @@ const CasinoGames = ({
                     type="text"
                     placeholder="Search live casino games..."
                     value={searchTerm}
-                    onChange={(e) =>
-                      setSearchTerm(e.target.value)
-                    }
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full rounded-xl border border-[#2a1b3d] bg-[#12061C] py-3 pl-12 pr-4 text-white placeholder-gray-500 transition-all focus:border-[#B45CFF]/60 focus:outline-none focus:ring-2 focus:ring-[#B45CFF]/20"
                   />
                 </div>
@@ -434,7 +407,6 @@ const CasinoGames = ({
               ==================================================== */}
           {isHome && (
             <div className="mb-4 flex items-center justify-between">
-
               <div className="flex items-center gap-2">
                 <span className="text-[22px]">🎰</span>
 
@@ -459,7 +431,6 @@ const CasinoGames = ({
               GAMES GRID
               ==================================================== */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-
             {currentGames.map((game) => (
               <div
                 key={game.game_uid || game.id}
@@ -474,11 +445,8 @@ const CasinoGames = ({
                 />
 
                 {/* PLAY OVERLAY */}
-                <div
-                  className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-[#0B0410] via-[#0B0410]/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                >
-                  {launchLoading &&
-                  selectedGame?.game_uid === game.game_uid ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-[#0B0410] via-[#0B0410]/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                  {launchLoading && selectedGame?.game_uid === game.game_uid ? (
                     <FaSpinner className="animate-spin text-3xl text-white" />
                   ) : (
                     <MdPlayCircle className="text-4xl text-white opacity-90 transition-transform group-hover:scale-110 md:text-5xl" />
@@ -487,13 +455,11 @@ const CasinoGames = ({
 
                 {/* GAME INFO */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0B0410] to-transparent p-3">
-
                   <h3 className="truncate text-sm font-semibold text-white">
                     {game.game_name}
                   </h3>
 
                   <div className="mt-1 flex items-center justify-between">
-
                     <span className="rounded border border-[#2a1b3d] bg-[#12061C]/80 px-2 py-1 text-xs text-gray-300">
                       {game.provider || "BF Gaming"}
                     </span>
@@ -501,7 +467,6 @@ const CasinoGames = ({
                     <span className="text-xs font-medium text-[#F1C40F]">
                       Live
                     </span>
-
                   </div>
                 </div>
               </div>
@@ -513,13 +478,10 @@ const CasinoGames = ({
               ==================================================== */}
           {currentGames.length === 0 && (
             <div className="mt-10 rounded-2xl border border-dashed border-[#2a1b3d] bg-[#1C0F2B] py-16 text-center">
-
               <FaSearch className="mx-auto mb-4 text-4xl text-gray-500" />
 
               <h3 className="mb-2 text-lg font-semibold text-white">
-                {loading
-                  ? "Loading games..."
-                  : "No games found"}
+                {loading ? "Loading games..." : "No games found"}
               </h3>
 
               <p className="text-gray-400">
@@ -535,101 +497,82 @@ const CasinoGames = ({
           {/* ====================================================
               PAGINATION
               ==================================================== */}
-          {!isHome &&
-            showSearch &&
-            filteredGames.length > gamesPerPage && (
-              <div className="mt-10">
+          {!isHome && showSearch && filteredGames.length > gamesPerPage && (
+            <div className="mt-10">
+              <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
+                {/* DESKTOP PAGINATION */}
+                <div className="hidden items-center gap-2 sm:flex">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#12061C] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all hover:bg-[#2a1b3d] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <FaChevronLeft className="text-xs" />
+                    Previous
+                  </button>
 
-                <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
-
-                  {/* DESKTOP PAGINATION */}
-                  <div className="hidden items-center gap-2 sm:flex">
-
-                    <button
-                      onClick={() =>
-                        goToPage(currentPage - 1)
-                      }
-                      disabled={currentPage === 1}
-                      className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#12061C] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all hover:bg-[#2a1b3d] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <FaChevronLeft className="text-xs" />
-                      Previous
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                      {renderPageNumbers().map(
-                        (pageNum, index) =>
-                          pageNum === "..." ? (
-                            <span
-                              key={`ellipsis-${index}`}
-                              className="px-3 py-2 text-gray-500"
-                            >
-                              ...
-                            </span>
-                          ) : (
-                            <button
-                              key={pageNum}
-                              onClick={() =>
-                                goToPage(pageNum)
-                              }
-                              className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-all ${
-                                currentPage === pageNum
-                                  ? `${purpleGradient} text-white`
-                                  : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d] hover:text-white"
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          )
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() =>
-                        goToPage(currentPage + 1)
-                      }
-                      disabled={currentPage === totalPages}
-                      className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#12061C] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all hover:bg-[#2a1b3d] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Next
-                      <FaChevronRight className="text-xs" />
-                    </button>
-
+                  <div className="flex items-center gap-1">
+                    {renderPageNumbers().map((pageNum, index) =>
+                      pageNum === "..." ? (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="px-3 py-2 text-gray-500"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={pageNum}
+                          onClick={() => goToPage(pageNum)}
+                          className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-all ${
+                            currentPage === pageNum
+                              ? `${purpleGradient} text-white`
+                              : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d] hover:text-white"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ),
+                    )}
                   </div>
 
-                  {/* MOBILE PAGINATION */}
-                  <div className="mt-6 flex items-center justify-center gap-4 md:hidden">
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#12061C] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all hover:bg-[#2a1b3d] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                    <FaChevronRight className="text-xs" />
+                  </button>
+                </div>
 
-                    <button
-                      onClick={() =>
-                        goToPage(currentPage - 1)
-                      }
-                      disabled={currentPage === 1}
-                      className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#12061C] px-4 py-2 text-sm font-medium text-gray-300 hover:bg-[#2a1b3d] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <FaChevronLeft />
-                      Prev
-                    </button>
+                {/* MOBILE PAGINATION */}
+                <div className="mt-6 flex items-center justify-center gap-4 md:hidden">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#12061C] px-4 py-2 text-sm font-medium text-gray-300 hover:bg-[#2a1b3d] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <FaChevronLeft />
+                    Prev
+                  </button>
 
-                    <span className="font-medium text-white">
-                      {currentPage} / {totalPages}
-                    </span>
+                  <span className="font-medium text-white">
+                    {currentPage} / {totalPages}
+                  </span>
 
-                    <button
-                      onClick={() =>
-                        goToPage(currentPage + 1)
-                      }
-                      disabled={currentPage === totalPages}
-                      className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#12061C] px-4 py-2 text-sm font-medium text-gray-300 hover:bg-[#2a1b3d] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Next
-                      <FaChevronRight />
-                    </button>
-
-                  </div>
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-2 rounded-lg border border-[#2a1b3d] bg-[#12061C] px-4 py-2 text-sm font-medium text-gray-300 hover:bg-[#2a1b3d] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                    <FaChevronRight />
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
+          )}
         </div>
       </div>
 

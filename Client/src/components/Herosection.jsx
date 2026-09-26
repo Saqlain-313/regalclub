@@ -70,7 +70,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="w-full bg-[#1C0F2B] px-2 py-2 sm:px-3 md:px-4">
+    <section className="w-full bg-[#0B0410] px-2 py-2 sm:px-3 md:px-4">
       {/* ================= HERO BANNER ================= */}
       <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <Swiper

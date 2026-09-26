@@ -674,10 +674,53 @@ export default function MinesGame() {
                       </>
                     )}
                 </div>
+
+                {/* Cashout overlay - same position as Mine Hit */}
+                {game?.status === "cashout" && !explosion && (
+                  <div className="absolute inset-0 z-[70] flex items-center justify-center bg-[#0B0410]/55 px-4 backdrop-blur-[2px]">
+                    <div className="flex w-[min(82%,320px)] flex-col items-center">
+                      <div className="mb-3 w-full rounded-2xl border-2 border-[#00E676] bg-gradient-to-r from-[#07180f] via-[#0f2d1b] to-[#07180f] px-5 py-3 text-center shadow-[0_8px_30px_rgba(0,0,0,.5),0_0_35px_rgba(0,230,118,.18)]">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-[#00E676] shadow-[0_0_10px_#00E676]" />
+                          <p className="text-sm font-black tracking-[.12em] text-[#8dffbd]">
+                            💰 CASHOUT SUCCESSFUL
+                          </p>
+                          <span className="h-2 w-2 rounded-full bg-[#00E676] shadow-[0_0_10px_#00E676]" />
+                        </div>
+                        <p className="mt-1 text-[9px] font-bold uppercase tracking-[.2em] text-white/60">
+                          Winnings secured • Start a new game
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExplosion(false);
+                          setExplosionCell(null);
+                          dispatch(resetMinesGame());
+                        }}
+                        className="group relative w-full overflow-hidden rounded-2xl border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] px-6 py-3.5 font-bold text-white shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.97] cursor-pointer"
+                      >
+                        <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                        <div className="relative flex items-center justify-center gap-3">
+                          <span className="text-lg transition-transform duration-500 group-hover:rotate-180">
+                            🔄
+                          </span>
+                          <span className="text-sm font-bold tracking-wide sm:text-base">
+                            START NEW GAME
+                          </span>
+                          <span className="text-lg transition-transform duration-300 group-hover:translate-x-1">
+                            →
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </section>
 
               {/* Controls */}
-              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1.5fr_1fr]">
+              <div className="mt-4 grid w-full grid-cols-1 gap-3">
                 <button
                   type="button"
                   onClick={cashout}
@@ -686,7 +729,7 @@ export default function MinesGame() {
                     Number(game.safeCells || 0) <= 0 ||
                     loading
                   }
-                  className="rounded-2xl border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] px-4 py-3 text-lg font-black text-white shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="w-full rounded-2xl border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] px-4 py-3 text-lg font-black text-white shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {loading
                     ? "PROCESSING..."
@@ -731,19 +774,21 @@ export default function MinesGame() {
                 </div>
               )}
 
-              {game.status !== "playing" && !explosion && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExplosion(false);
-                    setExplosionCell(null);
-                    dispatch(resetMinesGame());
-                  }}
-                  className="mt-3 w-full rounded-xl border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] py-3 font-bold text-white shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] transition hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  🔄 NEW GAME
-                </button>
-              )}
+              {game.status !== "playing" &&
+                !explosion &&
+                game.status !== "cashout" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExplosion(false);
+                      setExplosionCell(null);
+                      dispatch(resetMinesGame());
+                    }}
+                    className="mt-3 w-full rounded-xl border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] py-3 font-bold text-white shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] transition hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    🔄 NEW GAME
+                  </button>
+                )}
 
               {message && (
                 <p className="mt-4 text-center text-sm font-semibold text-[#9B59B6]">
