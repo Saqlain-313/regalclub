@@ -11,14 +11,11 @@ import {
   Diamond,
   Flame,
   Gift,
-  Home,
   RefreshCw,
   ShieldCheck,
   Sparkles,
   Trophy,
-  UserCircle,
   Users,
-  WalletCards,
   X,
   Zap,
 } from "lucide-react";
@@ -963,15 +960,15 @@ const GameSelection = () => {
 
       {/* HERO - Compact */}
       <section className="mx-auto max-w-[980px] px-2 pt-2 sm:px-4 sm:pt-3">
-        <div className="relative h-[140px] overflow-hidden rounded-xl border border-[#2a1b3d] shadow-[0_0_20px_rgba(116,24,245,0.18)] sm:h-[260px] md:h-[320px]">
+        <div className="relative h-[140px] overflow-hidden rounded-xl border border-[#2a1b3d] shadow-[0_0_20px_rgba(116,24,245,0.18)] sm:h-[155px] sm:w-full md:h-[320px]">
           <img
-            src="https://i.ibb.co/60g6N1Fp/banner1.png"
+            src="https://i.ibb.co/zWFjM0dG/powerhit-1.png"
             alt="WinLuxury Powerball"
             className="h-full w-full object-cover"
           />
-          <div className="absolute bottom-2 left-2 flex items-center gap-2 rounded-xl border border-[#B45CFF]/70 bg-[#0B0410]/90 px-2.5 py-1.5 text-white shadow-xl sm:bottom-4 sm:left-5 sm:gap-3 sm:px-3.5 sm:py-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white sm:h-10 sm:w-10">
-              <span className="text-lg sm:text-2xl">
+          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1.5 rounded-lg border border-[#B45CFF]/70 bg-[#0B0410]/90 px-2 py-1 text-white shadow-lg sm:bottom-4 sm:left-5 sm:gap-3 sm:rounded-xl sm:px-3.5 sm:py-2 sm:shadow-xl">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white sm:h-10 sm:w-10">
+              <span className="text-[11px] sm:text-2xl">
                 {activeCountryObject?.code === "IN"
                   ? "🇮🇳"
                   : activeCountryObject?.code === "AU"
@@ -986,10 +983,10 @@ const GameSelection = () => {
               </span>
             </div>
             <div>
-              <div className="text-[9px] font-bold text-[#C77AFF] sm:text-[11px]">
+              <div className="text-[7px] font-bold leading-none text-[#C77AFF] sm:text-[11px] sm:leading-normal">
                 Playing from
               </div>
-              <div className="text-[11px] font-black sm:text-base">
+              <div className="mt-0.5 text-[9px] font-black leading-none sm:mt-0 sm:text-base sm:leading-normal">
                 {activeCountryObject?.name || activeCountryName || "INDIA"}
               </div>
             </div>
@@ -1835,30 +1832,6 @@ const GameSelection = () => {
             </>
           )}
       </main>
-
-      {/* FIXED BOTTOM NAV - Compact */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex h-[60px] max-w-[860px] items-center justify-around rounded-t-2xl border border-[#2a1b3d] bg-[#12061C]/95 px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur sm:h-[72px] sm:rounded-t-[22px]">
-        <button className="flex flex-col items-center gap-0.5 text-[#B45CFF] sm:gap-1">
-          <Home size={18} className="sm:size={22}" />
-          <span className="text-[9px] font-bold sm:text-xs">Home</span>
-        </button>
-        <button className="flex flex-col items-center gap-0.5 text-gray-400 sm:gap-1">
-          <BarChart3 size={18} className="sm:size={22}" />
-          <span className="text-[9px] font-bold sm:text-xs">Activity</span>
-        </button>
-        <button className="-mt-6 flex h-12 w-12 flex-col items-center justify-center rounded-full border-2 border-[#12061C] bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white shadow-[0_0_18px_rgba(180,92,255,0.45)] sm:-mt-8 sm:h-14 sm:w-14 sm:border-4">
-          <Gift size={18} className="sm:size={22}" />
-          <span className="text-[7px] font-black sm:text-[8px]">PROMO</span>
-        </button>
-        <button className="flex flex-col items-center gap-0.5 text-gray-400 sm:gap-1">
-          <WalletCards size={18} className="sm:size={22}" />
-          <span className="text-[9px] font-bold sm:text-xs">Wallet</span>
-        </button>
-        <button className="flex flex-col items-center gap-0.5 text-gray-400 sm:gap-1">
-          <UserCircle size={18} className="sm:size={22}" />
-          <span className="text-[9px] font-bold sm:text-xs">Account</span>
-        </button>
-      </nav>
     </div>
   );
 };
