@@ -14,7 +14,7 @@ const PopularGamesCards = () => {
       id: 2,
       name: "Trading",
       img: tradingIMG,
-      to: "https://lotterry.trade.marinclub.site/",
+      to: "https://trading.regalclub.live/",
       external: true,
     },
     { id: 3, name: "Mines", img: minesIMG, to: "/mine-games" },
