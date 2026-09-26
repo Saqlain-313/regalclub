@@ -237,7 +237,7 @@ const Navbar = ({ children }) => {
   const WinzoxLogo = ({ className = "h-48" }) => (
     <img
       src="https://i.ibb.co/fdGFXBrr/logo.png"
-      alt="WINZOX"
+      alt="RegalClub"
       className={`${className} object-contain w-auto`}
     />
   );
