@@ -2,25 +2,23 @@
 
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { createWithdrawalSettings } from "../redux/withdrawalSettingsSlice";
+import {
+  createWithdrawalSettings,
+  resetWithdrawalSettingsState,
+} from "../redux/withdrawalSettingsSlice";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Save,
   X,
   Globe,
-  DollarSign,
   Calendar,
   Shield,
   Settings,
   Zap,
   Wallet,
-  Award,
   Lock,
-  MapPin,
   Banknote,
-  Percent,
-  Clock,
   CreditCard,
   Building,
   Mail,
@@ -41,6 +39,16 @@ const countries = [
   { code: "NP", name: "Nepal" },
   { code: "AE", name: "Dubai" },
 ];
+
+// Currency defaults per country (optional auto-fill)
+const countryCurrencyDefaults = {
+  AU: { currency: "AUD", symbol: "A$" },
+  IN: { currency: "INR", symbol: "₹" },
+  PK: { currency: "PKR", symbol: "₨" },
+  BD: { currency: "BDT", symbol: "৳" },
+  NP: { currency: "NPR", symbol: "रू" },
+  AE: { currency: "AED", symbol: "د.إ" },
+};
 
 // ============================
 // Main Component
@@ -74,46 +82,85 @@ const CreateWithdrawalSettings = () => {
     suspiciousAmountThreshold: 10000,
   });
 
+  // ✅ Reset redux state on mount so `loading` isn't stuck from a previous action
   useEffect(() => {
+    dispatch(resetWithdrawalSettingsState());
     window.scrollTo(0, 0);
-  }, []);
+  }, [dispatch]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    // Country dropdown → auto-fill countryName + currency
     if (name === "country") {
-      const selectedCountry = countries.find(c => c.code === value);
+      const selectedCountry = countries.find((c) => c.code === value);
+      const defaults = countryCurrencyDefaults[value] || {};
       setForm((prev) => ({
         ...prev,
         country: value,
         countryName: selectedCountry ? selectedCountry.name : "",
+        currency: defaults.currency || prev.currency,
+        currencySymbol: defaults.symbol || prev.currencySymbol,
       }));
       return;
     }
 
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : type === "number" ? Number(value) : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : type === "number"
+          ? value === ""
+            ? ""
+            : Number(value)
+          : value,
     }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const res = await dispatch(createWithdrawalSettings(form));
-    if (!res.error) {
-      toast.success("✅ Withdrawal settings created successfully!");
-      navigate("/admin/withdrawal-settings");
-    }
   };
 
   const handlePaymentMethodToggle = (method) => {
     setForm((prev) => ({
       ...prev,
       paymentMethods: prev.paymentMethods.includes(method)
-        ? prev.paymentMethods.filter(m => m !== method)
+        ? prev.paymentMethods.filter((m) => m !== method)
         : [...prev.paymentMethods, method],
     }));
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("🚀 Submit started", form);
+
+    // ✅ Manual validation (in case browser `required` is bypassed)
+    if (!form.country) {
+      toast.error("Please select a country");
+      return;
+    }
+    if (!form.countryName) {
+      toast.error("Country name is required");
+      return;
+    }
+    if (Number(form.minWithdrawal) > Number(form.maxWithdrawal)) {
+      toast.error("Min withdrawal cannot be greater than max withdrawal");
+      return;
+    }
+
+    try {
+      console.log("📡 Sending payload:", form);
+      const res = await dispatch(createWithdrawalSettings(form)).unwrap();
+      console.log("✅ API response:", res);
+      toast.success("✅ Withdrawal settings created successfully!");
+      navigate("/admin/withdrawal-settings");
+    } catch (err) {
+      console.error("❌ API error:", err);
+      toast.error(err?.message || "Failed to create withdrawal settings");
+    }
+  };
+
+  // Common input class
+  const inputClass =
+    "w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none bg-white";
+  const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/30 p-6">
@@ -124,35 +171,46 @@ const CreateWithdrawalSettings = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4"
         >
-          <div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/admin/withdrawal-settings")}
-                className="p-2 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent flex items-center gap-3">
-                  <Sparkles className="text-purple-600" size={28} />
-                  Create Withdrawal Settings
-                </h1>
-                <p className="text-gray-500 mt-1">Configure withdrawal rules and limits for your platform</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/admin/withdrawal-settings")}
+              className="p-2 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent flex items-center gap-3">
+                <Sparkles className="text-purple-600" size={28} />
+                Create Withdrawal Settings
+              </h1>
+              <p className="text-gray-500 mt-1">
+                Configure withdrawal rules and limits for your platform
+              </p>
             </div>
           </div>
           <div className="bg-white px-4 py-2 rounded-xl shadow-md">
             <span className="text-sm text-gray-600">Status: </span>
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${form.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${form.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-              {form.isActive ? 'Active' : 'Inactive'}
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                form.isActive
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  form.isActive ? "bg-green-500" : "bg-gray-400"
+                }`}
+              ></span>
+              {form.isActive ? "Active" : "Inactive"}
             </span>
           </div>
         </motion.div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
+          {/* ========== Basic Information ========== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -163,20 +221,21 @@ const CreateWithdrawalSettings = () => {
               <div className="bg-white/20 p-2 rounded-xl">
                 <Globe className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-white">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-white">
+                Basic Information
+              </h3>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Country Code <span className="text-red-500">*</span>
                   </label>
                   <select
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none bg-white"
+                    className={inputClass}
                     name="country"
                     value={form.country}
                     onChange={handleChange}
-                    required
                   >
                     <option value="">-- Select Country --</option>
                     {countries.map((country) => (
@@ -187,25 +246,23 @@ const CreateWithdrawalSettings = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Country Name <span className="text-red-500">*</span>
                   </label>
                   <input
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 cursor-not-allowed"
+                    className={`${inputClass} bg-gray-50 cursor-not-allowed`}
                     name="countryName"
                     value={form.countryName}
-                    onChange={handleChange}
-                    required
                     readOnly
-                    placeholder="Select country code first"
+                    placeholder="Auto-filled from country code"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Currency <span className="text-red-500">*</span>
                   </label>
                   <input
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="currency"
                     value={form.currency}
                     onChange={handleChange}
@@ -213,11 +270,9 @@ const CreateWithdrawalSettings = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Currency Symbol
-                  </label>
+                  <label className={labelClass}>Currency Symbol</label>
                   <input
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="currencySymbol"
                     value={form.currencySymbol}
                     onChange={handleChange}
@@ -228,7 +283,7 @@ const CreateWithdrawalSettings = () => {
             </div>
           </motion.div>
 
-          {/* Amount Limits */}
+          {/* ========== Amount Limits ========== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -239,49 +294,48 @@ const CreateWithdrawalSettings = () => {
               <div className="bg-white/20 p-2 rounded-xl">
                 <Banknote className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-white">Amount Limits</h3>
+              <h3 className="text-lg font-semibold text-white">
+                Amount Limits
+              </h3>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Minimum Withdrawal <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="minWithdrawal"
                     value={form.minWithdrawal}
                     onChange={handleChange}
-                    step="1"
                     min="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Maximum Withdrawal <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="maxWithdrawal"
                     value={form.maxWithdrawal}
                     onChange={handleChange}
-                    step="1"
                     min="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Suspicious Amount Threshold
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="suspiciousAmountThreshold"
                     value={form.suspiciousAmountThreshold}
                     onChange={handleChange}
-                    step="1"
                     min="0"
                   />
                 </div>
@@ -289,7 +343,7 @@ const CreateWithdrawalSettings = () => {
             </div>
           </motion.div>
 
-          {/* Time Limits */}
+          {/* ========== Time Limits ========== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -305,44 +359,41 @@ const CreateWithdrawalSettings = () => {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Daily Limit <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="dailyLimit"
                     value={form.dailyLimit}
                     onChange={handleChange}
-                    step="1"
                     min="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Weekly Limit <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="weeklyLimit"
                     value={form.weeklyLimit}
                     onChange={handleChange}
-                    step="1"
                     min="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Monthly Limit <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="monthlyLimit"
                     value={form.monthlyLimit}
                     onChange={handleChange}
-                    step="1"
                     min="0"
                   />
                 </div>
@@ -350,7 +401,7 @@ const CreateWithdrawalSettings = () => {
             </div>
           </motion.div>
 
-          {/* Processing & Fees */}
+          {/* ========== Processing & Fees ========== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -361,16 +412,16 @@ const CreateWithdrawalSettings = () => {
               <div className="bg-white/20 p-2 rounded-xl">
                 <Settings className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-white">Processing & Fees</h3>
+              <h3 className="text-lg font-semibold text-white">
+                Processing & Fees
+              </h3>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Processing Time
-                  </label>
+                  <label className={labelClass}>Processing Time</label>
                   <input
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="processingTime"
                     value={form.processingTime}
                     onChange={handleChange}
@@ -378,12 +429,10 @@ const CreateWithdrawalSettings = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Processing Fee
-                  </label>
+                  <label className={labelClass}>Processing Fee</label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="processingFee"
                     value={form.processingFee}
                     onChange={handleChange}
@@ -392,11 +441,9 @@ const CreateWithdrawalSettings = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Fee Type
-                  </label>
+                  <label className={labelClass}>Fee Type</label>
                   <select
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none bg-white"
+                    className={inputClass}
                     name="processingFeeType"
                     value={form.processingFeeType}
                     onChange={handleChange}
@@ -409,7 +456,7 @@ const CreateWithdrawalSettings = () => {
             </div>
           </motion.div>
 
-          {/* User Requirements */}
+          {/* ========== User Requirements ========== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -420,58 +467,55 @@ const CreateWithdrawalSettings = () => {
               <div className="bg-white/20 p-2 rounded-xl">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-white">User Requirements</h3>
+              <h3 className="text-lg font-semibold text-white">
+                User Requirements
+              </h3>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className={labelClass}>
                     Minimum Account Age (days)
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="minAccountAge"
                     value={form.minAccountAge}
                     onChange={handleChange}
-                    step="1"
                     min="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Minimum Games Played
-                  </label>
+                  <label className={labelClass}>Minimum Games Played</label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="minGamesPlayed"
                     value={form.minGamesPlayed}
                     onChange={handleChange}
-                    step="1"
                     min="0"
                   />
                 </div>
-                <div className="flex items-end">
-                  <div className="flex items-center gap-3 pt-1">
+                <div className="flex items-end pb-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="verificationRequired"
                       name="verificationRequired"
                       checked={form.verificationRequired}
                       onChange={handleChange}
-                      className="w-5 h-5 rounded-lg border-2 border-gray-300 text-purple-600 focus:ring-purple-500 focus:ring-2 transition-all duration-200"
+                      className="w-5 h-5 rounded-lg border-2 border-gray-300 text-purple-600 focus:ring-purple-500 focus:ring-2"
                     />
-                    <label htmlFor="verificationRequired" className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-gray-700">
                       Verification Required
-                    </label>
-                  </div>
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Withdrawal Frequency Limits */}
+          {/* ========== Frequency Limits ========== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -482,35 +526,37 @@ const CreateWithdrawalSettings = () => {
               <div className="bg-white/20 p-2 rounded-xl">
                 <Zap className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-white">Withdrawal Frequency Limits</h3>
+              <h3 className="text-lg font-semibold text-white">
+                Withdrawal Frequency Limits
+              </h3>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Max Withdrawals Per Day <span className="text-red-500">*</span>
+                  <label className={labelClass}>
+                    Max Withdrawals Per Day{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="maxWithdrawalsPerDay"
                     value={form.maxWithdrawalsPerDay}
                     onChange={handleChange}
-                    step="1"
                     min="1"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Max Withdrawals Per Week <span className="text-red-500">*</span>
+                  <label className={labelClass}>
+                    Max Withdrawals Per Week{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    className={inputClass}
                     name="maxWithdrawalsPerWeek"
                     value={form.maxWithdrawalsPerWeek}
                     onChange={handleChange}
-                    step="1"
                     min="1"
                   />
                 </div>
@@ -518,7 +564,7 @@ const CreateWithdrawalSettings = () => {
             </div>
           </motion.div>
 
-          {/* Payment Methods */}
+          {/* ========== Payment Methods ========== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -529,40 +575,59 @@ const CreateWithdrawalSettings = () => {
               <div className="bg-white/20 p-2 rounded-xl">
                 <CreditCard className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-white">Payment Methods</h3>
+              <h3 className="text-lg font-semibold text-white">
+                Payment Methods
+              </h3>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
                   { value: "upi", label: "UPI", icon: CreditCard },
-                  { value: "bank_transfer", label: "Bank Transfer", icon: Building },
+                  {
+                    value: "bank_transfer",
+                    label: "Bank Transfer",
+                    icon: Building,
+                  },
                   { value: "crypto", label: "Cryptocurrency", icon: Wallet },
                   { value: "paypal", label: "PayPal", icon: Mail },
-                ].map((method) => (
-                  <label
-                    key={method.value}
-                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${form.paymentMethods.includes(method.value)
-                        ? "border-purple-500 bg-purple-50 shadow-md"
-                        : "border-gray-200 hover:border-gray-300"
+                ].map((method) => {
+                  const selected = form.paymentMethods.includes(method.value);
+                  const Icon = method.icon;
+                  return (
+                    <label
+                      key={method.value}
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                        selected
+                          ? "border-purple-500 bg-purple-50 shadow-md"
+                          : "border-gray-200 hover:border-gray-300"
                       }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.paymentMethods.includes(method.value)}
-                      onChange={() => handlePaymentMethodToggle(method.value)}
-                      className="hidden"
-                    />
-                    <method.icon className={`w-5 h-5 ${form.paymentMethods.includes(method.value) ? 'text-purple-600' : 'text-gray-400'}`} />
-                    <span className={`text-sm font-medium ${form.paymentMethods.includes(method.value) ? 'text-purple-700' : 'text-gray-600'}`}>
-                      {method.label}
-                    </span>
-                  </label>
-                ))}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => handlePaymentMethodToggle(method.value)}
+                        className="hidden"
+                      />
+                      <Icon
+                        className={`w-5 h-5 ${
+                          selected ? "text-purple-600" : "text-gray-400"
+                        }`}
+                      />
+                      <span
+                        className={`text-sm font-medium ${
+                          selected ? "text-purple-700" : "text-gray-600"
+                        }`}
+                      >
+                        {method.label}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </motion.div>
 
-          {/* Status */}
+          {/* ========== Status ========== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -577,31 +642,40 @@ const CreateWithdrawalSettings = () => {
             </div>
             <div className="p-6">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3">
+                <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
-                    id="isActive"
                     name="isActive"
                     checked={form.isActive}
                     onChange={handleChange}
-                    className="w-5 h-5 rounded-lg border-2 border-gray-300 text-purple-600 focus:ring-purple-500 focus:ring-2 transition-all duration-200"
+                    className="w-5 h-5 rounded-lg border-2 border-gray-300 text-purple-600 focus:ring-purple-500 focus:ring-2"
                   />
-                  <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium text-gray-700">
                     Active
-                  </label>
-                </div>
+                  </span>
+                </label>
                 <div className="ml-auto flex items-center gap-2 text-sm">
                   <span className="text-gray-500">Status:</span>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${form.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${form.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                    {form.isActive ? 'Active' : 'Inactive'}
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
+                      form.isActive
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        form.isActive ? "bg-green-500" : "bg-gray-400"
+                      }`}
+                    ></span>
+                    {form.isActive ? "Active" : "Inactive"}
                   </span>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Actions */}
+          {/* ========== Actions ========== */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
