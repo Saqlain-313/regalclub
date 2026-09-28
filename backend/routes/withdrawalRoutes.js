@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const {
   requestWithdrawal,
+  getWithdrawalEligibility,
   getWithdrawalHistory,
   getWithdrawalDetails,
   cancelWithdrawal,
@@ -15,6 +16,7 @@ router.use(protect);
 
 // User routes
 router.post('/', requestWithdrawal);
+router.get('/eligibility', getWithdrawalEligibility);
 router.get('/history', getWithdrawalHistory);
 router.get('/settings', getWithdrawalSettings);
 router.get('/:id', getWithdrawalDetails);

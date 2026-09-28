@@ -262,7 +262,8 @@ const authSlice = createSlice({
         if (
           errorMessage.includes("unauthorized") ||
           errorMessage.includes("powerhit") ||
-          errorMessage.includes("invalid")
+          errorMessage.includes("invalid") ||
+          errorMessage.includes("authenticated")
         ) {
           state.isAuthenticated = false;
           state.token = null;

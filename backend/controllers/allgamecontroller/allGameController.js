@@ -190,7 +190,9 @@ const transferBalance = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       status: false,
-      message: "Transfer error",
+      // Provider (Zapcore) ka actual message forward karo —
+      // e.g. "Your IP address x.x.x.x is not whitelisted"
+      message: error.response?.data?.message || "Transfer error",
       error: error.response?.data || error.message,
     });
   }

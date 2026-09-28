@@ -19,6 +19,21 @@ export const fetchWithdrawalSettings = createAsyncThunk(
   },
 );
 
+// @desc    Fetch withdrawal eligibility (wagering-based)
+export const fetchWithdrawalEligibility = createAsyncThunk(
+  "withdrawal/fetchEligibility",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/withdrawals/eligibility");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to load withdrawal eligibility",
+      );
+    }
+  },
+);
+
 // @desc    Fetch withdrawal history
 export const fetchWithdrawalHistory = createAsyncThunk(
   "withdrawal/fetchHistory",
@@ -160,6 +175,11 @@ const initialState = {
   settingsLoading: false,
   settingsError: null,
 
+  // Wagering eligibility
+  eligibility: null,
+  eligibilityLoading: false,
+  eligibilityError: null,
+
   // History
   history: [],
   historyLoading: false,
@@ -258,6 +278,20 @@ const withdrawalSlice = createSlice({
         state.settingsLoading = false;
         state.settingsError = action.payload;
         state.error = action.payload;
+      })
+
+      // ============ FETCH ELIGIBILITY (WAGERING) ============
+      .addCase(fetchWithdrawalEligibility.pending, (state) => {
+        state.eligibilityLoading = true;
+        state.eligibilityError = null;
+      })
+      .addCase(fetchWithdrawalEligibility.fulfilled, (state, action) => {
+        state.eligibilityLoading = false;
+        state.eligibility = action.payload.eligibility;
+      })
+      .addCase(fetchWithdrawalEligibility.rejected, (state, action) => {
+        state.eligibilityLoading = false;
+        state.eligibilityError = action.payload;
       })
 
       // ============ FETCH HISTORY ============
@@ -441,6 +475,14 @@ export const selectRequestSuccess = (state) => state.withdrawal.requestSuccess;
 export const selectWithdrawalDetails = (state) =>
   state.withdrawal.withdrawalDetails;
 export const selectDetailsLoading = (state) => state.withdrawal.detailsLoading;
+
+// Eligibility (wagering) selectors
+export const selectWithdrawalEligibility = (state) =>
+  state.withdrawal.eligibility;
+export const selectEligibilityLoading = (state) =>
+  state.withdrawal.eligibilityLoading;
+export const selectEligibilityError = (state) =>
+  state.withdrawal.eligibilityError;
 
 // Cancel selectors
 export const selectCancelLoading = (state) => state.withdrawal.cancelLoading;

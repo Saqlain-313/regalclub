@@ -81,6 +81,7 @@ const mineGameRoutes = require("./routes/minesRoutes");
 const adminWithdrawalRoutes = require("./routes/admin/withdrawalRoutes");
 const depositSettingsRoutes = require("./routes/depositSettingsRoutes");
 const withdrawalSettingsRoutes = require("./routes/withdrawalSettingsRoutes");
+const supportSettingsRoutes = require("./routes/supportSettingsRoutes");
 const adminTicketTypeRoutes = require("./routes/admin/ticketTypeRoutes");
 const winMultiplierRoutes = require("./routes/winMultiplierRoutes");
 
@@ -303,6 +304,7 @@ app.use("/api/mine-games", mineGameRoutes);
 app.use("/api/admin/withdrawals", adminWithdrawalRoutes);
 app.use("/api", depositSettingsRoutes);
 app.use("/api/withdrawal-settings", withdrawalSettingsRoutes);
+app.use("/api/support-settings", supportSettingsRoutes);
 app.use("/api/admin/ticket-types", adminTicketTypeRoutes);
 
 // =====================================================

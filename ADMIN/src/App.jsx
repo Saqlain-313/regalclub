@@ -78,6 +78,7 @@ import AdminBettingBonus from "./admin/pages/AdminBettingBonus";
 import AdminWinMultipliers from "./admin/pages/AdminWinMultipliers";
 import MinesAdmin from "./admin/pages/MinesAdmin";
 import BetAdmin from "./admin/pages/BetAdmin";
+import Profile from "./admin/pages/Profile";
 import AdminCommission from "./admin/pages/AdminCommission";
 
 function App() {
@@ -151,6 +152,11 @@ function App() {
           <Route
             path="/admin/settings"
             element={<Settings />}
+          />
+
+          <Route
+            path="/admin/profile"
+            element={<Profile />}
           />
 
           <Route

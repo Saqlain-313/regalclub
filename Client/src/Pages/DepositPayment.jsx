@@ -300,24 +300,33 @@ const DepositPayment = () => {
 
       <div className="relative px-4 sm:px-6 py-6">
         <div className="max-w-md w-full mx-auto">
-          {/* Back */}
-          {/* <button
-            type="button"
-            onClick={() => navigate("/deposit")}
-            className="flex items-center gap-1 text-gray-400 text-xs font-medium mb-4 hover:text-[#B45CFF] transition w-fit"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back
-          </button> */}
+          {/* ============================================= */}
+          {/* HEADER                                        */}
+          {/* ============================================= */}
+          <div className="mb-5 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white leading-tight">
+                Payment
+              </h1>
+              <p className="text-[11px] text-gray-400">
+                Complete your deposit
+              </p>
+            </div>
+          </div>
 
-          {/* Amount + Method */}
-          <div className="mb-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] px-5 py-4 flex items-center justify-between">
+          {/* ============================================= */}
+          {/* AMOUNT + METHOD STRIP                         */}
+          {/* ============================================= */}
+          <div className="mb-5 bg-[#12061C] rounded-xl border border-[#2a1b3d] px-4 py-3 flex items-center justify-between">
             <div>
               <span className="text-[10px] uppercase tracking-wide text-gray-400 font-medium block">
                 Amount to pay
               </span>
 
-              <span className="text-xl font-bold text-white">
+              <span className="text-lg font-bold text-[#00E676]">
                 ₹{Number(amount).toLocaleString("en-IN")}
               </span>
             </div>
@@ -327,54 +336,60 @@ const DepositPayment = () => {
             >
               {getMethodIcon(selectedMethod.type)}
 
-              <span className="text-xs font-semibold">
+              <span className="text-xs font-semibold uppercase">
                 {selectedMethod.title}
               </span>
             </div>
           </div>
 
           {/* =================================================
-              UPI QR SECTION
+              STEP 1 — UPI QR SECTION
           ================================================= */}
           {isUPI && upiId && (
             <div className="mb-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
               <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                    Scan & Pay
-                  </h3>
+                <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white text-[10px] font-bold flex items-center justify-center">
+                    1
+                  </span>
+                  Scan & Pay
+                </h3>
 
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    Scan this QR using any UPI app
-                  </p>
-                </div>
-
-                <div className="w-9 h-9 rounded-xl bg-[#B45CFF]/15 border border-[#B45CFF]/30 flex items-center justify-center">
-                  <QrCode className="w-5 h-5 text-[#B45CFF]" />
+                <div className="w-8 h-8 rounded-xl bg-[#B45CFF]/15 border border-[#B45CFF]/30 flex items-center justify-center">
+                  <QrCode className="w-4 h-4 text-[#B45CFF]" />
                 </div>
               </div>
 
               {/* QR */}
               <div className="flex justify-center">
-                <div className="p-4 bg-white rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
+                <div className="relative p-4 bg-white rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
                   <QRCodeSVG
                     value={upiPaymentUrl}
-                    size={220}
+                    size={200}
                     level="H"
                     includeMargin={true}
                   />
+                  {/* Amount badge centered on QR */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-[#1C0F2B] border-2 border-[#C77AFF] rounded-xl px-3 py-1.5 shadow-[0_0_12px_rgba(180,92,255,0.5)]">
+                      <p className="text-base font-bold text-white leading-none">
+                        ₹{Number(amount).toLocaleString("en-IN")}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Amount */}
-              <div className="mt-4 text-center">
-                <p className="text-[10px] uppercase tracking-wide text-gray-400">
-                  Payment Amount
-                </p>
-
-                <p className="text-2xl font-bold text-[#9B59B6] mt-0.5">
-                  ₹{Number(amount).toLocaleString("en-IN")}
-                </p>
+              {/* App hints */}
+              <div className="mt-4 flex items-center justify-center gap-2">
+                {["GPay", "PhonePe", "Paytm", "BHIM"].map((app) => (
+                  <span
+                    key={app}
+                    className="text-[10px] font-semibold text-gray-400 bg-[#12061C] border border-[#2a1b3d] rounded-full px-2.5 py-1"
+                  >
+                    {app}
+                  </span>
+                ))}
               </div>
 
               {/* UPI ID */}
@@ -402,8 +417,7 @@ const DepositPayment = () => {
               </div>
 
               <p className="text-[10px] text-gray-500 text-center mt-3">
-                Open Google Pay, PhonePe, Paytm or another UPI app and scan the
-                QR code.
+                Open any UPI app, scan the QR and pay the exact amount shown.
               </p>
             </div>
           )}
@@ -414,7 +428,7 @@ const DepositPayment = () => {
           {(paymentDetails.length > 0 ||
             (!isUPI && selectedMethod.details)) && (
             <div className="mb-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3.5">
+              <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-3.5">
                 Payment Details
               </h3>
 
@@ -458,21 +472,30 @@ const DepositPayment = () => {
           )}
 
           {/* =================================================
-              CONFIRM PAYMENT FORM
+              STEP 2 — CONFIRM PAYMENT FORM
           ================================================= */}
           <form
+            id="confirm-payment-form"
             onSubmit={submitHandler}
             className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5"
           >
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300 uppercase tracking-wide mb-4">
+              <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white text-[10px] font-bold flex items-center justify-center">
+                {isUPI && upiId ? 2 : 1}
+              </span>
               Confirm Payment
             </h3>
+
+            <p className="text-[11px] text-gray-400 mb-3">
+              Pay first, then enter the UTR / transaction ID from your payment
+              app to submit your deposit request.
+            </p>
 
             {/* Transaction ID */}
             <div>
               <label className="flex items-center gap-1 text-xs font-medium text-gray-300 mb-1.5">
                 <FileText className="w-3 h-3 text-[#B45CFF]" />
-                UTR ID
+                UTR / Transaction ID
               </label>
 
               <div className="relative">
@@ -487,7 +510,7 @@ const DepositPayment = () => {
                   value={transactionId}
                   onChange={handleTransactionIdChange}
                   onBlur={() => handleBlur("transactionId")}
-                  placeholder="e.g. UTR-12345"
+                  placeholder="e.g. 123456789012"
                 />
 
                 {touched.transactionId &&
@@ -509,11 +532,19 @@ const DepositPayment = () => {
               )}
             </div>
 
+            <div className="mt-4 flex items-start gap-2 bg-[#12061C] border border-[#2a1b3d] rounded-xl p-3">
+              <ShieldCheck className="w-4 h-4 text-[#00E676] flex-shrink-0 mt-0.5" />
+              <p className="text-[10px] text-gray-400 leading-relaxed">
+                Your deposit is secured. After submitting, our team verifies
+                your payment and credits your wallet.
+              </p>
+            </div>
+
             {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className={`mt-6 w-full font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-1.5 ${
+              className={`mt-5 w-full font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-1.5 ${
                 loading
                   ? "bg-[#2a1b3d] text-gray-500 cursor-not-allowed"
                   : `${purpleGradient} text-white active:scale-[0.98]`
