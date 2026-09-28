@@ -267,15 +267,17 @@ const Slotgame = ({ isHome = false }) => {
       {/* ========================================================
           SLOT GAMES PAGE
           ======================================================== */}
-      <div className="bg-[#0B0410] px-4 py-5 sm:px-3">
+      <div className="bg-[#0B0410] px-4 py-6 sm:px-3">
         {/* HEADER */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[22px]">🎰</span>
-
-            <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[24px]">
-              Slot Games
-            </h2>
+        <div className="mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {/* Rounded bar icon — Platform recommendation style */}
+              <span className="w-2 h-6 rounded-full bg-gradient-to-b from-[#B45CFF] to-[#7418F5] flex-shrink-0" />
+              <h2 className="text-lg font-extrabold tracking-tight text-white sm:text-xl leading-tight">
+                Slot Games
+              </h2>
+            </div>
           </div>
         </div>
 
@@ -296,7 +298,7 @@ const Slotgame = ({ isHome = false }) => {
           ) : (
             <>
               {/* GAME GRID */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 {displayGames.map((game, index) => {
                   const hideOnMobile = index >= 6;
 
@@ -305,25 +307,17 @@ const Slotgame = ({ isHome = false }) => {
                       key={game.game_uid || game.id || index}
                       onClick={() => handlePlay(game)}
                       className={`group relative
-    w-[160px]
-    h-[260px]
-    sm:w-[103%]
-    sm:h-[143px]
-    md:w-[200px]
-    md:h-[300px]
-    lg:w-[165px]
-    lg:h-[320px]
-    xl:w-[230px]
-    xl:h-[340px]
+    w-full
+    aspect-[3/4]
     cursor-pointer
     overflow-hidden
-    rounded-xl
+    rounded-2xl
     border border-[#2a1b3d]
     bg-[#1C0F2B]
     shadow-[0_4px_12px_rgba(0,0,0,0.5)]
     transition-all duration-300
     hover:border-[#B45CFF]/60
-    hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)]
+    hover:shadow-[0_8px_20px_rgba(155,89,182,0.3)]
     ${hideOnMobile ? "hidden md:block" : ""}`}
                     >
                       {/* IMAGE */}

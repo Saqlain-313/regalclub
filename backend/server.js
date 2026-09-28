@@ -30,6 +30,7 @@ const Transaction = require("./models/Transaction");
 const Commission = require("./models/Commission");
 const Subordinate = require("./models/Subordinate");
 const Admin = require("./models/Admin");
+const WingoResultConfig = require("./models/WingoResultConfig");
 const Level = require("./models/Level");
 const Recharge = require("./models/Recharge");
 require("./cron");
@@ -609,13 +610,63 @@ async function processResultImmediately(gameName, typeId) {
 
     // -------------------------------------------------
     // 2. Generate result
+    //
+    // Priority (tamper-resistant, server-side only):
+    //   a) Period-specific authorized config (audit-logged)
+    //   b) Legacy Admin forced field (current pending period)
+    //   c) Random
     // -------------------------------------------------
-    const resultAmount = Number(betController.generateRandomResult());
+    let finalResult = null;
 
-    const finalResult =
-      Number.isInteger(resultAmount) && resultAmount >= 0 && resultAmount <= 9
-        ? resultAmount
-        : Math.floor(Math.random() * 10);
+    // a) Period-specific config — ek hi baar consume hota hai
+    try {
+      const periodConfig = await WingoResultConfig.findOne({
+        game: gameName,
+        period,
+        consumedAt: null,
+      });
+
+      if (periodConfig) {
+        finalResult = Number(periodConfig.result);
+        console.log(
+          `[${gameName}] PERIOD-CONFIG: period ${period} locked result -> ${finalResult}`,
+        );
+
+        // Consume mark (ek hi baar process ho)
+        await WingoResultConfig.updateOne(
+          { _id: periodConfig._id },
+          { $set: { consumedAt: new Date(), processedResult: finalResult } },
+        );
+      }
+    } catch (configError) {
+      console.error(`[${gameName}] Period config read error:`, configError);
+    }
+
+    // b) Legacy Admin forced field
+    if (finalResult === null) {
+      try {
+        const adminDoc = await Admin.findOne();
+        const forced = Number(adminDoc?.[gameName]);
+        if (Number.isInteger(forced) && forced >= 0 && forced <= 9) {
+          finalResult = forced;
+          console.log(
+            `[${gameName}] ADMIN OVERRIDE: period ${period} forced result -> ${forced}`,
+          );
+        }
+      } catch (overrideError) {
+        console.error(`[${gameName}] Admin override read error:`, overrideError);
+      }
+    }
+
+    // c) Random
+    if (finalResult === null) {
+      const resultAmount = Number(betController.generateRandomResult());
+
+      finalResult =
+        Number.isInteger(resultAmount) && resultAmount >= 0 && resultAmount <= 9
+          ? resultAmount
+          : Math.floor(Math.random() * 10);
+    }
 
     console.log(`[${gameName}] Generated result: ${period} -> ${finalResult}`);
 

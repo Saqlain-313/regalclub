@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import { Crown, Gem, Shuffle, Zap } from "lucide-react";
+import { Crown, Shuffle, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCircle, FaMinus, FaPlus } from "react-icons/fa";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
@@ -8,7 +8,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 
 import EmptyData from "../../components/EmptyData.jsx";
-import { host } from "../../redux/slices/api.js";
+import { api, host } from "../../redux/slices/api.js";
 import { getProfile } from "../../redux/slices/authSlice.js";
 import {
   getMyBets,
@@ -452,15 +452,20 @@ const Wingo = () => {
       const res = await dispatch(
         getOrderList({ typeid: typeid1, pageno, pageto }),
       ).unwrap();
-      if (res.status) {
-        setWingoPeriodListData(res);
-        setPeriodData(res);
-        if (res.period) setCurrentPeriod(res.period);
-        setTimeout(chartFunction, 100);
+        if (res.status) {
+          setWingoPeriodListData(res);
+          setPeriodData(res);
+          // Period sirf aage badhta hai (stale response guard)
+          if (res.period) {
+            setCurrentPeriod((prev) =>
+              !prev || String(res.period) > String(prev) ? res.period : prev,
+            );
+          }
+          setTimeout(chartFunction, 100);
+        }
+      } catch (err) {
+        console.error("fetchNewData failed:", err);
       }
-    } catch (err) {
-      console.error("fetchNewData failed:", err);
-    }
     await fetchHistory();
   };
 
@@ -473,7 +478,12 @@ const Wingo = () => {
         if (res.status) {
           setWingoPeriodListData(res);
           setPeriodData(res);
-          if (res.period) setCurrentPeriod(res.period);
+          // Period sirf aage badhta hai (stale response guard)
+          if (res.period) {
+            setCurrentPeriod((prev) =>
+              !prev || String(res.period) > String(prev) ? res.period : prev,
+            );
+          }
           setTimeout(chartFunction, 100);
         }
       } catch (err) {
@@ -494,6 +504,27 @@ const Wingo = () => {
     }, 500),
     [dispatch],
   );
+
+  // ============================================================
+  // SERVER-SIDE PERIOD SYNC (source of truth)
+  // currentPeriod sirf aage badhta hai — kabhi piche nahi.
+  // ============================================================
+  const syncCurrentPeriod = useCallback(async (tid) => {
+    try {
+      const { data } = await api.get(`/bet/current-period?typeid=${tid}`);
+      if (data?.success && data.period) {
+        const serverPeriod = String(data.period);
+        setCurrentPeriod((prev) =>
+          !prev || serverPeriod > String(prev) ? serverPeriod : prev,
+        );
+        setPeriodData((prev) =>
+          prev ? { ...prev, period: serverPeriod } : prev,
+        );
+      }
+    } catch (err) {
+      console.error('syncCurrentPeriod failed:', err);
+    }
+  }, []);
 
   const setSocketListeners = useCallback(
     (typeid) => {
@@ -520,6 +551,12 @@ const Wingo = () => {
         if (minute === 0 && second1 === 0 && second2 === 0) {
           setOpenTime(true);
           setOpenPopup(false);
+          // Timer complete — server se CURRENT period sync.
+          // Result processing + next-period create mein thoda
+          // time lag sakta hai, isliye chhote retries bhi.
+          syncCurrentPeriod(typeid);
+          setTimeout(() => syncCurrentPeriod(typeid), 1500);
+          setTimeout(() => syncCurrentPeriod(typeid), 3500);
           debouncedFetch(typeid, 1, 10);
           if (activeVoice) playAudio(audio1Ref);
         } else {
@@ -553,6 +590,8 @@ const Wingo = () => {
         resultProcessedRef.current.add(processKey);
 
         try {
+          // Result aane par server se current period bhi re-sync
+          syncCurrentPeriod(typeid);
           await debouncedFetch(typeid, 1, 10);
           if (Number(typeid1) !== Number(typeid)) return;
 
@@ -603,7 +642,7 @@ const Wingo = () => {
         socket.off("data-server", handleDataServer);
       };
     },
-    [activeVoice, debouncedFetch, dispatch, typeid1],
+    [activeVoice, debouncedFetch, dispatch, syncCurrentPeriod, typeid1],
   );
 
   // ============================================================
@@ -761,8 +800,29 @@ const Wingo = () => {
 
   useEffect(() => {
     debouncedFetch(typeid1, pageno, pageto);
+    // Server se current period + time sync (mount par)
+    syncCurrentPeriod(typeid1);
     fetchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // typeid change par bhi server period sync karo
+  useEffect(() => {
+    if (typeid1) syncCurrentPeriod(typeid1);
+  }, [typeid1, syncCurrentPeriod]);
+
+  // Tab background se wapas aane par server se re-sync
+  // (background mein timers throttle hote hain — resync zaroori)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        syncCurrentPeriod(typeid1);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, [typeid1, syncCurrentPeriod]);
 
   useEffect(() => {
     if (typeid1 !== null) {
@@ -1253,7 +1313,10 @@ const Wingo = () => {
             </span>
           </div>
           <p className="mt-1 truncate text-[12px] font-semibold text-gray-300">
-            Period: {wingoPeriodListData?.period || "Loading..."}
+            Period:{" "}
+            {wingoPeriodListData?.period || currentPeriod || (
+              <span className="inline-block h-3 w-16 animate-pulse rounded bg-[#2a1b3d] align-middle" />
+            )}
           </p>
         </div>
       </div>
@@ -1300,7 +1363,7 @@ const Wingo = () => {
             gradient: "from-[#1a5c2e] to-[#0d3a1a]",
             border: "border-[#00E676]/50",
             text: "text-[#00E676]",
-            gem: "text-[#00E676]",
+            dot: "bg-[#00E676]",
           },
           {
             key: "t",
@@ -1308,7 +1371,7 @@ const Wingo = () => {
             gradient: "from-[#5b2f9c] to-[#3a1d6a]",
             border: "border-[#B45CFF]/50",
             text: "text-[#C77AFF]",
-            gem: "text-[#C77AFF]",
+            dot: "bg-[#C77AFF]",
           },
           {
             key: "d",
@@ -1316,23 +1379,52 @@ const Wingo = () => {
             gradient: "from-[#7a1c1c] to-[#4a0d0d]",
             border: "border-[#E74C3C]/50",
             text: "text-[#E74C3C]",
-            gem: "text-[#E74C3C]",
+            dot: "bg-[#E74C3C]",
           },
-        ].map(({ key, label, gradient, border, text, gem }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => selectBetHandle(key)}
-            className={`bg-gradient-to-br ${gradient} rounded-2xl border ${border} px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-95`}
-          >
-            <div className="flex items-center justify-between">
-              <span className={`text-sm font-black ${text} sm:text-base`}>
-                {label}
-              </span>
-              <Gem className={`h-6 w-6 ${gem} drop-shadow-sm`} />
-            </div>
-          </button>
-        ))}
+        ].map(({ key, label, gradient, border, text, dot }) => {
+          const isSelected = selectBet === key;
+
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => selectBetHandle(key)}
+              className={`relative bg-gradient-to-br ${gradient} rounded-2xl border px-3 py-3.5 text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${
+                isSelected
+                  ? `border-2 ${border} ring-2 ring-white/30`
+                  : border
+              }`}
+            >
+              {/* Clean dot indicator */}
+              <div className="flex items-center gap-2">
+                <span
+                  className={`h-3.5 w-3.5 rounded-full ${dot} shadow-[0_0_8px_currentColor] ring-2 ring-white/40`}
+                />
+                <span className={`text-sm font-black ${text} sm:text-base`}>
+                  {label}
+                </span>
+              </div>
+
+              {/* Selected check */}
+              {isSelected && (
+                <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 shadow">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-3 w-3"
+                    fill="none"
+                    stroke="#0B0410"
+                    strokeWidth="4"
+                  >
+                    <path d="M5 13l4 4L19 7" strokeLinecap="round" />
+                  </svg>
+                </span>
+              )}
+
+              {/* Bottom shine */}
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 to-transparent rounded-b-2xl" />
+            </button>
+          );
+        })}
       </div>
 
       {/* ===== Pick a number + Multiplier ===== */}
@@ -1346,23 +1438,34 @@ const Wingo = () => {
           </div>
           <div>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-              {ImgData.map((item, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => selectBetHandle(i)}
-                  className={`flex min-h-[64px] items-center justify-center rounded-xl bg-[#1C0F2B] border border-[#2a1b3d] shadow-sm transition hover:-translate-y-0.5 hover:border-[#9B59B6]/50 hover:shadow-[0_4px_12px_rgba(155,89,182,.25)] active:scale-95 ${
-                    animate ? "animate-bounce" : ""
-                  }`}
-                  style={{ animationDelay: `${i * 0.06}s` }}
-                >
-                  <img
-                    src={item}
-                    alt={i}
-                    className="h-14 w-14 object-contain sm:h-16 sm:w-16 md:h-16 md:w-16"
-                  />
-                </button>
-              ))}
+              {ImgData.map((item, i) => {
+                const isNumberSelected = selectBet === i;
+
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => selectBetHandle(i)}
+                    className={`relative flex min-h-[64px] items-center justify-center rounded-xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(155,89,182,.25)] active:scale-95 ${
+                      isNumberSelected
+                        ? "border-2 border-[#C77AFF] bg-[#2a1b3d] ring-2 ring-[#B45CFF]/40"
+                        : "border-[#2a1b3d] bg-[#1C0F2B] hover:border-[#9B59B6]/50"
+                    } ${animate ? "animate-bounce" : ""}`}
+                    style={{ animationDelay: `${i * 0.06}s` }}
+                  >
+                    <img
+                      src={item}
+                      alt={i}
+                      className="h-14 w-14 object-contain sm:h-16 sm:w-16 md:h-16 md:w-16"
+                    />
+                    {isNumberSelected && (
+                      <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-[10px] font-black text-white shadow">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

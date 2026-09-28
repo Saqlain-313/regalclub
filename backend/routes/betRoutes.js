@@ -23,6 +23,9 @@ router.get("/wingo10", betController.winGoPage10);
 // USER BET APIs
 // =====================================================
 
+// Current period (server source of truth — period + time sync)
+router.get("/bet/current-period", protect, betController.currentPeriod);
+
 // Place Bet
 router.post(
   "/bet",
@@ -44,6 +47,46 @@ router.post(
   betController.GetMyEmerdList
 );
 
+
+// =====================================================
+// ADMIN RESULT CONTROL (authorized result system)
+// =====================================================
+
+router.get(
+  "/bet/admin/result-control",
+  protect,
+  adminProtect,
+  betController.adminGetResultControl
+);
+
+router.put(
+  "/bet/admin/result-control",
+  protect,
+  adminProtect,
+  betController.adminSetResultControl
+);
+
+// Period-specific result configs (audit-logged)
+router.get(
+  "/bet/admin/period-results",
+  protect,
+  adminProtect,
+  betController.adminGetPeriodResults
+);
+
+router.put(
+  "/bet/admin/period-results",
+  protect,
+  adminProtect,
+  betController.adminSetPeriodResult
+);
+
+router.delete(
+  "/bet/admin/period-results",
+  protect,
+  adminProtect,
+  betController.adminClearPeriodResult
+);
 
 // =====================================================
 // ADMIN COMMISSION APIs
