@@ -40,7 +40,6 @@ const allGames = [
     max_bet: 5000,
     is_featured: true,
     is_new: false,
-    route: "/chicken",
     loaderIcon: GiChicken,
     loaderTitle: "Loading Chicken Game...",
   },
@@ -59,7 +58,6 @@ const allGames = [
     max_bet: 2500,
     is_featured: false,
     is_new: true,
-    route: "/chicken",
     loaderIcon: GiChicken,
     loaderTitle: "Loading Chicken Game...",
   },
@@ -78,7 +76,6 @@ const allGames = [
     max_bet: 8000,
     is_featured: true,
     is_new: false,
-    route: "/minis",
     loaderIcon: GiMineExplosion,
     loaderTitle: "Loading Mines...",
   },
@@ -97,7 +94,6 @@ const allGames = [
     max_bet: 5000,
     is_featured: false,
     is_new: false,
-    route: "/minis",
     loaderIcon: GiMineExplosion,
     loaderTitle: "Loading Mines...",
   },
@@ -116,9 +112,25 @@ const allGames = [
     max_bet: 10000,
     is_featured: true,
     is_new: false,
-    route: "/aviator",
     loaderIcon: GiAirplane,
     loaderTitle: "Loading Aviator...",
+  },
+  {
+    id: "7up7down-1",
+    category: "instant",
+    game_name: "7up7down",
+    game_uid: "3aca3084a5c1a8c77c52d6147ee3d2ab",
+    game_type: "Instant",
+    provider: "jili",
+    icon: "https://huidu-bucket.s3.ap-southeast-1.amazonaws.com/api/jili/7up7down.png",
+    rating: 4.6,
+    players: "1.2K",
+    volatility: "Low",
+    min_bet: 10,
+    max_bet: 5000,
+    is_featured: true,
+    is_new: true,
+    // route nahi hai — home se click par direct modal launch
   },
 ];
 
@@ -197,10 +209,10 @@ const AllGames = ({ isHome = false }) => {
    * ============================================================
    */
   useEffect(() => {
-    if (!isHome && gameUrl && selectedGame) {
+    if (gameUrl && selectedGame) {
       setIsGameModalOpen(true);
     }
-  }, [gameUrl, isHome, selectedGame]);
+  }, [gameUrl, selectedGame]);
 
   /*
    * ============================================================
@@ -209,9 +221,9 @@ const AllGames = ({ isHome = false }) => {
    */
   const handlePlay = async (game) => {
     /*
-     * HOME -> GAME'S OWN ROUTE (/chicken, /mines, /aviator)
+     * HOME -> GAME WITH DEDICATED ROUTE (/chicken, /mines, /aviator)
      */
-    if (isHome) {
+    if (isHome && game.route) {
       navigate(game.route, {
         state: {
           autoLaunch: true,
@@ -223,7 +235,8 @@ const AllGames = ({ isHome = false }) => {
     }
 
     /*
-     * NORMAL PAGE (direct click, no home redirect)
+     * HOME -> GAME WITHOUT ROUTE (e.g. 7up7down) — direct modal launch
+     * NORMAL PAGE (direct click, no home redirect) — same
      */
     try {
       setSelectedGame(game);
@@ -318,47 +331,54 @@ const AllGames = ({ isHome = false }) => {
       {/* ========================================================
           ALL GAMES (Chicken + Mines + Aviator)
           ======================================================== */}
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-3 sm:py-6">
-        {/* HEADER */}
-        <div className="mx-auto mb-4 sm:mb-6">
-          <div className="mb-1 flex items-center gap-2 sm:gap-2.5">
-            <div className={`rounded-lg p-2 sm:p-2.5 ${purpleGradient}`}>
-              <GiChicken className="text-lg text-white sm:text-xl" />
+      <div className="bg-[#0B0410] px-4 py-6 sm:px-3">
+        {/* HEADER — Platform recommendation */}
+        <div className="mx-auto mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <FaFire className="w-5 h-5 text-[#B45CFF] flex-shrink-0" />
+              <h2 className="text-lg font-extrabold tracking-tight text-white sm:text-xl leading-tight">
+                Platform recommendation
+              </h2>
             </div>
-
-            <h1 className="text-xl font-bold text-white sm:text-2xl">
-              Popular Games
-            </h1>
+            <button
+              type="button"
+              onClick={() => navigate("/chicken")}
+              className="flex items-center gap-1 flex-shrink-0 text-xs font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-full hover:bg-[#2a1b3d] hover:text-white transition-all"
+            >
+              All {allGames.length}
+              <span className="text-base leading-none">›</span>
+            </button>
           </div>
-
-          <p className="text-xs text-gray-400 sm:text-sm">
-            Chicken Road, Mines & Aviator — all your favorites in one place
-          </p>
         </div>
 
         {/* GRID */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5 md:grid-cols-4 md:gap-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
           {allGames.map((game) => (
             <div
               key={game.id}
               onClick={() => handlePlay(game)}
               onMouseEnter={() => setHoveredId(game.id)}
               onMouseLeave={() => setHoveredId(null)}
-              className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] transition-all duration-300 hover:scale-[1.02] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] w-full h-auto"
+              className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-[1.02] hover:border-[#B45CFF]/60 hover:shadow-[0_8px_20px_rgba(155,89,182,0.3)] w-full h-auto"
             >
-              {/* IMAGE - dimensions same rakhe hain */}
-              <div className="relative h-24 w-40 flex-shrink-0 overflow-hidden sm:h-[9rem] sm:w-full">
+              {/* IMAGE */}
+              <div className="relative w-full aspect-[3/4] flex-shrink-0 overflow-hidden bg-[#1C0F2B]">
                 <img
                   src={game.icon}
                   alt={game.game_name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 ${
+                    // Aviator image ke edges white hain — thoda zoom
+                    // karke full-fit karo
+                    game.id === "aviator-1" ? "scale-110" : ""
+                  }`}
                 />
 
                 {/* BADGES */}
-                <div className="absolute left-1.5 top-1.5 flex flex-wrap gap-1 sm:left-2.5 sm:top-2.5">
+                <div className="absolute left-1.5 top-1.5 flex flex-wrap gap-1 sm:left-2 sm:top-2">
                   {game.is_featured && (
                     <span
-                      className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white sm:text-[10px] ${purpleGradient}`}
+                      className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white sm:text-[9px] ${purpleGradient}`}
                     >
                       <FaCrown className="text-[7px] sm:text-[9px]" />
                       HOT
@@ -389,37 +409,42 @@ const AllGames = ({ isHome = false }) => {
                     </div>
                   ) : (
                     <div
-                      className={`rounded-full p-1.5 sm:p-3 ${purpleGradient}`}
+                      className={`rounded-full p-1.5 sm:p-2.5 ${purpleGradient}`}
                     >
-                      <MdPlayCircle className="text-xl text-white sm:text-3xl" />
+                      <MdPlayCircle className="text-lg text-white sm:text-2xl" />
                     </div>
                   )}
                 </div>
               </div>
 
               {/* CONTENT */}
-              <div className="flex min-w-0 flex-1 flex-col justify-center p-0.5 sm:px-2">
-                <div className="mb-1 flex items-start justify-between gap-1.5">
-                  <h3 className="truncate text-sm font-bold text-white sm:text-xs">
+              <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-2">
+                <div className="flex items-center justify-between gap-1.5">
+                  <h3 className="truncate text-xs font-bold text-white sm:text-sm">
                     {game.game_name}
                   </h3>
 
-                  <div className="sm:hidden md:flex flex-shrink-0 items-center gap-0.5">
-                    <MdStar className="text-xs text-[#F1C40F] sm:text-sm" />
-                    <span className="text-[10px] font-bold text-white sm:text-sm">
+                  <div className="flex flex-shrink-0 items-center gap-0.5">
+                    <MdStar className="text-[10px] text-[#F1C40F] sm:text-xs" />
+                    <span className="text-[10px] font-bold text-white sm:text-xs">
                       {game.rating}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-[9px] text-gray-500 sm:gap-4 sm:text-xs">
-                  <span className="flex items-center gap-0.5">
-                    <MdGamepad className="text-[10px] sm:text-xs" />
-                    {game.players}
-                  </span>
+                <div className="flex items-center justify-between text-[9px] text-gray-500 sm:text-[10px]">
+                  {/* "X playing" sirf 7up7down par */}
+                  {game.id === "7up7down-1" ? (
+                    <span className="flex items-center gap-0.5">
+                      <MdGamepad className="text-[10px]" />
+                      {game.players} playing
+                    </span>
+                  ) : (
+                    <span />
+                  )}
 
-                  <span className="md:flex items-center gap-0.5 text-[#B45CFF] sm:hidden">
-                    <FaFire className="text-[9px] sm:text-xs" />
+                  <span className="flex items-center gap-0.5 text-[#B45CFF]">
+                    <FaFire className="text-[9px]" />
                     {game.volatility}
                   </span>
                 </div>
@@ -432,16 +457,14 @@ const AllGames = ({ isHome = false }) => {
       {/* ========================================================
           GAME MODAL
           ======================================================== */}
-      {!isHome && (
-        <GamePlayModal
-          isOpen={isGameModalOpen}
-          onClose={closeGameModal}
-          gameData={selectedGame}
-          gameUrl={gameUrl}
-          loading={launchLoading}
-          launchError={launchError}
-        />
-      )}
+      <GamePlayModal
+        isOpen={isGameModalOpen}
+        onClose={closeGameModal}
+        gameData={selectedGame}
+        gameUrl={gameUrl}
+        loading={launchLoading}
+        launchError={launchError}
+      />
     </>
   );
 };

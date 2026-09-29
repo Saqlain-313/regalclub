@@ -231,50 +231,45 @@ const CasinoGames = ({
           )}
 
           {isHome && (
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-[22px]">🎰</span>
-                <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[16px]">
-                  Casino & Live Games
-                </h2>
+            <div className="mb-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {/* Rounded bar icon — Platform recommendation style */}
+                  <span className="w-2 h-6 rounded-full bg-gradient-to-b from-[#B45CFF] to-[#7418F5] flex-shrink-0" />
+                  <h2 className="text-lg font-extrabold tracking-tight text-white sm:text-xl leading-tight">
+                    Casino &amp; Live Games
+                  </h2>
+                </div>
+                {showViewAll && (
+                  <Link
+                    to="/casino"
+                    className="flex items-center gap-1 text-xs font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-xl hover:bg-[#2a1b3d] hover:text-white transition-all flex-shrink-0"
+                  >
+                    View all
+                    <span className="text-lg">›</span>
+                  </Link>
+                )}
               </div>
-              {showViewAll && (
-                <Link
-                  to="/casino"
-                  className="flex items-center gap-1 text-sm font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-lg hover:bg-[#2a1b3d] hover:text-white transition-all"
-                >
-                  View all
-                  <span className="text-lg">›</span>
-                </Link>
-              )}
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-3">
             {currentGames.map((game) => (
               <div
                 key={game.game_uid || game.id}
                 onClick={() => handlePlay(game)}
                 className="group relative
-  w-[160px]
-  h-[260px]
-  sm:w-[103%]
-  sm:h-[143px]
-  md:w-[200px]
-  md:h-[300px]
-  lg:w-[193px]
-  lg:h-[320px]
-  xl:w-[230px]
-  xl:h-[340px]
+  w-full
+  aspect-[3/4]
   cursor-pointer
   overflow-hidden
-  rounded-xl
+  rounded-2xl
   border border-[#2a1b3d]
   bg-[#1C0F2B]
   shadow-[0_4px_12px_rgba(0,0,0,0.5)]
   transition-all duration-300
   hover:border-[#B45CFF]/60
-  hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)]"
+  hover:shadow-[0_8px_20px_rgba(155,89,182,0.3)]"
               >
                 <img
                   src={game.img || game.icon}

@@ -30,6 +30,7 @@ const Transaction = require("./models/Transaction");
 const Commission = require("./models/Commission");
 const Subordinate = require("./models/Subordinate");
 const Admin = require("./models/Admin");
+const WingoResultConfig = require("./models/WingoResultConfig");
 const Level = require("./models/Level");
 const Recharge = require("./models/Recharge");
 require("./cron");
@@ -81,6 +82,7 @@ const mineGameRoutes = require("./routes/minesRoutes");
 const adminWithdrawalRoutes = require("./routes/admin/withdrawalRoutes");
 const depositSettingsRoutes = require("./routes/depositSettingsRoutes");
 const withdrawalSettingsRoutes = require("./routes/withdrawalSettingsRoutes");
+const supportSettingsRoutes = require("./routes/supportSettingsRoutes");
 const adminTicketTypeRoutes = require("./routes/admin/ticketTypeRoutes");
 const winMultiplierRoutes = require("./routes/winMultiplierRoutes");
 
@@ -303,6 +305,7 @@ app.use("/api/mine-games", mineGameRoutes);
 app.use("/api/admin/withdrawals", adminWithdrawalRoutes);
 app.use("/api", depositSettingsRoutes);
 app.use("/api/withdrawal-settings", withdrawalSettingsRoutes);
+app.use("/api/support-settings", supportSettingsRoutes);
 app.use("/api/admin/ticket-types", adminTicketTypeRoutes);
 
 // =====================================================
@@ -607,13 +610,63 @@ async function processResultImmediately(gameName, typeId) {
 
     // -------------------------------------------------
     // 2. Generate result
+    //
+    // Priority (tamper-resistant, server-side only):
+    //   a) Period-specific authorized config (audit-logged)
+    //   b) Legacy Admin forced field (current pending period)
+    //   c) Random
     // -------------------------------------------------
-    const resultAmount = Number(betController.generateRandomResult());
+    let finalResult = null;
 
-    const finalResult =
-      Number.isInteger(resultAmount) && resultAmount >= 0 && resultAmount <= 9
-        ? resultAmount
-        : Math.floor(Math.random() * 10);
+    // a) Period-specific config — ek hi baar consume hota hai
+    try {
+      const periodConfig = await WingoResultConfig.findOne({
+        game: gameName,
+        period,
+        consumedAt: null,
+      });
+
+      if (periodConfig) {
+        finalResult = Number(periodConfig.result);
+        console.log(
+          `[${gameName}] PERIOD-CONFIG: period ${period} locked result -> ${finalResult}`,
+        );
+
+        // Consume mark (ek hi baar process ho)
+        await WingoResultConfig.updateOne(
+          { _id: periodConfig._id },
+          { $set: { consumedAt: new Date(), processedResult: finalResult } },
+        );
+      }
+    } catch (configError) {
+      console.error(`[${gameName}] Period config read error:`, configError);
+    }
+
+    // b) Legacy Admin forced field
+    if (finalResult === null) {
+      try {
+        const adminDoc = await Admin.findOne();
+        const forced = Number(adminDoc?.[gameName]);
+        if (Number.isInteger(forced) && forced >= 0 && forced <= 9) {
+          finalResult = forced;
+          console.log(
+            `[${gameName}] ADMIN OVERRIDE: period ${period} forced result -> ${forced}`,
+          );
+        }
+      } catch (overrideError) {
+        console.error(`[${gameName}] Admin override read error:`, overrideError);
+      }
+    }
+
+    // c) Random
+    if (finalResult === null) {
+      const resultAmount = Number(betController.generateRandomResult());
+
+      finalResult =
+        Number.isInteger(resultAmount) && resultAmount >= 0 && resultAmount <= 9
+          ? resultAmount
+          : Math.floor(Math.random() * 10);
+    }
 
     console.log(`[${gameName}] Generated result: ${period} -> ${finalResult}`);
 
@@ -651,8 +704,38 @@ async function processResultImmediately(gameName, typeId) {
 
     // -------------------------------------------------
     // 5. Create next period
+    //
+    // Period ID date+time based format (image jaisa):
+    //   YYYYMMDD + daily sequence (base 10001)
+    //   e.g. 2026092910001, 2026092910002, ...
+    // Agar game ka period abhi purane (short) format me hai
+    // to bhi naya period hamesha naye format me banega —
+    // smooth migration, purane records waise hi rehte hain.
     // -------------------------------------------------
-    const newPeriod = String(BigInt(period) + BigInt(1));
+    const buildNewPeriod = async () => {
+      // Asia/Kolkata date — game ka "day"
+      const istNow = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+      const dayStamp = istNow.toISOString().slice(0, 10).replace(/-/g, "");
+
+      const todayCount = await Wingo.countDocuments({
+        game: gameName,
+        period: { $regex: `^${dayStamp}` },
+      });
+
+      return `${dayStamp}${10001 + todayCount}`;
+    };
+
+    let newPeriod = await buildNewPeriod();
+
+    // Collision guard (rare): agar wahi period already hai to aage badho
+    let collisionGuard = 0;
+    while (
+      (await Wingo.findOne({ game: gameName, period: newPeriod })) &&
+      collisionGuard < 50
+    ) {
+      newPeriod = String(BigInt(newPeriod) + BigInt(1));
+      collisionGuard++;
+    }
 
     const existingNext = await Wingo.findOne({
       game: gameName,

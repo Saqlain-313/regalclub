@@ -3,6 +3,31 @@ const Withdrawal = require('../models/Withdrawal');
 const WithdrawalSettings = require('../models/WithdrawalSettings');
 const User = require('../models/authmodel');
 const mongoose = require('mongoose');
+const { getWageringSummary } = require('../utils/wageringService');
+
+// @desc    Get withdrawal eligibility (wagering-based)
+// @route   GET /api/withdrawals/eligibility
+// @access  Private
+const getWithdrawalEligibility = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const summary = await getWageringSummary(user);
+
+    return res.status(200).json({
+      success: true,
+      eligibility: summary,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to compute withdrawal eligibility',
+    });
+  }
+};
 
 // @desc    Request a withdrawal
 // @route   POST /api/withdrawals
@@ -73,6 +98,23 @@ const requestWithdrawal = async (req, res) => {
         success: false,
         message: 'Insufficient credit',
         availablecredit: user.credit,
+      });
+    }
+
+    // ================================================
+    // WAGERING-BASED WITHDRAWAL ELIGIBILITY (backend validation)
+    // - Wagering pending -> wagered amount tak hi withdraw
+    // - Wagering complete -> wallet balance tak
+    // ================================================
+    const wagering = await getWageringSummary(user);
+    if (amount > wagering.maxAllowedWithdrawal) {
+      return res.status(403).json({
+        success: false,
+        message:
+          wagering.remainingWagering > 0
+            ? `Wagering requirement pending. Complete ₹${wagering.remainingWagering} more wagering to withdraw fully, or withdraw up to ₹${wagering.maxAllowedWithdrawal} (your completed wagering amount).`
+            : 'Insufficient credit',
+        wagering,
       });
     }
 
@@ -758,6 +800,7 @@ const getWithdrawalStats = async (req, res) => {
 
 module.exports = {
   requestWithdrawal,
+  getWithdrawalEligibility,
   getWithdrawalHistory,
   getWithdrawalDetails,
   cancelWithdrawal,

@@ -2,8 +2,9 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import {
-  Route,
   Routes,
+  Route,
+  Navigate,
   useLocation,
   useNavigate,
 } from "react-router-dom";
@@ -53,6 +54,7 @@ import GameEntryResultPage from "./Pages/GameEntryResultPage.jsx";
 // Other Pages
 // ========================================
 import Maintenance from "./Pages/Maintenance.jsx";
+import SupportChat from "./Pages/SupportChat.jsx";
 
 // ========================================
 // Matka Pages
@@ -1039,6 +1041,28 @@ function App() {
               }
             />
 
+
+            {/* ========================================
+                LEGACY ROUTE REDIRECTS
+                Purane/dead links real pages par bhejo
+                warna Maintenance (404) khul jata hai
+            ======================================== */}
+            <Route
+              path="/dashboard"
+              element={<Navigate to="/account" replace />}
+            />
+            <Route
+              path="/support-chat"
+              element={<SupportChat />}
+            />
+            <Route
+              path="/support"
+              element={<Navigate to="/support-chat" replace />}
+            />
+            <Route
+              path="/create-game-entry"
+              element={<Navigate to="/powerhit" replace />}
+            />
 
             {/* ========================================
                 404 / MAINTENANCE

@@ -1,6 +1,7 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import {
+  Shield,
   X,
   LayoutDashboard,
   Users,
@@ -77,6 +78,7 @@ const MENUS = [
   { name: "Bet Admin", path: "/admin/bet-admin", icon: <BarChart3 size={20} />, color: "cyan" },
   { name: "wingo Bets", path: "/admin/admin-wingo-bets", icon: <BarChart3 size={20} />, color: "cyan" },
   { name: "Wingo Commission", path: "/admin/wingo-commission", icon: <Globe size={20} />, color: "gray" },
+  { name: "Result Control", path: "/admin/result-control", icon: <Shield size={20} />, color: "purple" },
 
   {
     name: "Powerhit",

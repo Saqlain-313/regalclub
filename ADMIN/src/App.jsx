@@ -78,7 +78,9 @@ import AdminBettingBonus from "./admin/pages/AdminBettingBonus";
 import AdminWinMultipliers from "./admin/pages/AdminWinMultipliers";
 import MinesAdmin from "./admin/pages/MinesAdmin";
 import BetAdmin from "./admin/pages/BetAdmin";
+import Profile from "./admin/pages/Profile";
 import AdminCommission from "./admin/pages/AdminCommission";
+import ResultControl from "./admin/pages/ResultControl";
 
 function App() {
   return (
@@ -151,6 +153,11 @@ function App() {
           <Route
             path="/admin/settings"
             element={<Settings />}
+          />
+
+          <Route
+            path="/admin/profile"
+            element={<Profile />}
           />
 
           <Route
@@ -360,6 +367,11 @@ function App() {
           <Route
             path="/admin/wingo-commission"
             element={<AdminCommission />}
+          />
+
+          <Route
+            path="/admin/result-control"
+            element={<ResultControl />}
           />
 
           <Route
