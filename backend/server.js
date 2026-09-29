@@ -704,8 +704,38 @@ async function processResultImmediately(gameName, typeId) {
 
     // -------------------------------------------------
     // 5. Create next period
+    //
+    // Period ID date+time based format (image jaisa):
+    //   YYYYMMDD + daily sequence (base 10001)
+    //   e.g. 2026092910001, 2026092910002, ...
+    // Agar game ka period abhi purane (short) format me hai
+    // to bhi naya period hamesha naye format me banega —
+    // smooth migration, purane records waise hi rehte hain.
     // -------------------------------------------------
-    const newPeriod = String(BigInt(period) + BigInt(1));
+    const buildNewPeriod = async () => {
+      // Asia/Kolkata date — game ka "day"
+      const istNow = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+      const dayStamp = istNow.toISOString().slice(0, 10).replace(/-/g, "");
+
+      const todayCount = await Wingo.countDocuments({
+        game: gameName,
+        period: { $regex: `^${dayStamp}` },
+      });
+
+      return `${dayStamp}${10001 + todayCount}`;
+    };
+
+    let newPeriod = await buildNewPeriod();
+
+    // Collision guard (rare): agar wahi period already hai to aage badho
+    let collisionGuard = 0;
+    while (
+      (await Wingo.findOne({ game: gameName, period: newPeriod })) &&
+      collisionGuard < 50
+    ) {
+      newPeriod = String(BigInt(newPeriod) + BigInt(1));
+      collisionGuard++;
+    }
 
     const existingNext = await Wingo.findOne({
       game: gameName,

@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import { Crown, Shuffle, Zap } from "lucide-react";
+import { Crown, Shuffle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCircle, FaMinus, FaPlus } from "react-icons/fa";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
@@ -1355,170 +1355,149 @@ const Wingo = () => {
         </button>
       </div>
 
+      {/* ===== COLOR BUTTONS — solid, image jaisa ===== */}
       <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
         {[
           {
             key: "x",
             label: "Green",
-            gradient: "from-[#1a5c2e] to-[#0d3a1a]",
-            border: "border-[#00E676]/50",
-            text: "text-[#00E676]",
-            dot: "bg-[#00E676]",
+            bg: "bg-[#0FA958]",
+            hover: "hover:bg-[#0C9A50]",
           },
           {
             key: "t",
             label: "Violet",
-            gradient: "from-[#5b2f9c] to-[#3a1d6a]",
-            border: "border-[#B45CFF]/50",
-            text: "text-[#C77AFF]",
-            dot: "bg-[#C77AFF]",
+            bg: "bg-[#9B59B6]",
+            hover: "hover:bg-[#8A4CA4]",
           },
           {
             key: "d",
             label: "Red",
-            gradient: "from-[#7a1c1c] to-[#4a0d0d]",
-            border: "border-[#E74C3C]/50",
-            text: "text-[#E74C3C]",
-            dot: "bg-[#E74C3C]",
+            bg: "bg-[#E5484D]",
+            hover: "hover:bg-[#D13B40]",
           },
-        ].map(({ key, label, gradient, border, text, dot }) => {
+        ].map(({ key, label, bg, hover }) => {
           const isSelected = selectBet === key;
 
           return (
             <button
               key={key}
               type="button"
-              onClick={() => selectBetHandle(key)}
-              className={`relative bg-gradient-to-br ${gradient} rounded-2xl border px-3 py-3.5 text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${
+              onClick={() => {
+                // Toggle: same option dobara click par deselect
+                if (isSelected) {
+                  setSelectBet("");
+                } else {
+                  selectBetHandle(key);
+                }
+              }}
+              className={`relative flex items-center justify-center rounded-xl py-3.5 text-base font-extrabold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:text-lg ${bg} ${hover} ${
                 isSelected
-                  ? `border-2 ${border} ring-2 ring-white/30`
-                  : border
+                  ? "ring-2 ring-white/70 ring-offset-2 ring-offset-[#1C0F2B]"
+                  : ""
               }`}
             >
-              {/* Clean dot indicator */}
-              <div className="flex items-center gap-2">
-                <span
-                  className={`h-3.5 w-3.5 rounded-full ${dot} shadow-[0_0_8px_currentColor] ring-2 ring-white/40`}
-                />
-                <span className={`text-sm font-black ${text} sm:text-base`}>
-                  {label}
-                </span>
-              </div>
-
-              {/* Selected check */}
+              {label}
               {isSelected && (
-                <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 shadow">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-3 w-3"
-                    fill="none"
-                    stroke="#0B0410"
-                    strokeWidth="4"
-                  >
-                    <path d="M5 13l4 4L19 7" strokeLinecap="round" />
-                  </svg>
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-[#0B0410] shadow">
+                  ✓
                 </span>
               )}
-
-              {/* Bottom shine */}
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 to-transparent rounded-b-2xl" />
             </button>
           );
         })}
       </div>
 
-      {/* ===== Pick a number + Multiplier ===== */}
-      <div className="mt-3 flex flex-col gap-4 rounded-2xl border border-[#2a1b3d] bg-[#12061C] p-3 shadow-sm sm:p-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(180px,200px)] lg:items-stretch lg:gap-4 lg:p-4">
-        {/* Pick a number */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9B59B6] sm:text-xs">
-              Pick a number
-            </span>
-          </div>
-          <div>
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-              {ImgData.map((item, i) => {
-                const isNumberSelected = selectBet === i;
-
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => selectBetHandle(i)}
-                    className={`relative flex min-h-[64px] items-center justify-center rounded-xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(155,89,182,.25)] active:scale-95 ${
-                      isNumberSelected
-                        ? "border-2 border-[#C77AFF] bg-[#2a1b3d] ring-2 ring-[#B45CFF]/40"
-                        : "border-[#2a1b3d] bg-[#1C0F2B] hover:border-[#9B59B6]/50"
-                    } ${animate ? "animate-bounce" : ""}`}
-                    style={{ animationDelay: `${i * 0.06}s` }}
-                  >
-                    <img
-                      src={item}
-                      alt={i}
-                      className="h-14 w-14 object-contain sm:h-16 sm:w-16 md:h-16 md:w-16"
-                    />
-                    {isNumberSelected && (
-                      <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-[10px] font-black text-white shadow">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      {/* ===== Pick a number ===== */}
+      <div className="mt-3 rounded-2xl border border-[#2a1b3d] bg-[#12061C] p-3 shadow-sm sm:p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9B59B6] sm:text-xs">
+            Pick a number
+          </span>
         </div>
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+          {ImgData.map((item, i) => {
+            const isNumberSelected = selectBet === i;
 
-        {/* Vertical divider — only on lg+ */}
-        <div className="hidden self-stretch border-l border-[#2a1b3d] lg:block" />
-
-        {/* Multiplier */}
-        <div className="lg:w-[190px]">
-          <div className="mb-2 flex items-center gap-1.5">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9B59B6] sm:text-xs">
-              Multiplier
-            </span>
-            <Zap className="h-3.5 w-3.5 text-[#9B59B6]" fill="currentColor" />
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {X_DATA.map((item, i) => (
+            return (
               <button
                 key={i}
                 type="button"
-                onClick={() => {
-                  setActiveX(i);
-                  setMultiplier(item);
-                }}
-                className={`rounded-lg px-2 py-2 text-[11px] font-black transition sm:text-xs ${
-                  activeX === i
-                    ? `${purpleGradient} text-white`
-                    : "border border-[#2a1b3d] bg-[#1C0F2B] text-gray-300 hover:bg-[#2a1b3d] hover:text-white"
-                }`}
+                onClick={() => selectBetHandle(i)}
+                className={`relative flex min-h-[64px] items-center justify-center rounded-full border-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(155,89,182,.25)] active:scale-95 ${
+                  isNumberSelected
+                    ? "border-[#C77AFF] ring-2 ring-[#B45CFF]/40"
+                    : "border-transparent"
+                } ${animate ? "animate-bounce" : ""}`}
+                style={{ animationDelay: `${i * 0.06}s` }}
               >
-                X{item}
+                <img
+                  src={item}
+                  alt={i}
+                  className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+                />
+                {isNumberSelected && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-[10px] font-black text-white shadow">
+                    ✓
+                  </span>
+                )}
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+
+        {/* ===== Random + Multiplier — ek row me ===== */}
+        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            onClick={generateRandomNumber}
+            className={`flex flex-shrink-0 items-center gap-1 rounded-full border px-3.5 py-2 text-[11px] font-extrabold transition ${
+              selectBet === "random"
+                ? `${purpleGradient} text-white`
+                : "border-[#C77AFF]/60 bg-[#12061C] text-[#C77AFF] hover:bg-[#2a1b3d]"
+            }`}
+          >
+            <Shuffle className="h-3.5 w-3.5" />
+            Random
+          </button>
+
+          {X_DATA.map((item, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => {
+                setActiveX(i);
+                setMultiplier(item);
+              }}
+              className={`flex-shrink-0 rounded-full px-3.5 py-2 text-[11px] font-extrabold transition ${
+                activeX === i
+                  ? `${purpleGradient} text-white`
+                  : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d] hover:text-white"
+              }`}
+            >
+              X{item}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
+      {/* ===== Big / Small — full-width split, purple theme ===== */}
+      <div className="mt-3 flex overflow-hidden rounded-xl shadow-md">
         <button
           type="button"
           onClick={() => {
             setActiveBigSmall("l");
             selectBetHandle("l");
           }}
-          className={`relative flex min-h-[52px] items-center justify-center gap-1.5 overflow-hidden rounded-xl py-3 text-sm font-black shadow-md transition hover:-translate-y-0.5 active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
+          className={`flex min-h-[52px] flex-1 items-center justify-center gap-1.5 py-3 text-sm font-black text-white transition-all active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
             activeBigSmall === "l"
-              ? `${purpleGradient} text-white`
-              : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d]"
+              ? "bg-gradient-to-r from-[#B45CFF] to-[#8A3FF0]"
+              : "bg-[#5A3ABF]/60 hover:bg-[#5A3ABF]"
           }`}
         >
-          Big <span className="text-[11px] opacity-70">5–9</span>
+          Big <span className="text-[11px] opacity-80">5–9</span>
           <Crown
-            className={`absolute right-3 h-5 w-5 ${activeBigSmall === "l" ? "text-white/60" : "text-gray-600"}`}
+            className={`h-4 w-4 ${activeBigSmall === "l" ? "text-white/80" : "text-white/40"}`}
           />
         </button>
         <button
@@ -1527,15 +1506,15 @@ const Wingo = () => {
             setActiveBigSmall("n");
             selectBetHandle("n");
           }}
-          className={`relative flex min-h-[52px] items-center justify-center gap-1.5 overflow-hidden rounded-xl py-3 text-sm font-black shadow-md transition hover:-translate-y-0.5 active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
+          className={`flex min-h-[52px] flex-1 items-center justify-center gap-1.5 border-l border-white/10 py-3 text-sm font-black text-white transition-all active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
             activeBigSmall === "n"
-              ? `${purpleGradient} text-white`
-              : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d]"
+              ? "bg-gradient-to-r from-[#5A3ABF] to-[#3A2270]"
+              : "bg-[#3A2A6B]/60 hover:bg-[#3A2A6B]"
           }`}
         >
-          Small <span className="text-[11px] opacity-70">0–4</span>
+          Small <span className="text-[11px] opacity-80">0–4</span>
           <Crown
-            className={`absolute right-3 h-5 w-5 ${activeBigSmall === "n" ? "text-white/60" : "text-gray-600"}`}
+            className={`h-4 w-4 ${activeBigSmall === "n" ? "text-white/80" : "text-white/40"}`}
           />
         </button>
       </div>
