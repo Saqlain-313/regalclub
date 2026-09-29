@@ -377,14 +377,19 @@ const gameHistory = async (req, res) => {
   try {
     const playerid = String(req.user.mobile).trim();
 
-    const { page = 1, size = 2000, from_date, to_date } = req.query;
+    // Provider limit max 100 per page (docs)
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.size) || 20));
+    const from_date = req.query.from_date || undefined;
+    const to_date = req.query.to_date || undefined;
+
     const response = await axios.post(
-      `${apiUrl}/history?page=${page}&size=${size}`,
+      `${apiUrl}/history`,
       {
         key,
         playerid,
         page,
-        limit: size,
+        limit,
         from_date,
         to_date,
       },
@@ -403,6 +408,58 @@ const gameHistory = async (req, res) => {
 };
 
 /* =========================
+   API GAME WAGERED TOTAL
+   (withdrawal wagering ke liye)
+========================= */
+const HISTORY_FIELD_CANDIDATES = [
+  "bet_amount",
+  "betAmount",
+  "bet",
+  "stake",
+  "turnover",
+  "wager_amount",
+  "amount",
+];
+
+const extractWageredAmount = (item) => {
+  if (!item || typeof item !== "object") return 0;
+
+  for (const field of HISTORY_FIELD_CANDIDATES) {
+    const value = Number(item[field]);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+
+  return 0;
+};
+
+const getApiGameWagered = async (playerid, maxPages = 10) => {
+  let totalWagered = 0;
+
+  for (let page = 1; page <= maxPages; page++) {
+    const response = await axios.post(
+      `${apiUrl}/history`,
+      {
+        key,
+        playerid: String(playerid).trim(),
+        page,
+        limit: 100,
+      },
+      { headers: zapHeaders }
+    );
+
+    const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+    rows.forEach((row) => {
+      totalWagered += extractWageredAmount(row);
+    });
+
+    const lastPage = Number(response.data?.pagination?.last_page) || 1;
+    if (page >= lastPage || rows.length === 0) break;
+  }
+
+  return totalWagered;
+};
+
+/* =========================
    EXPORTS
 ========================= */
 module.exports = {
@@ -416,4 +473,6 @@ module.exports = {
   gameListByGameType,
   gameListByGameTypeAndProvider,
   gameHistory,
+  getApiGameWagered,
+  zapKey: key,
 }

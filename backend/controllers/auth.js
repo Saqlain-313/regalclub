@@ -9,37 +9,12 @@ const { sendResetPasswordOTP } = require("../utils/mailer.js");
 const uploadToImgBB = require("../utils/uploadToImgBB");
 
 // ======================================================
-// COUNTRY CONFIGURATION
+// COUNTRY CONFIGURATION — Sirf India support hai
 // ======================================================
 
 const COUNTRY_CONFIG = {
   IN: {
     name: "India",
-    mobileLength: 10,
-  },
-
-  PK: {
-    name: "Pakistan",
-    mobileLength: 10,
-  },
-
-  AE: {
-    name: "UAE",
-    mobileLength: 9,
-  },
-
-  AU: {
-    name: "Australia",
-    mobileLength: 9,
-  },
-
-  BD: {
-    name: "Bangladesh",
-    mobileLength: 10,
-  },
-
-  NP: {
-    name: "Nepal",
     mobileLength: 10,
   },
 };
@@ -53,32 +28,11 @@ const normalizeCountry = (country) => {
     .trim()
     .toLowerCase();
 
-  // Always return the COUNTRY_CONFIG key.
-  // COUNTRY_CONFIG uses ISO-style keys: IN, PK, AE, AU, BD, NP.
+  // Only India supported.
   const aliases = {
     india: "IN",
     in: "IN",
     ind: "IN",
-
-    pakistan: "PK",
-    pk: "PK",
-    pak: "PK",
-
-    bangladesh: "BD",
-    bangla: "BD",
-    bd: "BD",
-    bng: "BD",
-
-    nepal: "NP",
-    np: "NP",
-
-    uae: "AE",
-    ae: "AE",
-    dubai: "AE",
-
-    australia: "AU",
-    au: "AU",
-    aus: "AU",
   };
 
   return aliases[value] || "";
@@ -113,8 +67,7 @@ const validateCountry = (country) => {
     return {
       valid: false,
       country: "",
-      message:
-        "Country is required. Supported countries are India, Pakistan, UAE, Australia, Bangladesh and Nepal.",
+      message: "Country is required. Only India is supported.",
     };
   }
 
@@ -122,8 +75,7 @@ const validateCountry = (country) => {
     return {
       valid: false,
       country: normalized,
-      message:
-        "Unsupported country. Supported countries are India, Pakistan, UAE, Australia, Bangladesh and Nepal.",
+      message: "Unsupported country. Only India is supported.",
     };
   }
 
@@ -142,7 +94,7 @@ const validateMobile = (mobile, country) => {
     return {
       valid: false,
       message:
-        "Invalid country. Supported countries are India, Pakistan, UAE, Australia, Bangladesh and Nepal.",
+        "Invalid country. Only India is supported.",
     };
   }
 

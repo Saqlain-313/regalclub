@@ -649,41 +649,43 @@ const GameEntryResultPage = () => {
       <div className="relative px-4 sm:px-6 py-6">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-3">
             <div
-              className={`w-11 h-11 rounded-2xl ${purpleGradient} flex items-center justify-center mb-3`}
+              className={`w-11 h-11 rounded-2xl ${purpleGradient} border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75)] flex items-center justify-center flex-shrink-0`}
             >
               <Gamepad2 className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              Game Entry Results
-            </h1>
-            <p className="text-sm text-gray-400 mt-1">
-              View and manage all your game entries
-            </p>
-
-            {/* Country Badge */}
-            {activeCountryObject && (
-              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#9B59B6]/10 border border-[#9B59B6]/40 rounded-full">
-                <img
-                  src={activeCountryObject.flag}
-                  alt={activeCountryObject.name}
-                  className="w-5 h-3 rounded-sm shadow-md"
-                />
-                <span className="text-xs font-medium text-[#C77AFF]">
-                  {activeCountryObject.name}
-                </span>
-                <span className="text-xs font-medium text-[#C77AFF]">
-                  • {currencySymbol} {currencyConfigObj.code}
-                </span>
-                {urlCountry && (
-                  <span className="text-[10px] text-[#C77AFF] bg-[#9B59B6]/20 px-2 py-0.5 rounded-full">
-                    via URL
-                  </span>
-                )}
-              </div>
-            )}
+            <div>
+              <h1 className="text-xl font-black text-white tracking-wide">
+                Game Entry Results
+              </h1>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                View and manage all your game entries
+              </p>
+            </div>
           </div>
+
+          {/* Country Badge */}
+          {activeCountryObject && (
+            <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 bg-[#9B59B6]/10 border border-[#9B59B6]/40 rounded-full">
+              <img
+                src={activeCountryObject.flag}
+                alt={activeCountryObject.name}
+                className="w-5 h-3 rounded-sm shadow-md"
+              />
+              <span className="text-xs font-medium text-[#C77AFF]">
+                {activeCountryObject.name}
+              </span>
+              <span className="text-xs font-medium text-[#C77AFF]">
+                • {currencySymbol} {currencyConfigObj.code}
+              </span>
+              {urlCountry && (
+                <span className="text-[10px] text-[#C77AFF] bg-[#9B59B6]/20 px-2 py-0.5 rounded-full">
+                  via URL
+                </span>
+              )}
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl mb-5 flex items-center gap-2 text-sm">

@@ -29,6 +29,7 @@ import WithdrawalHistory from "./components/WithdrawalHistory.jsx";
 // ========================================
 import Deposit from "./Pages/Deposit.jsx";
 import DepositHistory from "./Pages/DepositHistory.jsx";
+import GameHistory from "./Pages/GameHistory.jsx";
 import GameCounts from "./Pages/GameCounts.jsx";
 import Homme from "./Pages/Homme.jsx";
 import Login from "./Pages/Login.jsx";
@@ -925,6 +926,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DepositHistory />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/game-history"
+              element={
+                <ProtectedRoute>
+                  <GameHistory />
                 </ProtectedRoute>
               }
             />

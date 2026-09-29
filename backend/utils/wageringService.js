@@ -21,6 +21,7 @@ const Deposit = require("../models/Deposit");
 const Bet = require("../models/Bet");
 const Bid = require("../models/Bid");
 const TradeBet = require("../models/TradeBet");
+const { getApiGameWagered } = require("../controllers/allgamecontroller/allGameController");
 
 /**
  * Wagering summary compute karo for a user.
@@ -59,10 +60,26 @@ const getWageringSummary = async (user) => {
     ]),
   ]);
 
+  // 3) API provider games (home page wale zapcore games) ka wagered
+  //    Provider history se aata hai. API fail ho to wagering local
+  //    games se hi compute ho — withdrawal block na ho.
+  let apiGameWagered = 0;
+  if (mobile) {
+    try {
+      apiGameWagered = Number(await getApiGameWagered(mobile)) || 0;
+    } catch (error) {
+      console.error(
+        "WAGERING: API game history fetch failed, skipping api wagered:",
+        error.message,
+      );
+    }
+  }
+
   const totalWagered =
     (betAgg[0]?.total || 0) +
     (bidAgg[0]?.total || 0) +
-    (tradeBetAgg[0]?.total || 0);
+    (tradeBetAgg[0]?.total || 0) +
+    apiGameWagered;
 
   const remainingWagering = Math.max(0, requiredWagering - totalWagered);
 
@@ -76,6 +93,7 @@ const getWageringSummary = async (user) => {
   return {
     requiredWagering,
     totalWagered,
+    apiGameWagered,
     remainingWagering,
     maxAllowedWithdrawal,
     isEligibleForFullWithdrawal: remainingWagering <= 0,

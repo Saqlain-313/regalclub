@@ -12,6 +12,7 @@ import {
   History,
   Home,
   User,
+  Wallet,
   Wallet as WalletIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -263,43 +264,69 @@ export default function WalletDashboard() {
   // ======================================================
 
   return (
-    <div className="min-h-screen bg-[#0B0410] pb-28 font-sans">
-      <div className="max-w-md mx-auto px-4">
+    <div className="min-h-screen bg-[#0B0410] pb-28 font-sans relative overflow-hidden">
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#8E44AD]/10 rounded-full blur-3xl" />
+
+      <div className="relative max-w-md mx-auto px-4">
         {/* Header */}
         <div className="pt-6 pb-4 flex items-center justify-between relative">
-          <h1 className="text-xl font-semibold text-white">Wallet</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75)] flex items-center justify-center flex-shrink-0">
+              <Wallet className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-white tracking-wide">
+                Wallet
+              </h1>
+              <p className="text-[11px] text-gray-400">
+                Manage your balance
+              </p>
+            </div>
+          </div>
           <button>
             <Bell className="w-6 h-6 text-gray-300" strokeWidth={1.8} />
           </button>
         </div>
 
         {/* credit Card */}
-        <div className="relative overflow-hidden rounded-2xl border border-[#9B59B6]/40 bg-gradient-to-br from-[#1C0F2B] to-[#2a1b3d] px-5 py-5 mb-4 shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
-          <div className="flex items-start justify-between">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] px-5 py-5 mb-4 shadow-[0_10px_36px_rgba(58,0,201,0.45)]">
+          <div
+            className="absolute inset-0 opacity-[0.14] pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)",
+              backgroundSize: "18px 18px",
+            }}
+          />
+          <div className="pointer-events-none absolute -right-10 -bottom-14 w-44 h-44 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative flex items-start justify-between">
             <div className="flex-1">
-              <p className="text-sm text-white mb-1.5">
-                Current Wallet credit
+              <p className="text-[10px] font-black tracking-[0.18em] text-white/75 uppercase mb-1.5">
+                Current Wallet Credit
               </p>
               <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-[28px] leading-none font-bold text-gray-300 tracking-tight">
+                <h2 className="text-[30px] leading-none font-black text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
                   {showcredit ? formatcredit(walletcredit) : "••••••••"}
                 </h2>
                 <button onClick={() => setShowcredit(!showcredit)}>
                   {showcredit ? (
-                    <Eye className="w-4 h-4 text-gray-400" strokeWidth={1.8} />
+                    <Eye className="w-4 h-4 text-white/70" strokeWidth={1.8} />
                   ) : (
                     <EyeOff
-                      className="w-4 h-4 text-gray-400"
+                      className="w-4 h-4 text-white/70"
                       strokeWidth={1.8}
                     />
                   )}
                 </button>
               </div>
-              <div className="border-t border-[#9B59B6]/30 pt-3">
-                <span className="text-sm text-gray-400">
-                  Available credit{" "}
+              <div className="border-t border-white/20 pt-3">
+                <span className="text-[11px] font-bold tracking-wider text-white/75 uppercase">
+                  Available Credit{" "}
                 </span>
-                <span className="text-sm font-semibold text-white ml-1">
+                <span className="text-sm font-black text-white ml-1">
                   {formatcredit(walletcredit)}
                 </span>
               </div>

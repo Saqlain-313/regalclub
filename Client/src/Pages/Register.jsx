@@ -1,5 +1,4 @@
 import {
-  ChevronDown,
   Eye,
   EyeOff,
   Gift,
@@ -10,18 +9,14 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { clearError, register } from "../redux/slices/authSlice";
 
+// Sirf India support hai
 const countries = [
   { code: "IN", name: "India", flag: "🇮🇳", dialCode: "+91" },
-  { code: "AE", name: "UAE", flag: "🇦🇪", dialCode: "+971" },
-  { code: "BD", name: "Bangladesh", flag: "🇧🇩", dialCode: "+880" },
-  { code: "PK", name: "Pakistan", flag: "🇵🇰", dialCode: "+92" },
-  { code: "NP", name: "Nepal", flag: "🇳🇵", dialCode: "+977" },
-  { code: "AU", name: "Australia", flag: "🇦🇺", dialCode: "+61" },
 ];
 
 const Register = () => {
@@ -34,8 +29,6 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const countryDropdownRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -73,21 +66,6 @@ const Register = () => {
     }
   }, [location.search]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        countryDropdownRef.current &&
-        !countryDropdownRef.current.contains(event.target)
-      ) {
-        setShowCountryDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -99,14 +77,6 @@ const Register = () => {
     }
     if (error) {
       dispatch(clearError());
-    }
-  };
-
-  const handleCountrySelect = (countryCode) => {
-    setFormData((prev) => ({ ...prev, country: countryCode }));
-    setShowCountryDropdown(false);
-    if (formErrors.country) {
-      setFormErrors((prev) => ({ ...prev, country: "" }));
     }
   };
 
@@ -123,34 +93,8 @@ const Register = () => {
       errors.mobile = "Mobile number is required";
     } else {
       const mobileDigits = formData.mobile.replace(/\D/g, "");
-      if (formData.country === "IN" && !/^[0-9]{10}$/.test(mobileDigits)) {
+      if (!/^[0-9]{10}$/.test(mobileDigits)) {
         errors.mobile = "Please enter a valid 10-digit mobile number";
-      } else if (
-        formData.country === "BD" &&
-        !/^[0-9]{10}$/.test(mobileDigits)
-      ) {
-        errors.mobile = "Please enter a valid 10-digit mobile number";
-      } else if (
-        formData.country === "AE" &&
-        !/^[0-9]{9}$/.test(mobileDigits)
-      ) {
-        errors.mobile = "Please enter a valid 9-digit mobile number";
-      } else if (
-        formData.country === "PK" &&
-        !/^[0-9]{10}$/.test(mobileDigits)
-      ) {
-        errors.mobile = "Please enter a valid 10-digit mobile number";
-      } else if (
-        formData.country === "NP" &&
-        !/^[0-9]{10}$/.test(mobileDigits)
-      ) {
-        errors.mobile = "Please enter a valid 10-digit mobile number";
-      } else if (
-        formData.country === "AU" &&
-        !/^4[0-9]{8}$/.test(mobileDigits)
-      ) {
-        errors.mobile =
-          "Please enter a valid 9-digit Australian mobile number starting with 4";
       }
     }
 
@@ -313,66 +257,25 @@ const Register = () => {
               <label className="text-xs font-bold block mb-1 text-gray-300">
                 Mobile Number
               </label>
-              <div className="relative" ref={countryDropdownRef}>
-                <div className={`${inputWrapper(formErrors.mobile)} pr-3.5`}>
-                  <button
-                    type="button"
-                    onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                    className="flex items-center gap-1 pl-3.5 pr-2 h-full flex-shrink-0 border-r border-[#2a1b3d]"
-                  >
-                    <span className="text-lg">{selectedCountry.flag}</span>
-                    <span className="text-xs font-semibold text-gray-300">
-                      {selectedCountry.dialCode}
-                    </span>
-                    <ChevronDown
-                      size={12}
-                      className={`text-gray-500 transition-transform ${
-                        showCountryDropdown ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  <Phone
-                    size={14}
-                    className="text-gray-500 flex-shrink-0 ml-2"
-                  />
-                  <input
-                    type="text"
-                    name="mobile"
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    placeholder="Enter mobile number"
-                    className="bg-transparent flex-1 outline-none px-2 text-sm text-white placeholder-gray-500 min-w-0"
-                  />
+              <div className={`${inputWrapper(formErrors.mobile)} pr-3.5`}>
+                <div className="flex items-center gap-1 pl-3.5 pr-2 h-full flex-shrink-0 border-r border-[#2a1b3d]">
+                  <span className="text-lg">{selectedCountry.flag}</span>
+                  <span className="text-xs font-semibold text-gray-300">
+                    {selectedCountry.dialCode}
+                  </span>
                 </div>
-
-                {/* Country Dropdown */}
-                {showCountryDropdown && (
-                  <div className="absolute z-10 mt-1 w-full bg-[#1C0F2B] border border-[#2a1b3d] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.7)] max-h-56 overflow-auto">
-                    {countries.map((country) => (
-                      <button
-                        key={country.code}
-                        type="button"
-                        onClick={() => handleCountrySelect(country.code)}
-                        className={`w-full flex items-center px-3.5 py-2.5 hover:bg-[#2a1b3d] transition-colors ${
-                          formData.country === country.code
-                            ? "bg-[#9B59B6]/10"
-                            : ""
-                        }`}
-                      >
-                        <span className="text-lg mr-2.5">{country.flag}</span>
-                        <span className="flex-1 text-left text-sm text-white">
-                          {country.name}
-                        </span>
-                        <span className="text-xs text-gray-400 mr-2">
-                          {country.dialCode}
-                        </span>
-                        {formData.country === country.code && (
-                          <span className="text-[#B45CFF]">✓</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <Phone
+                  size={14}
+                  className="text-gray-500 flex-shrink-0 ml-2"
+                />
+                <input
+                  type="text"
+                  name="mobile"
+                  value={formData.mobile}
+                  onChange={handleChange}
+                  placeholder="Enter mobile number"
+                  className="bg-transparent flex-1 outline-none px-2 text-sm text-white placeholder-gray-500 min-w-0"
+                />
               </div>
               {formErrors.mobile && (
                 <p className="text-red-400 text-[11px] mt-0.5 ml-1">
