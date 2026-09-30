@@ -41,7 +41,6 @@ import {
   selectRequestLoading,
   selectRequestSuccess,
   selectSettingsError,
-  selectSettingsLoading,
   selectSummary,
   selectWithdrawalEligibility,
   selectWithdrawalError,
@@ -57,7 +56,6 @@ const Withdrawal = () => {
 
   // Redux state
   const settings = useSelector(selectWithdrawalSettings);
-  const settingsLoading = useSelector(selectSettingsLoading);
   const settingsError = useSelector(selectSettingsError);
   const withdrawalHistory = useSelector(selectWithdrawalHistory);
   const historyLoading = useSelector(selectHistoryLoading);
@@ -447,21 +445,8 @@ const Withdrawal = () => {
     });
   };
 
-  if (settingsLoading) {
-    return (
-      <div className="min-h-screen bg-[#0B0410] flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 border-4 border-[#2a1b3d] border-t-[#B45CFF] rounded-full animate-spin mx-auto"></div>
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#B45CFF] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
-          <p className="mt-4 text-gray-400 font-medium text-sm sm:text-base">
-            Loading withdrawal settings...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // India-only: settings load hone tak page turant render hota hai,
+  // full-screen loader nahi dikhta (settings optional chaining se safe hai)
 
   if (settingsError && !settings) {
     return (
@@ -671,19 +656,19 @@ const Withdrawal = () => {
                         <strong className="text-white">
                           {formatCurrency(eligibility.maxAllowedWithdrawal)}
                         </strong>{" "}
-                        tak hi withdraw kar sakte hain. Full withdrawal ke liye{" "}
+                        only. To withdraw the full amount, complete{" "}
                         <strong className="text-white">
                           {formatCurrency(eligibility.remainingWagering)}
                         </strong>{" "}
-                        aur wagering complete karo.
+                        more wagering.
                       </p>
                     </>
                   ) : (
                     <>
                       <CheckCircle className="w-3.5 h-3.5 text-[#00E676] flex-shrink-0 mt-0.5" />
                       <p className="text-[10px] text-gray-300 leading-relaxed">
-                        Wagering complete! Aap apne wallet balance ke according
-                        withdraw kar sakte hain.
+                        Wagering complete! You can now withdraw according to
+                        your wallet balance.
                       </p>
                     </>
                   )}

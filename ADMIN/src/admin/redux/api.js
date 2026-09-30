@@ -8,9 +8,8 @@ const api = axios.create({
   withCredentials: true,
 
   headers: {
-    // ❌ Content-Type: application/json yahan mat lagao
-    // Axios FormData ke liye khud multipart/form-data
-    // + boundary set karega.
+    // Do not set Content-Type here. Axios sets multipart/form-data
+    // with the proper boundary for FormData requests automatically.
 
     Accept: "application/json",
 

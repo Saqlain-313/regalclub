@@ -120,7 +120,7 @@ export default function ChangePassword() {
         hasSpecialChar: false,
       });
 
-      // 5 second baad relogin notice dikhao
+      // Show the relogin notice after 5 seconds
       reloginTimerRef.current = setTimeout(() => {
         setShowReloginNotice(true);
       }, 5000);
@@ -147,7 +147,7 @@ export default function ChangePassword() {
     try {
       await dispatch(logout()).unwrap();
     } catch (err) {
-      // logout API fail bhi ho to local session clear karke login pe bhej dete hain
+      // Even if the logout API fails, clear the local session and go to login
     } finally {
       setIsLoggingOut(false);
       setShowReloginNotice(false);
@@ -156,23 +156,33 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="h-full w-full flex items-center justify-center p-4 sm:p-6 md:p-8 bg-[#0B0410]">
+    <div className="relative min-h-screen bg-[#0B0410] overflow-hidden">
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#8E44AD]/10 rounded-full blur-3xl" />
+
+      <div className="relative h-full w-full flex items-center justify-center p-4 sm:p-6 md:p-8">
       <div className="w-full max-w-3xl mx-auto space-y-4 sm:space-y-5">
         {/* Header Section */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center text-white flex-shrink-0">
+          <div
+            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center text-white flex-shrink-0"
+          >
             <Lock size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide">
               Change Password
             </h2>
-            <p className="text-sm text-gray-400">Keep your account secure</p>
+            <p className="text-[11px] text-gray-400">
+              Keep your account secure
+            </p>
           </div>
         </div>
 
         {/* Main Card */}
-        <div className="bg-[#1C0F2B] border border-[#2a1b3d] rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-4 sm:p-6 md:p-8">
+        <div className="bg-[#150D22]/90 border border-[#2a1b3d] rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.04)] p-4 sm:p-6 md:p-8">
           {/* Security Recommendation */}
           <div className="mb-5 sm:mb-6 flex items-start gap-3 rounded-xl bg-[#9B59B6]/10 border border-[#9B59B6]/30 p-3 sm:p-4">
             <ShieldCheck
@@ -401,6 +411,7 @@ export default function ChangePassword() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

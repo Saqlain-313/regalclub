@@ -25,6 +25,7 @@ import {
   TrendingUp,
   AlertCircle,
   Filter,
+  FileText,
   ChevronLeft,
   ChevronRight,
   Users,
@@ -401,6 +402,17 @@ const DepositRow = ({
           {deposit.country || 'N/A'}
         </div>
       </td>
+      <td className="px-6 py-4 whitespace-nowrap hidden xl:table-cell">
+        <div className="flex items-center gap-1.5 text-xs font-mono text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 max-w-[180px]">
+          <FileText className="w-3 h-3 text-indigo-400 flex-shrink-0" />
+          <span className="truncate" title={deposit.transactionId || ''}>
+            {deposit.transactionId || 'N/A'}
+          </span>
+        </div>
+        <div className="xl:hidden text-xs text-gray-500 mt-1 truncate max-w-[160px]" title={deposit.transactionId || ''}>
+          {deposit.transactionId || ''}
+        </div>
+      </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gradient-to-br from-blue-50 to-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm group-hover:shadow-md transition-all duration-300">
           <CreditCard className="w-3 h-3" />
@@ -678,7 +690,8 @@ const DetailModal = ({
     { label: 'Mobile', value: deposit.user?.mobile || 'N/A', icon: Phone },
     { label: 'Country', value: deposit.country || 'N/A', icon: Globe },
     { label: 'Amount', value: formatCurrency(deposit.amount, deposit.country), icon: DollarSign, highlight: true },
-    { label: 'Method', value: deposit.methodType?.toUpperCase() || 'N/A', icon: CreditCard },
+    { label: 'UTR / Transaction ID', value: deposit.transactionId || 'N/A', icon: FileText, highlight: true },
+    { label: 'Payment Method', value: `${deposit.methodType?.toUpperCase() || 'N/A'}${deposit.methodTitle ? ` - ${deposit.methodTitle}` : ''}`, icon: CreditCard },
     { label: 'Status', value: deposit.status, icon: Activity, isBadge: true },
     { label: 'Created', value: formatDate(deposit.createdAt), icon: Calendar },
     { label: 'Approved', value: deposit.approvedAt ? formatDate(deposit.approvedAt) : 'N/A', icon: CheckCircle },
@@ -724,7 +737,7 @@ const DetailModal = ({
               </h2>
               <p className="text-indigo-100 text-sm flex items-center gap-2 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-white/50"></span>
-                Transaction ID: {deposit._id?.slice(0, 12)}...
+                Deposit ID: {deposit._id?.slice(0, 12)}...
               </p>
             </div>
           </div>
@@ -929,6 +942,12 @@ const ActionModal = ({
                 <span className="font-semibold text-gray-900 flex items-center gap-1.5">
                   <CreditCard className="w-4 h-4 text-gray-400" />
                   {deposit.methodType?.toUpperCase()}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm gap-3">
+                <span className="text-gray-500 font-medium whitespace-nowrap">UTR / Txn ID:</span>
+                <span className="font-mono font-semibold text-gray-900 break-all text-right">
+                  {deposit.transactionId || 'N/A'}
                 </span>
               </div>
             </motion.div>
@@ -1239,6 +1258,9 @@ const Deposits = () => {
                         </th>
                         <th className="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                           Amount
+                        </th>
+                        <th className="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden xl:table-cell">
+                          UTR / Txn ID
                         </th>
                         <th className="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                           Method

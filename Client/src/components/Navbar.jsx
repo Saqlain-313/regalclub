@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Circle,
+  CloudDownload,
   Dice5,
   Home as HomeIcon,
   LogIn,
@@ -223,16 +224,6 @@ const Navbar = ({ children }) => {
     return currencyMap[countryCode] || "₹";
   };
 
-  const getAvatar = () => {
-    const name = getUserDisplayName();
-    return (
-      user?.profilePic ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        name,
-      )}&background=FBBF24&color=fff&size=128`
-    );
-  };
-
   // WINZOX Logo Component
   const WinzoxLogo = ({ className = "h-48" }) => (
     <img
@@ -451,7 +442,7 @@ const Navbar = ({ children }) => {
               </Link>
             </div>
 
-            {/* ================= RIGHT - WALLET + ACCOUNT ================= */}
+            {/* ================= RIGHT - WALLET + APK ================= */}
             <div className="flex items-center gap-2">
               {/* Wallet credit */}
               {isAuthenticated && (
@@ -480,40 +471,15 @@ const Navbar = ({ children }) => {
               {/* ================= AUTHENTICATED USER ================= */}
               {isAuthenticated ? (
                 <>
-                  {/* Desktop Avatar + Name */}
-                  <Link
-                    to="/account"
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl text-white hover:bg-[#1C0F2B] transition-all duration-500"
+                  {/* APK Download — white icon only, last position */}
+                  <a
+                    href="/apk/app.apk"
+                    download="RegalClub.apk"
+                    title="Download App (APK)"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-transform duration-300 hover:scale-110"
                   >
-                    <img
-                      src={getAvatar()}
-                      alt={getUserDisplayName()}
-                      className="w-7 h-7 rounded-full object-cover border-2 border-[#9B59B6] shadow-lg transform-gpu hover:scale-110 transition-all duration-300"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          getUserDisplayName(),
-                        )}&background=FBBF24&color=fff&size=128`;
-                      }}
-                    />
-
-                    <span className="text-sm font-bold">
-                      {getUserDisplayName()}
-                    </span>
-                  </Link>
-
-                  {/* Mobile Avatar */}
-                  <Link to="/account" className="md:hidden flex items-center">
-                    <img
-                      src={getAvatar()}
-                      alt={getUserDisplayName()}
-                      className="w-8 h-8 rounded-full object-cover border-2 border-[#9B59B6] shadow-lg transform-gpu hover:scale-110 transition-all duration-300"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          getUserDisplayName(),
-                        )}&background=FBBF24&color=fff&size=128`;
-                      }}
-                    />
-                  </Link>
+                    <CloudDownload size={20} strokeWidth={2.2} />
+                  </a>
                 </>
               ) : (
                 <>

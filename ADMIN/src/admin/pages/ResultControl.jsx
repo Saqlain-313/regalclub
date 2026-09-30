@@ -1,17 +1,20 @@
 // pages/ResultControl.jsx
 // Period-specific authorized result management + audit trail.
-// Admin exact period ke liye result (0-9) lock karta hai.
-// Backend: /bet/admin/period-results (adminProtect secured)
-import React, { useEffect, useState } from "react";
+// Admin locks the expected result (0-9) for the LIVE pending period.
+// The current period is fetched from the server (source of truth) and
+// auto-resets when the next period starts. Audit trail kept below.
+// Backend: /bet/admin/period-results + /bet/current-period (admin secured)
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Shield,
   Loader2,
-  Save,
-  Trash2,
   Lock,
+  Trash2,
   Info,
   History as HistoryIcon,
   CheckCircle2,
+  RefreshCw,
+  Clock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { api } from "../redux/api";
@@ -25,7 +28,7 @@ const GAMES = [
 
 const NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-// Number -> colour/size mapping (backend ke deriveAttributes jaisa hi)
+// Number -> colour/size mapping (same as backend deriveAttributes)
 const numberMeta = (n) => {
   if (n === 0) return { colours: "Red + Violet", size: "Small" };
   if (n === 5) return { colours: "Green + Violet", size: "Big" };
@@ -37,10 +40,21 @@ const numberMeta = (n) => {
 
 const ResultControl = () => {
   const [game, setGame] = useState(10);
-  const [period, setPeriod] = useState("");
   const [result, setResult] = useState("");
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Live period state (server-driven)
+  const [livePeriod, setLivePeriod] = useState("");
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [periodLoading, setPeriodLoading] = useState(false);
+  const [periodError, setPeriodError] = useState("");
+
+  // Local ticking value — keeps countdown smooth between server syncs
+  const tickRef = useRef(null);
+  const secondsRef = useRef(0);
+  secondsRef.current = secondsLeft;
+
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -54,13 +68,66 @@ const ResultControl = () => {
     }
   };
 
+  // ======================================================
+  // FETCH LIVE PENDING PERIOD (server is source of truth)
+  // ======================================================
+  const fetchCurrentPeriod = useCallback(
+    async (targetGame = game) => {
+      setPeriodLoading(true);
+      setPeriodError("");
+      try {
+        const { data } = await api.get("/bet/current-period", {
+          params: { typeid: targetGame },
+        });
+        setLivePeriod(String(data?.period || ""));
+        setSecondsLeft(Number(data?.secondsRemaining) || 0);
+      } catch (error) {
+        setLivePeriod("");
+        setPeriodError(
+          error?.response?.data?.message ||
+            "No pending period. Waiting for the next one...",
+        );
+      } finally {
+        setPeriodLoading(false);
+      }
+    },
+    [game],
+  );
+
   useEffect(() => {
     load();
   }, []);
 
+  // Refetch period whenever the selected game changes
+  useEffect(() => {
+    fetchCurrentPeriod(game);
+  }, [game, fetchCurrentPeriod]);
+
+  // Smooth 1s countdown; resync with server when the period rolls over
+  useEffect(() => {
+    tickRef.current = setInterval(() => {
+      if (secondsRef.current > 0) {
+        setSecondsLeft((s) => Math.max(0, s - 1));
+      }
+    }, 1000);
+
+    return () => clearInterval(tickRef.current);
+  }, []);
+
+  // When countdown reaches 0 (or stays 0 too long), resync with server
+  useEffect(() => {
+    if (secondsLeft > 0) return;
+
+    const resync = setTimeout(() => {
+      fetchCurrentPeriod(game);
+    }, 1500);
+
+    return () => clearTimeout(resync);
+  }, [secondsLeft, game, fetchCurrentPeriod]);
+
   const save = async () => {
-    if (!period.trim() || !/^\d+$/.test(period.trim())) {
-      toast.error("Please enter a valid period number");
+    if (!livePeriod) {
+      toast.error("No active period right now. Please wait for the next one.");
       return;
     }
     if (result === "" || result === null) {
@@ -72,17 +139,14 @@ const ResultControl = () => {
     try {
       const { data } = await api.put("/bet/admin/period-results", {
         typeid: game,
-        period: period.trim(),
+        period: livePeriod,
         result: Number(result),
       });
       toast.success(data?.message || "Result locked");
-      setPeriod("");
       setResult("");
       await load();
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message || "Failed to lock result",
-      );
+      toast.error(error?.response?.data?.message || "Failed to lock result");
     } finally {
       setSaving(false);
     }
@@ -103,6 +167,10 @@ const ResultControl = () => {
 
   const gameMeta = GAMES.find((g) => g.value === game);
 
+  // Countdown display mm:ss
+  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+  const ss = String(secondsLeft % 60).padStart(2, "0");
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-5 flex items-center gap-2">
@@ -115,11 +183,12 @@ const ResultControl = () => {
         <div className="flex items-start gap-2 mb-5 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
           <Info className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-slate-600 leading-relaxed">
-            Exact <strong>period number</strong> ke liye expected result lock
-            karo. Timer complete hone par wahi number process hoga — Size aur
-            Color automatic derive honge (7 → Big / Green). Result process
-            hone ke baad config <strong>consumed</strong> mark ho jata hai.
-            Closed periods modify nahi ho sakte. Har action audit-logged hai.
+            The <strong>live period</strong> is fetched automatically from the
+            server. Pick the expected result and lock it before the timer
+            completes — Size and Color derive automatically (7 → Big / Green).
+            When the period completes and the next one starts, the panel resets
+            and you set the result again. Closed periods cannot be modified.
+            Every action is audit-logged.
           </p>
         </div>
 
@@ -139,20 +208,67 @@ const ResultControl = () => {
           ))}
         </select>
 
-        {/* Period input */}
+        {/* Live period (read-only, auto-fetched) */}
         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-          Period Number
+          Current Period (auto)
         </label>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={period}
-          onChange={(e) =>
-            setPeriod(e.target.value.replace(/[^\d]/g, ""))
-          }
-          placeholder="e.g. 16360430"
-          className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm mb-4 outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 bg-slate-50"
-        />
+
+        {periodLoading && !livePeriod ? (
+          <div className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm mb-1 bg-slate-50 text-slate-400 flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Fetching live period...
+          </div>
+        ) : livePeriod ? (
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50">
+              <span className="text-sm font-black text-slate-800 font-mono tracking-wider">
+                {livePeriod}
+              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                {gameMeta?.label}
+              </span>
+            </div>
+
+            {/* Countdown badge */}
+            <div
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-black font-mono ${
+                secondsLeft <= 5 && secondsLeft > 0
+                  ? "bg-red-50 border-red-300 text-red-600"
+                  : "bg-emerald-50 border-emerald-300 text-emerald-700"
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              {mm}:{ss}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => fetchCurrentPeriod(game)}
+              title="Resync period"
+              className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="w-full border border-amber-200 rounded-xl px-4 py-2.5 text-sm mb-1 bg-amber-50 text-amber-700 flex items-center justify-between gap-2">
+            <span>{periodError || "No pending period"}</span>
+            <button
+              type="button"
+              onClick={() => fetchCurrentPeriod(game)}
+              className="text-[11px] font-bold text-amber-800 underline flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Retry
+            </button>
+          </div>
+        )}
+
+        {livePeriod && secondsLeft > 0 && secondsLeft <= 5 && (
+          <p className="text-[11px] text-red-500 font-semibold mb-4 -mt-2">
+            Hurry up — this period is about to complete!
+          </p>
+        )}
 
         {/* Result picker */}
         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -168,7 +284,8 @@ const ResultControl = () => {
                 key={n}
                 type="button"
                 onClick={() => setResult(String(n))}
-                className={`h-12 rounded-xl transition-all ${
+                disabled={!livePeriod}
+                className={`h-12 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   selected
                     ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-105"
                     : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300"
@@ -201,7 +318,7 @@ const ResultControl = () => {
         <button
           type="button"
           onClick={save}
-          disabled={saving}
+          disabled={saving || !livePeriod}
           className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
         >
           {saving ? (
@@ -209,7 +326,7 @@ const ResultControl = () => {
           ) : (
             <Lock className="w-4 h-4" />
           )}
-          Lock Result for Period
+          Lock Result for {livePeriod ? `Period ${livePeriod}` : "Current Period"}
         </button>
       </div>
 
