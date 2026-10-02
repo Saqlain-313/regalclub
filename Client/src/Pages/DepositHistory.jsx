@@ -216,12 +216,12 @@ const DepositHistory = () => {
                       </span>
                     </div>
 
-                    {/* Txn ID — system reference REG{digits} */}
+                    {/* Txn ID */}
                     <div className="mt-3 flex items-center justify-between gap-2 bg-[#12061C] rounded-xl border border-[#2a1b3d] px-3 py-2">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <FileText size={11} className="text-[#B45CFF] flex-shrink-0" />
                         <span className="text-[10px] font-mono text-gray-300 truncate">
-                          {item.depositRef || item.transactionId || "—"}
+                          {item.transactionId || "—"}
                         </span>
                       </div>
                       <button
@@ -229,7 +229,7 @@ const DepositHistory = () => {
                         className="p-1 rounded-md hover:bg-[#B45CFF]/15 transition-colors flex-shrink-0"
                         onClick={() =>
                           navigator.clipboard.writeText(
-                            item.depositRef || item.transactionId || "",
+                            item.transactionId || "",
                           )
                         }
                         title="Copy Transaction ID"

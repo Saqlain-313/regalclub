@@ -597,8 +597,7 @@ const Withdrawal = () => {
                         eligibility.requiredWagering > 0
                           ? Math.min(
                               100,
-                              ((eligibility.wageringCompleted ??
-                                eligibility.totalWagered) /
+                              (eligibility.totalWagered /
                                 eligibility.requiredWagering) *
                                 100,
                             )
@@ -619,13 +618,10 @@ const Withdrawal = () => {
                   </div>
                   <div>
                     <p className="text-[9px] text-gray-500 uppercase">
-                      Wagered + Won
+                      Wagered
                     </p>
                     <p className="text-[11px] font-bold text-[#B45CFF]">
-                      {formatCurrency(
-                        eligibility.wageringCompleted ??
-                          eligibility.totalWagered,
-                      )}
+                      {formatCurrency(eligibility.totalWagered)}
                     </p>
                   </div>
                   <div>
@@ -656,7 +652,7 @@ const Withdrawal = () => {
                     <>
                       <AlertCircle className="w-3.5 h-3.5 text-[#F1C40F] flex-shrink-0 mt-0.5" />
                       <p className="text-[10px] text-gray-300 leading-relaxed">
-                        Wagering pending. You have completed{" "}
+                        Wagering pending. Aap abhi tak{" "}
                         <strong className="text-white">
                           {formatCurrency(eligibility.maxAllowedWithdrawal)}
                         </strong>{" "}
@@ -671,8 +667,8 @@ const Withdrawal = () => {
                     <>
                       <CheckCircle className="w-3.5 h-3.5 text-[#00E676] flex-shrink-0 mt-0.5" />
                       <p className="text-[10px] text-gray-300 leading-relaxed">
-                        Wagering complete! You can withdraw your full wallet
-                        balance.
+                        Wagering complete! You can now withdraw according to
+                        your wallet balance.
                       </p>
                     </>
                   )}

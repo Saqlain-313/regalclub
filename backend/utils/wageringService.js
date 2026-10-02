@@ -37,82 +37,28 @@ const getWageringSummary = async (user) => {
     { $match: { user: userId, status: "approved" } },
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
-  const rechargeWagering = rechargeAgg?.total || 0;
-
-  // 1b) Admin-set wagering requirement — withdrawal block karne ke liye
-  //     admin manually ek target set kar sakta hai.
-  //     Effective target = max(recharge-based, admin-set). 0 = off.
-  const adminWageringRequired = Math.max(
-    0,
-    Number(user.adminWageringRequired) || 0,
-  );
-  const requiredWagering = Math.max(rechargeWagering, adminWageringRequired);
+  const requiredWagering = rechargeAgg?.total || 0;
 
   // 2) Total wagered — saare game bets (parallel)
-  //    Bet.money stake net of 2% fee hota hai, isliye gross stake =
-  //    money + fee (warna 500 stake par sirf 490 wagering hoti thi).
-  // 2b) Total winnings — JEET ka paisa bhi wagering COMPLETE karta
-  //    hai. Rule: bada win aaye to wagering khatam (500 recharge +
-  //    100 bet + 9000 win => wagering 0, full withdrawal allowed).
-  const [betAgg, betWinAgg, bidAgg, bidWinAgg, tradeBetAgg, tradeWinAgg] =
-    await Promise.all([
-      // Wingo / TRX bets — mobile se linked (stake)
-      mobile
-        ? Bet.aggregate([
-            { $match: { mobile } },
-            {
-              $group: {
-                _id: null,
-                total: {
-                  $sum: { $add: ["$money", { $ifNull: ["$fee", 0] }] },
-                },
-              },
-            },
-          ])
-        : Promise.resolve([]),
-      // Wingo / TRX winnings (payout "get" field)
-      mobile
-        ? Bet.aggregate([
-            { $match: { mobile } },
-            {
-              $group: {
-                _id: null,
-                total: { $sum: { $ifNull: ["$get", 0] } },
-              },
-            },
-          ])
-        : Promise.resolve([]),
-      // Matka bids (stake)
-      Bid.aggregate([
-        { $match: { userId } },
-        { $group: { _id: null, total: { $sum: "$bidAmount" } } },
-      ]),
-      // Matka winnings
-      Bid.aggregate([
-        { $match: { userId, status: "won" } },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: { $ifNull: ["$winAmount", 0] } },
-          },
-        },
-      ]),
-      // Trade bets (stake)
-      TradeBet.aggregate([
-        { $match: { userId } },
-        { $group: { _id: null, total: { $sum: "$amount" } } },
-      ]),
-      // Trade winnings
-      TradeBet.aggregate([
-        { $match: { userId, status: 1 } },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: { $ifNull: ["$getAmount", 0] } },
-          },
-        },
-      ]),
-    ]);
+  const [betAgg, bidAgg, tradeBetAgg] = await Promise.all([
+    // Wingo / TRX bets — mobile se linked
+    mobile
+      ? Bet.aggregate([
+          { $match: { mobile } },
+          { $group: { _id: null, total: { $sum: "$money" } } },
+        ])
+      : Promise.resolve([]),
+    // Matka bids
+    Bid.aggregate([
+      { $match: { userId } },
+      { $group: { _id: null, total: { $sum: "$bidAmount" } } },
+    ]),
+    // Trade bets
+    TradeBet.aggregate([
+      { $match: { userId } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
+  ]);
 
   // 3) API provider games (home page wale zapcore games) ka wagered
   //    Provider history se aata hai. API fail ho to wagering local
@@ -135,32 +81,18 @@ const getWageringSummary = async (user) => {
     (tradeBetAgg[0]?.total || 0) +
     apiGameWagered;
 
-  // Winnings (matka + wingo + trade) wagering ko complete karti hain
-  const totalWinnings =
-    (betWinAgg[0]?.total || 0) +
-    (bidWinAgg[0]?.total || 0) +
-    (tradeWinAgg[0]?.total || 0);
-
-  // Wagering completion = stakes + winnings. Bada win aaye to
-  // requirement turant khatam.
-  const wageringCompleted = totalWagered + totalWinnings;
-
-  const remainingWagering = Math.max(0, requiredWagering - wageringCompleted);
+  const remainingWagering = Math.max(0, requiredWagering - totalWagered);
 
   // 3) Withdrawal cap:
-  //    - Wagering pending -> completed (stake+win) amount tak hi withdraw
+  //    - Wagering pending -> wagered amount tak hi withdraw
   //    - Wagering complete -> wallet balance tak
   const credit = Number(user.credit || 0);
   const maxAllowedWithdrawal =
-    remainingWagering > 0 ? Math.min(wageringCompleted, credit) : credit;
+    remainingWagering > 0 ? Math.min(totalWagered, credit) : credit;
 
   return {
     requiredWagering,
-    rechargeWagering,
-    adminWageringRequired,
     totalWagered,
-    totalWinnings,
-    wageringCompleted,
     apiGameWagered,
     remainingWagering,
     maxAllowedWithdrawal,

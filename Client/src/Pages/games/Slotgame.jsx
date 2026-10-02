@@ -319,33 +319,12 @@ const Slotgame = ({ isHome = false }) => {
         <div className="mb-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              {/* Back button — only on the /slots view-all page (Casino style) */}
-              {!isHome && (
-                <button
-                  type="button"
-                  onClick={() => navigate(-1)}
-                  className="flex items-center gap-2 text-gray-300 hover:text-white text-sm font-bold transition-colors bg-[#1C0F2B] border border-[#2a1b3d] hover:bg-[#2a1b3d] hover:border-[#9B59B6]/50 px-4 py-2 rounded-xl flex-shrink-0"
-                >
-                  <FaArrowLeft /> Back
-                </button>
-              )}
               {/* Rounded bar icon — Platform recommendation style */}
               <span className="w-2 h-6 rounded-full bg-gradient-to-b from-[#B45CFF] to-[#7418F5] flex-shrink-0" />
               <h2 className="text-lg font-extrabold tracking-tight text-white sm:text-xl leading-tight">
                 Slot Games
               </h2>
             </div>
-            {/* View All — only on the home section, same size as the
-                Casino & Live Games page view-all */}
-            {isHome && (
-              <Link
-                to="/slots"
-                className="flex items-center gap-1 text-xs font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-xl hover:bg-[#2a1b3d] hover:text-white transition-all flex-shrink-0"
-              >
-                View all
-                <span className="text-lg">›</span>
-              </Link>
-            )}
           </div>
         </div>
 

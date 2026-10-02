@@ -46,6 +46,24 @@ const purpleGradient =
  */
 const allGames = [
   {
+    id: "chicken-1",
+    category: "chicken",
+    game_name: "Chicken Road 2.0",
+    game_uid: "562b299961b0ec40f252a832453c67b0",
+    game_type: "Instant",
+    provider: "inout",
+    icon: "https://i.ibb.co/bj8PLGRD/67ff9cb072aefa0252de1fcc-chiken-road-2-1.png",
+    rating: 4.8,
+    players: "2.4K",
+    volatility: "Medium",
+    min_bet: 10,
+    max_bet: 5000,
+    is_featured: true,
+    is_new: false,
+    loaderIcon: GiChicken,
+    loaderTitle: "Loading Chicken Game...",
+  },
+  {
     id: "chicken-2",
     category: "chicken",
     game_name: "Chicken Road",
@@ -120,36 +138,19 @@ const allGames = [
   {
     id: "7up7down-1",
     category: "instant",
-    game_name: "7Updown",
+    game_name: "7up7down",
     game_uid: "3aca3084a5c1a8c77c52d6147ee3d2ab",
     game_type: "Instant",
     provider: "jili",
-    icon: "https://img.huidu123.com/huidu/images/2024-03-06/20240306153756.png@compress",
+    icon: "https://huidu-bucket.s3.ap-southeast-1.amazonaws.com/api/jili/7up7down.png",
     rating: 4.6,
+    players: "1.2K",
     volatility: "Low",
     min_bet: 10,
     max_bet: 5000,
     is_featured: true,
-    is_new: false,
+    is_new: true,
     // route nahi hai — home se click par direct modal launch
-  },
-  {
-    id: "pappu-1",
-    category: "table",
-    game_name: "Pappu Game",
-    game_uid: "e5091890bbb65a5f9ceb657351fa73c1",
-    game_type: "Table",
-    provider: "JILIGaming",
-    icon: "https://img.huidu123.com/huidu/images/2024-03-15/20240315154251.png",
-    rating: 4.8,
-    players: "2.1K",
-    volatility: "Medium",
-    min_bet: 10,
-    max_bet: 5000,
-    is_featured: true,
-    is_new: false,
-    loaderIcon: MdGamepad,
-    loaderTitle: "Loading Pappu Game...",
   },
 ];
 
@@ -399,17 +400,18 @@ const AllGames = ({ isHome = false }) => {
             </div>
             <button
               type="button"
-              onClick={() => navigate("/games/all")}
+              onClick={() => navigate("/chicken")}
               className="flex items-center gap-1 flex-shrink-0 text-xs font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-full hover:bg-[#2a1b3d] hover:text-white transition-all"
             >
-              All
+              All {allGames.length}
+              <span className="text-base leading-none">›</span>
             </button>
           </div>
         </div>
 
         {/* GRID */}
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
-          {visibleGames.map((game) => (
+          {allGames.map((game) => (
             <div
               key={game.id}
               onClick={() => handlePlay(game)}
@@ -492,7 +494,7 @@ const AllGames = ({ isHome = false }) => {
                   {game.id === "7up7down-1" ? (
                     <span className="flex items-center gap-0.5">
                       <MdGamepad className="text-[10px]" />
-                      {game.players}
+                      {game.players} playing
                     </span>
                   ) : (
                     <span />
