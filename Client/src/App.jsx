@@ -119,6 +119,7 @@ import {
 // ========================================
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import GameAutoSync from "./components/GameAutoSync";
 
 import "./styles/premium-toast.css";
 
@@ -418,6 +419,8 @@ function App() {
       />
 
       <ScrollToTop />
+
+      <GameAutoSync />
 
       <AppInitializer>
         <Navbar>

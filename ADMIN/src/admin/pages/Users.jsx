@@ -49,6 +49,7 @@ import {
   Key,
   Pencil,
   Save,
+  Download,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
@@ -213,12 +214,15 @@ const useUserManagement = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("newest");
+  const [pageSize, setPageSize] = useState(10);
+  const [filterCredit, setFilterCredit] = useState("all");
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [statusChangeLoading, setStatusChangeLoading] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  const usersPerPage = 10;
+  const usersPerPage = pageSize;
 
   useEffect(() => {
     dispatch(getAllUsers());
@@ -253,7 +257,14 @@ const useUserManagement = () => {
         user.mobile?.includes(searchTerm);
       const matchesRole = filterRole === "all" || user.role === filterRole;
       const matchesStatus = filterStatus === "all" || user.status === filterStatus;
-      return matchesSearch && matchesRole && matchesStatus;
+      const credit = Number(user.credit || 0);
+      const matchesCredit =
+        filterCredit === "all" ||
+        (filterCredit === "zero" && credit === 0) ||
+        (filterCredit === "low" && credit > 0 && credit < 1000) ||
+        (filterCredit === "mid" && credit >= 1000 && credit < 10000) ||
+        (filterCredit === "high" && credit >= 10000);
+      return matchesSearch && matchesRole && matchesStatus && matchesCredit;
     });
 
     filtered.sort((a, b) => {
@@ -272,7 +283,12 @@ const useUserManagement = () => {
     });
 
     return filtered;
-  }, [users, searchTerm, filterRole, filterStatus, sortBy]);
+  }, [users, searchTerm, filterRole, filterStatus, filterCredit, sortBy]);
+
+  // Reset to the first page whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterRole, filterStatus, filterCredit, sortBy, pageSize]);
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * usersPerPage;
@@ -287,7 +303,32 @@ const useUserManagement = () => {
     active: users?.filter(u => u.status === "active").length || 0,
     blocked: users?.filter(u => u.status === "blocked").length || 0,
     admins: users?.filter(u => u.role === "admin").length || 0,
+    wallet: users?.reduce((sum, u) => sum + (Number(u.credit) || 0), 0) || 0,
+    referrals: users?.reduce((sum, u) => sum + (Number(u.totalReferrals) || 0), 0) || 0,
   }), [users, userCount]);
+
+  /* ============ BULK SELECTION ============ */
+
+  const toggleSelectUser = useCallback((userId) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllOnPage = useCallback(() => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const pageIds = paginatedUsers.map((u) => u._id);
+      const allSelected = pageIds.every((id) => prev.has(id));
+      pageIds.forEach((id) => (allSelected ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  }, [paginatedUsers]);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   return {
     users: paginatedUsers,
@@ -316,6 +357,14 @@ const useUserManagement = () => {
     admin,
     totalPages,
     usersPerPage,
+    pageSize,
+    setPageSize,
+    filterCredit,
+    setFilterCredit,
+    selectedIds,
+    toggleSelectUser,
+    toggleSelectAllOnPage,
+    clearSelection,
     dispatch,
     isMobileFiltersOpen,
     setIsMobileFiltersOpen,
@@ -402,10 +451,24 @@ const StatsCards = ({ stats }) => {
       color: "purple",
       gradient: "from-purple-500 to-violet-600",
     },
+    {
+      title: "Total Wallet Balance",
+      value: stats.wallet?.toLocaleString() || 0,
+      icon: Wallet,
+      color: "emerald",
+      gradient: "from-emerald-500 to-teal-600",
+    },
+    {
+      title: "Total Referrals",
+      value: stats.referrals,
+      icon: Gift,
+      color: "amber",
+      gradient: "from-amber-500 to-orange-600",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
       {cards.map((card, index) => (
         <motion.div
           key={card.title}
@@ -417,7 +480,7 @@ const StatsCards = ({ stats }) => {
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">{card.title}</p>
-              <p className="text-xl sm:text-3xl font-bold text-gray-800 mt-0.5 sm:mt-1">{card.value}</p>
+              <p className="text-lg sm:text-2xl xl:text-3xl font-bold text-gray-800 mt-0.5 sm:mt-1">{card.value}</p>
             </div>
             <div className={`bg-gradient-to-br ${card.gradient} p-2 sm:p-3 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
               <card.icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
@@ -525,6 +588,9 @@ const PasswordCell = ({ password }) => {
 const UserCard = ({
   user,
   onViewDetails,
+  onStatusChange,
+  isSelected,
+  onToggleSelect,
   isCurrentAdmin,
   getRoleBadge,
   getStatusColor,
@@ -550,6 +616,22 @@ const UserCard = ({
       }`}>
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
+          {/* Selection checkbox */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect(user._id);
+            }}
+            title={isSelected ? "Deselect user" : "Select user"}
+            className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all touch-manipulation ${
+              isSelected
+                ? "bg-indigo-600 border-indigo-600 text-white"
+                : "border-gray-300 hover:border-indigo-400 bg-white"
+            }`}
+          >
+            {isSelected && <CheckCircle size={14} />}
+          </button>
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className={`relative w-10 h-10 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0 ${
               isAdmin ? "bg-gradient-to-br from-purple-500 to-violet-600" : "bg-gradient-to-br from-indigo-500 to-blue-600"
@@ -625,6 +707,36 @@ const UserCard = ({
             <Eye size={14} className="sm:w-4 sm:h-4" />
             View Details
           </button>
+          {/* Quick status toggle — block/activate without opening the modal */}
+          {!isCurrentAdminUser && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStatusChange(
+                  user._id,
+                  user.status === "active" ? "blocked" : "active"
+                );
+              }}
+              title={user.status === "active" ? "Block user" : "Activate user"}
+              className={`px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold flex items-center gap-1 whitespace-nowrap transition-all touch-manipulation ${
+                user.status === "active"
+                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                  : "bg-green-100 text-green-700 hover:bg-green-200"
+              }`}
+            >
+              {user.status === "active" ? (
+                <>
+                  <UserX size={12} className="sm:w-3.5 sm:h-3.5" />
+                  <span className="hidden xs:inline">Block</span>
+                </>
+              ) : (
+                <>
+                  <UserCheck size={12} className="sm:w-3.5 sm:h-3.5" />
+                  <span className="hidden xs:inline">Activate</span>
+                </>
+              )}
+            </button>
+          )}
           {isCurrentAdminUser && (
             <div className="px-2 sm:px-3 py-1.5 sm:py-2.5 bg-indigo-100 text-indigo-700 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-medium flex items-center gap-1 whitespace-nowrap">
               <Activity size={12} className="sm:w-3.5 sm:h-3.5" />
@@ -641,6 +753,9 @@ const UserCard = ({
 const UserRow = ({
   user,
   onViewDetails,
+  onStatusChange,
+  isSelected,
+  onToggleSelect,
   isCurrentAdmin,
   getRoleBadge,
   getStatusColor,
@@ -659,6 +774,21 @@ const UserRow = ({
         isAdmin ? "bg-purple-50/30" : ""
       } ${isCurrentAdminUser ? "bg-indigo-50/30" : ""}`}
     >
+      {/* Selection checkbox */}
+      <td className="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap">
+        <button
+          type="button"
+          onClick={() => onToggleSelect(user._id)}
+          title={isSelected ? "Deselect user" : "Select user"}
+          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all touch-manipulation ${
+            isSelected
+              ? "bg-indigo-600 border-indigo-600 text-white"
+              : "border-gray-300 hover:border-indigo-400 bg-white"
+          }`}
+        >
+          {isSelected && <CheckCircle size={14} />}
+        </button>
+      </td>
       <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 whitespace-nowrap">
         <div className="flex items-center">
           <div className={`flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center ${
@@ -716,6 +846,12 @@ const UserRow = ({
           <span className="hidden xs:inline">{user.status}</span>
         </span>
       </td>
+      {/* Wallet credit column */}
+      <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 whitespace-nowrap">
+        <span className="text-xs sm:text-sm font-bold text-emerald-600">
+          {formatCurrency(user.country, user.credit)}
+        </span>
+      </td>
       <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 whitespace-nowrap">
         <div className="flex items-center gap-1 sm:gap-2">
           <button
@@ -725,6 +861,35 @@ const UserRow = ({
             <Eye size={12} className="sm:w-3.5 sm:h-3.5" />
             <span className="hidden xs:inline">View</span>
           </button>
+          {/* Quick status toggle — block/activate without opening the modal */}
+          {!isCurrentAdminUser && (
+            <button
+              onClick={() =>
+                onStatusChange(
+                  user._id,
+                  user.status === "active" ? "blocked" : "active"
+                )
+              }
+              title={user.status === "active" ? "Block user" : "Activate user"}
+              className={`px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-[10px] font-semibold transition touch-manipulation ${
+                user.status === "active"
+                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                  : "bg-green-100 text-green-700 hover:bg-green-200"
+              }`}
+            >
+              {user.status === "active" ? (
+                <>
+                  <UserX size={11} className="inline sm:mr-0.5" />
+                  <span className="hidden md:inline">Block</span>
+                </>
+              ) : (
+                <>
+                  <UserCheck size={11} className="inline sm:mr-0.5" />
+                  <span className="hidden md:inline">Activate</span>
+                </>
+              )}
+            </button>
+          )}
           {isCurrentAdminUser && (
             <span className="text-[8px] sm:text-xs text-indigo-600 font-medium bg-indigo-50 px-1 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
               Current
@@ -1464,6 +1629,14 @@ const Users = () => {
     admin,
     totalPages,
     usersPerPage,
+    pageSize,
+    setPageSize,
+    filterCredit,
+    setFilterCredit,
+    selectedIds,
+    toggleSelectUser,
+    toggleSelectAllOnPage,
+    clearSelection,
     dispatch,
     isMobileFiltersOpen,
     setIsMobileFiltersOpen,
@@ -1560,8 +1733,81 @@ const Users = () => {
     setSearchTerm("");
     setFilterRole("all");
     setFilterStatus("all");
+    setFilterCredit("all");
     setSortBy("newest");
   }, []);
+
+  // Bulk status change on all selected users (sequential — the backend
+  // updates one user per request). Confirms before acting.
+  const handleBulkStatus = useCallback(async (status) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    const action = status === "active" ? "activate" : "block";
+    if (!window.confirm(`Are you sure you want to ${action} ${ids.length} user(s)?`))
+      return;
+
+    let success = 0;
+    let failed = 0;
+    for (const userId of ids) {
+      try {
+        await dispatch(updateUserStatus({ userId, status })).unwrap();
+        success += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+
+    await dispatch(getAllUsers());
+    clearSelection();
+
+    if (failed === 0) {
+      toast.success(`${success} user(s) ${status === "active" ? "activated" : "blocked"} successfully!`);
+    } else {
+      toast.error(`${success} succeeded, ${failed} failed`);
+    }
+  }, [dispatch, selectedIds]);
+
+  // Export the filtered user list as CSV (name, contact, wallet, status...)
+  const handleExportCsv = useCallback(() => {
+    const rows = [
+      ["Name", "Email", "Mobile", "Country", "Credit", "Role", "Status", "Referrals", "Referral Code", "Joined"],
+      ...allUsers.map((u) => [
+        u.name || "",
+        u.email || "",
+        u.mobile || "",
+        u.country || "",
+        u.credit ?? 0,
+        u.role || "",
+        u.status || "",
+        u.totalReferrals ?? 0,
+        u.referralCode || "",
+        u.createdAt ? new Date(u.createdAt).toISOString() : "",
+      ]),
+    ];
+
+    const csv = rows
+      .map((row) =>
+        row
+          .map((cell) => {
+            const value = String(cell);
+            return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${allUsers.length} users to CSV`);
+  }, [allUsers]);
 
   // Mobile filter toggle
   const toggleMobileFilters = useCallback(() => {
@@ -1589,6 +1835,17 @@ const Users = () => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
+            {/* Export filtered users to CSV */}
+            <button
+              onClick={handleExportCsv}
+              disabled={allUsers.length === 0}
+              title="Export filtered users to CSV"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-2.5 bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-[10px] sm:text-xs font-semibold text-gray-600 disabled:opacity-50 touch-manipulation"
+            >
+              <Download size={16} className="sm:w-4 sm:h-4 text-emerald-600" />
+              <span>CSV</span>
+            </button>
+
             <button
               onClick={handleRefresh}
               className="p-2 sm:p-2.5 bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:rotate-180 touch-manipulation"
@@ -1690,7 +1947,31 @@ const Users = () => {
               <option value="blocked">❌ Blocked</option>
             </select>
 
-            {(searchTerm || filterRole !== "all" || filterStatus !== "all") && (
+            <select
+              value={filterCredit}
+              onChange={(e) => setFilterCredit(e.target.value)}
+              className="px-3 sm:px-4 py-2.5 sm:py-3 text-sm border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 outline-none bg-white/80 backdrop-blur-sm font-medium"
+            >
+              <option value="all">💰 All Wallets</option>
+              <option value="zero">💰 Zero Balance</option>
+              <option value="low">💰 Below 1,000</option>
+              <option value="mid">💰 1,000 - 9,999</option>
+              <option value="high">💰 10,000+</option>
+            </select>
+
+            {/* Page size */}
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="px-3 sm:px-4 py-2.5 sm:py-3 text-sm border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 outline-none bg-white/80 backdrop-blur-sm font-medium"
+            >
+              <option value="10">10 / page</option>
+              <option value="25">25 / page</option>
+              <option value="50">50 / page</option>
+              <option value="100">100 / page</option>
+            </select>
+
+            {(searchTerm || filterRole !== "all" || filterStatus !== "all" || filterCredit !== "all") && (
               <button
                 onClick={clearFilters}
                 className="px-3 sm:px-4 py-2.5 sm:py-3 bg-red-100 text-red-600 rounded-xl sm:rounded-2xl text-sm font-medium hover:bg-red-200 transition-all duration-200 flex items-center gap-1.5 sm:gap-2 touch-manipulation"
@@ -1732,7 +2013,30 @@ const Users = () => {
                     <option value="blocked">❌ Blocked</option>
                   </select>
 
-                  {(searchTerm || filterRole !== "all" || filterStatus !== "all") && (
+                  <select
+                    value={filterCredit}
+                    onChange={(e) => setFilterCredit(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 outline-none bg-white font-medium"
+                  >
+                    <option value="all">💰 All Wallets</option>
+                    <option value="zero">💰 Zero Balance</option>
+                    <option value="low">💰 Below 1,000</option>
+                    <option value="mid">💰 1,000 - 9,999</option>
+                    <option value="high">💰 10,000+</option>
+                  </select>
+
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className="w-full px-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 outline-none bg-white font-medium"
+                  >
+                    <option value="10">10 / page</option>
+                    <option value="25">25 / page</option>
+                    <option value="50">50 / page</option>
+                    <option value="100">100 / page</option>
+                  </select>
+
+                  {(searchTerm || filterRole !== "all" || filterStatus !== "all" || filterCredit !== "all") && (
                     <button
                       onClick={clearFilters}
                       className="w-full px-4 py-2.5 bg-red-100 text-red-600 rounded-xl text-sm font-medium hover:bg-red-200 transition-all duration-200 flex items-center justify-center gap-2 touch-manipulation"
@@ -1746,6 +2050,49 @@ const Users = () => {
             )}
           </AnimatePresence>
         </motion.div>
+
+        {/* Bulk action bar — appears when users are selected */}
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg px-4 py-3 text-white"
+            >
+              <div className="flex items-center gap-2">
+                <UserCheck size={18} className="flex-shrink-0" />
+                <span className="text-sm font-bold">
+                  {selectedIds.size} user(s) selected
+                </span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => handleBulkStatus("active")}
+                  disabled={statusUpdateLoading}
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-xs font-bold transition disabled:opacity-50 touch-manipulation"
+                >
+                  <CheckCircle size={14} />
+                  Activate All
+                </button>
+                <button
+                  onClick={() => handleBulkStatus("blocked")}
+                  disabled={statusUpdateLoading}
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-xs font-bold transition disabled:opacity-50 touch-manipulation"
+                >
+                  <XCircle size={14} />
+                  Block All
+                </button>
+                <button
+                  onClick={clearSelection}
+                  className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-bold transition touch-manipulation"
+                >
+                  Clear
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Users Display */}
         {loading ? (
@@ -1761,6 +2108,9 @@ const Users = () => {
                         key={user._id}
                         user={user}
                         onViewDetails={handleViewDetails}
+                        onStatusChange={handleStatusChange}
+                        isSelected={selectedIds.has(user._id)}
+                        onToggleSelect={toggleSelectUser}
                         isCurrentAdmin={isCurrentAdmin}
                         getRoleBadge={getRoleBadge}
                         getStatusColor={getStatusColor}
@@ -1774,12 +2124,29 @@ const Users = () => {
                       <table className="min-w-[720px] sm:min-w-full divide-y divide-gray-200">
                         <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                           <tr>
+                            <th className="px-2 sm:px-3 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <button
+                                type="button"
+                                onClick={toggleSelectAllOnPage}
+                                title="Select / deselect all on this page"
+                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                  users.length > 0 && users.every((u) => selectedIds.has(u._id))
+                                    ? "bg-indigo-600 border-indigo-600 text-white"
+                                    : "border-gray-300 bg-white hover:border-indigo-400"
+                                }`}
+                              >
+                                {users.length > 0 && users.every((u) => selectedIds.has(u._id)) && (
+                                  <CheckCircle size={14} />
+                                )}
+                              </button>
+                            </th>
                             <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                             <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                             <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider hidden xs:table-cell">Mobile</th>
                             {/* ✅ Password header */}
                             <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
                             <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
+                            <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet</th>
                             <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                           </tr>
@@ -1790,6 +2157,9 @@ const Users = () => {
                               key={user._id}
                               user={user}
                               onViewDetails={handleViewDetails}
+                              onStatusChange={handleStatusChange}
+                              isSelected={selectedIds.has(user._id)}
+                              onToggleSelect={toggleSelectUser}
                               isCurrentAdmin={isCurrentAdmin}
                               getRoleBadge={getRoleBadge}
                               getStatusColor={getStatusColor}

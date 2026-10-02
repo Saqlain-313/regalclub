@@ -19,7 +19,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "dotnet": "^1.1.4",
-    "exceljs": "^4.4.0",
+    "exceljs": "^3.4.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
     "express-router": "^0.0.1",

@@ -46,6 +46,11 @@ router.post("/reset-password", verifyOTPAndReset);
 // Get Profile
 router.get("/profile", protect, getProfile);
 
+// Dedicated admin profile — /profile blocks admin accounts (a stale admin
+// cookie on the client site caused a client <-> login loop), so the admin
+// panel uses this endpoint instead.
+router.get("/admin/profile", protect, adminProtect, getProfile);
+
 // Update Profile + Profile Picture
 router.put("/profile", protect, upload.single("profilePic"), updateProfile);
 

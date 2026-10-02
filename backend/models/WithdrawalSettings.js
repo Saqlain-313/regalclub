@@ -134,8 +134,8 @@ const withdrawalSettingsSchema = new mongoose.Schema({
     default: true,
   },
   minAccountAge: {
-    type: Number, // in days
-    default: 1,
+    type: Number, // in days (0 = account age check disabled)
+    default: 0,
   },
   minGamesPlayed: {
     type: Number,
@@ -240,13 +240,9 @@ withdrawalSettingsSchema.methods.validateWithdrawal = function(amount, userData)
     errors.push(`Maximum withdrawal amount is ${this.currencySymbol}${this.maxWithdrawal}`);
   }
   
-  // Check user account age
-  if (this.minAccountAge > 0 && userData.createdAt) {
-    const accountAge = Math.floor((Date.now() - userData.createdAt) / (1000 * 60 * 60 * 24));
-    if (accountAge < this.minAccountAge) {
-      errors.push(`Account must be at least ${this.minAccountAge} days old`);
-    }
-  }
+  // Account-age (24hr) check removed — naye users ko withdrawal ke
+  // liye wait nahi karna padta, chahe DB settings me minAccountAge
+  // purani value (1/2 days) me saved ho.
   
   return {
     isValid: errors.length === 0,

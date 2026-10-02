@@ -76,15 +76,19 @@ const ensureZapPlayer = async (playerid) => {
 ========================= */
 const checkBalance = async (req, res) => {
   try {
-    const playerid = String(req.body.playerid || "").trim();
+    // playerid na mile to logged-in user ka mobile use karo —
+    // frontend live-wallet polling isse call karti hai
+    const playerid = String(req.body?.playerid || req.user?.mobile || "").trim();
     if (!playerid) {
       return res
         .status(400)
         .json({ status: false, message: "playerid required" });
     }
 
+    // Key QUERY STRING me jati hai (body me nahi) — warna provider
+    // "Key is required" deta hai. transferBalance bhi yahi karta hai.
     const response = await axios.post(
-      `${apiUrl}/Userbalance`,
+      `${apiUrl}/Userbalance?playerid=${encodeURIComponent(playerid)}&key=${encodeURIComponent(key)}`,
       { playerid, key },
       { headers: zapHeaders }
     );

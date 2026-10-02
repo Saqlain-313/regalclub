@@ -29,6 +29,9 @@ const Navbar = ({ children }) => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
+  const { gameUrl: activeGameUrl, liveGameBalance } = useSelector(
+    (state) => state.game,
+  );
 
   // ==========================================================
   // LIVE WALLET — server pushes "wallet-update" to the user's
@@ -140,7 +143,12 @@ const Navbar = ({ children }) => {
     return user.name || user.username || "User";
   };
 
-  const walletcredit = user?.credit;
+  // API game ke dauran paisa provider par hota hai (local credit 0) —
+  // tab navbar provider ka LIVE balance dikhata hai (5s polling).
+  const walletcredit =
+    activeGameUrl && liveGameBalance !== null
+      ? liveGameBalance
+      : user?.credit;
 
   // Country-wise currency SYMBOL only.
   const getCurrencySymbol = () => {

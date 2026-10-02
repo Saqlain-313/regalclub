@@ -1,12 +1,14 @@
 import {
   AlertCircle,
   CheckCircle,
+  ChevronRight,
   Clock,
   Coins,
   Gamepad2,
   Gift,
   RefreshCw,
   Sparkles,
+  Users,
   X,
   Zap,
 } from "lucide-react";
@@ -19,6 +21,29 @@ import {
   getDailyClaimStatus,
   resetClaimSuccess,
 } from "../redux/slices/dailyClaimSlice";
+import { getActivityContent } from "../redux/slices/activityBannerSlice";
+
+// Fallback banners — shown when the admin has not uploaded any
+const DEFAULT_BANNERS = [
+  {
+    _id: "default-1",
+    title: "FIRST RECHARGE",
+    image: "https://i.ibb.co/V0THwFvm/banner1.png",
+    navigateTo: "/deposit",
+  },
+  {
+    _id: "default-2",
+    title: "REFER & EARN",
+    image: "https://i.ibb.co/vxQwyNXC/banner2.png",
+    navigateTo: "/promo",
+  },
+  {
+    _id: "default-3",
+    title: "PLAY & WIN",
+    image: "https://i.ibb.co/PzhpvsHt/banner3.png",
+    navigateTo: "/matka",
+  },
+];
 
 const defaultRewards = {
   1: 10,
@@ -51,7 +76,7 @@ const getDayIcon = (day) =>
 // =======================
 // RewardCard Component
 // =======================
-const RewardCard = ({ title, subtitle, button, image, navigateTo }) => {
+const RewardCard = ({ title, subtitle, image, navigateTo }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -62,15 +87,79 @@ const RewardCard = ({ title, subtitle, button, image, navigateTo }) => {
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.5)] border border-[#2a1b3d] group active:scale-[0.98] transition-transform duration-150 cursor-pointer"
+      className="relative rounded-2xl overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.5)] border border-[#2a1b3d] group active:scale-[0.98] transition-transform duration-150 cursor-pointer hover:border-[#B45CFF]/60"
       onClick={handleClick}
     >
       <div className="absolute inset-0">
-        <img src={image} alt={title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410]/90 via-[#0B0410]/40 to-transparent"></div>
+        <img
+          src={image}
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0B0410]/90 via-[#0B0410]/30 to-transparent"></div>
       </div>
 
-      <div className="relative z-10 p-5 min-h-[190px] flex flex-col justify-between"></div>
+      <div className="relative z-10 px-4 py-4 min-h-[140px] sm:min-h-[160px] flex flex-col justify-end">
+        {title && (
+          <h3 className="text-base font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wide">
+            {title}
+          </h3>
+        )}
+
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-gray-300">
+            {subtitle}
+          </span>
+
+          <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[#B45CFF] to-[#7418F5] border border-[#C77AFF] px-3.5 py-1.5 text-[10px] font-black text-white shadow-[0_0_10px_rgba(180,92,255,0.6)] group-hover:gap-2 transition-all">
+            {navigateTo === "/promo"
+              ? "REFER NOW"
+              : navigateTo === "/deposit"
+                ? "RECHARGE"
+                : navigateTo === "/matka"
+                  ? "PLAY NOW"
+                  : "OPEN"}
+            <ChevronRight size={12} />
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =======================
+// Promo CTA — links the /activity page to /promo
+// =======================
+const PromoCta = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden border border-[#C77AFF]/60 bg-gradient-to-br from-[#1C0F2B] via-[#2a1245] to-[#1C0F2B] p-4 shadow-[0_4px_20px_rgba(180,92,255,0.25)]">
+      <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 bg-[#B45CFF]/20 rounded-full blur-3xl" />
+
+      <div className="relative z-10 flex items-center gap-3">
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_12px_rgba(180,92,255,0.6)]">
+          <Users size={22} className="text-white" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-black text-white">
+            Refer &amp; Earn ₹150
+          </h3>
+          <p className="text-[11px] text-gray-400">
+            Invite friends — they get bonus, you get rewarded
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => navigate("/promo")}
+          className="flex flex-shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] px-4 py-2 text-[11px] font-black text-white shadow-[0_0_10px_rgba(180,92,255,0.6)] active:scale-95 hover:scale-[1.03] transition-transform"
+        >
+          GO TO PROMO
+          <ChevronRight size={13} />
+        </button>
+      </div>
     </div>
   );
 };
@@ -96,6 +185,19 @@ const Activity = () => {
     error,
     reward,
   } = useSelector((state) => state.dailyClaim);
+
+  const activityBanners = useSelector(
+    (state) => state.activityBanner?.banners || [],
+  );
+
+  // Admin-managed banners (fallback: DEFAULT_BANNERS)
+  const bannerList = activityBanners.length
+    ? activityBanners
+    : DEFAULT_BANNERS;
+
+  useEffect(() => {
+    dispatch(getActivityContent());
+  }, [dispatch]);
 
   // TopX Purple gradient
   const purpleGradient =
@@ -378,31 +480,24 @@ const Activity = () => {
         )}
       </div>
 
-      {/* Reward Cards */}
-      <div className="space-y-3">
-        <RewardCard
-          title="FIRST RECHARGE"
-          subtitle="Extra bonus on first recharge!"
-          button="Recharge"
-          image="https://i.ibb.co/V0THwFvm/banner1.png"
-          navigateTo="/deposit"
-        />
+      {/* Promo CTA — Refer & Earn */}
+      <PromoCta />
 
-        <RewardCard
-          title="REFER & EARN"
-          subtitle="Invite friends & earn unlimited"
-          button="Refer Now"
-          image="https://i.ibb.co/vxQwyNXC/banner2.png"
-          navigateTo="/promo"
-        />
-
-        <RewardCard
-          title="PLAY & WIN"
-          subtitle="Win exciting prizes everyday"
-          button="Play Now"
-          image="https://i.ibb.co/PzhpvsHt/banner3.png"
-          navigateTo="/matka"
-        />
+      {/* Reward Cards (admin-managed) */}
+      <div className="mt-3 space-y-3">
+        {bannerList.map((banner) => (
+          <RewardCard
+            key={banner._id}
+            title={banner.title}
+            subtitle={banner.navigateTo === "/promo"
+              ? "Invite friends & earn unlimited"
+              : banner.navigateTo === "/deposit"
+                ? "Extra bonus on first recharge!"
+                : "Win exciting prizes everyday"}
+            image={banner.image}
+            navigateTo={banner.navigateTo}
+          />
+        ))}
       </div>
 
       {/* Custom CSS */}

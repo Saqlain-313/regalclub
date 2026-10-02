@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import mineBlastSound from "../assets/faah.mp3";
 import { getProfile } from "../redux/slices/authSlice";
 import { getCurrencyRates } from "../redux/slices/currencyRateSlice";
@@ -52,8 +53,21 @@ const normalizeCountryCode = (country) => {
 
 const TOTAL_CELLS = 36;
 
+// Mirror of MULTIPLIERS in backend/controllers/minesController.js —
+// for the "next cell" preview (keeps cashout value consistent)
+const MULTIPLIERS = [
+  1.05, 1.1, 1.15, 1.25, 1.5, 1.75, 2.0, 2.05, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5,
+  4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 8.0, 10.0,
+];
+
+const getMultiplier = (safeCells) => {
+  if (safeCells <= 0) return 1;
+  return MULTIPLIERS[safeCells - 1] || MULTIPLIERS[MULTIPLIERS.length - 1];
+};
+
 export default function MinesGame() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { game, loading, message } = useSelector((state) => state.mines);
   const authUser = useSelector((state) => state.auth?.user || null);
@@ -450,6 +464,29 @@ export default function MinesGame() {
           {/* Title */}
           <div className="relative mb-5 flex items-center justify-center">
             <div className="absolute h-px w-full bg-gradient-to-r from-transparent via-[#9B59B6] to-transparent" />
+
+            {/* Back button */}
+            <button
+              type="button"
+              onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+              aria-label="Go back"
+              className="absolute left-0 flex h-10 w-10 items-center justify-center rounded-full border border-[#C77AFF] bg-[#1C0F2B] text-white shadow-[0_0_8px_rgba(180,92,255,0.5)] transition-all duration-200 hover:scale-105 hover:bg-[#2a1b3d] active:scale-95"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+
             <div className="relative flex items-center gap-2 rounded-full border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] px-6 py-2 shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75)]">
               <span>⛏️</span>
               <h1 className="text-xl font-black tracking-wide text-white sm:text-2xl">
@@ -468,7 +505,7 @@ export default function MinesGame() {
                     Total Mines
                   </p>
                   <p className="mt-1 text-xl font-black text-[#9B59B6]">
-                    {game.minesCount || 15}
+                    {game.minesCount || 20}
                   </p>
                 </div>
                 <div className="rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] p-3 text-center shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
@@ -489,6 +526,28 @@ export default function MinesGame() {
                   </p>
                 </div>
               </div>
+
+              {/* Next-cell preview */}
+              {game.status === "playing" && (
+                <div className="mb-3 flex items-center justify-between rounded-xl border border-[#9B59B6]/30 bg-[#12061C] px-3 py-2 text-xs font-bold shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                  <span className="text-gray-400">
+                    Next safe cell pays
+                  </span>
+                  <span className="text-[#F1C40F]">
+                    {money(
+                      Number(game.entryAmount ?? game.virtualStake ?? 0) *
+                        getMultiplier(Number(game.safeCells || 0) + 1),
+                    )}{" "}
+                    <span className="text-gray-400">
+                      (
+                      {getMultiplier(
+                        Number(game.safeCells || 0) + 1,
+                      ).toFixed(2)}
+                      x)
+                    </span>
+                  </span>
+                </div>
+              )}
 
               {/* Game info */}
               <div className="mb-3 flex items-center justify-between rounded-xl border border-[#2a1b3d] bg-[#12061C] px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.5)] sm:px-5">

@@ -16,6 +16,7 @@ import DepositSettingsAdmin from "./admin/pages/DepositSettingsAdmin";
 import WithdrawalSettings from "./admin/pages/WithdrawalSettings";
 import CreateWithdrawalSettings from "./admin/pages/createWithdrawalSettings";
 import Banners from "./admin/pages/Banners";
+import ActivityBanners from "./admin/pages/ActivityBanners";
 import AdminPlatformGames from "./admin/pages/AdminPlatformGames";
 
 import PrivateRoute from "./admin/routes/PrivateRoute";
@@ -207,6 +208,11 @@ function App() {
           <Route
             path="/admin/banners"
             element={<Banners />}
+          />
+
+          <Route
+            path="/admin/activity-banners"
+            element={<ActivityBanners />}
           />
 
           <Route

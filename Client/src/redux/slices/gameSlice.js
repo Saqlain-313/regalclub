@@ -10,7 +10,9 @@ export const checkGamecredit = createAsyncThunk(
   "game/checkcredit",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await api.post("/game/balance/transfer", null, {
+      // send {} — axios sends a literal "null" body for `null`,
+      // which the backend express.json() parser rejects with 400
+      const { data } = await api.post("/game/balance/transfer", {}, {
         withCredentials: true,
       });
       return data;
@@ -49,10 +51,40 @@ export const launchGame = createAsyncThunk(
   async ({ gameId }, { rejectWithValue }) => {
     try {
       const { data } = await api.post("/game/get/game", { gameId });
+
+      // Game-session marker — GameAutoSync uses this to decide
+      // whether to auto-sync on browser back / app switch / page
+      // reopen. localStorage so it also survives a full page reload
+      // (mobile browser back often reloads the page).
+      try {
+        localStorage.setItem("rg_last_game_session", String(Date.now()));
+      } catch {
+        /* storage unavailable */
+      }
+
       return data.data;
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || "Game launch failed",
+      );
+    }
+  },
+);
+
+/* ===========================
+   LIVE GAME BALANCE (polling)
+   Live provider-side balance of the user during an API game,
+   balance — the navbar shows it alongside the local credit.
+=========================== */
+export const fetchLiveGameBalance = createAsyncThunk(
+  "game/fetchLiveGameBalance",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await api.post("/game/balance/check", {});
+      return data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Live balance fetch failed",
       );
     }
   },
@@ -138,6 +170,11 @@ const gameSlice = createSlice({
 
     // 👇 NEW — flag to auto-refresh credit when user returns from a game route
     shouldRefreshOnReturn: false,
+
+    // Live provider balance during an API game (via polling).
+    // null = no active session / not fetched yet
+    liveGameBalance: null,
+    liveBalanceLoading: false,
   },
 
   reducers: {
@@ -148,11 +185,13 @@ const gameSlice = createSlice({
       state.error = null;
       state.creditMessage = "";
       state.creditStatus = null;
+      state.liveGameBalance = null;
     },
     clearGameUrl: (state) => {
       state.gameUrl = null;
       state.launchLoading = false;
       state.launchError = null;
+      state.liveGameBalance = null;
     },
     // 👇 NEW
     setShouldRefreshOnReturn: (state, action) => {
@@ -178,6 +217,19 @@ const gameSlice = createSlice({
         state.creditStatus = false;
         state.creditMessage =
           action.payload?.message || "credit check failed";
+      })
+      /* ===== LIVE GAME BALANCE ===== */
+      .addCase(fetchLiveGameBalance.pending, (state) => {
+        state.liveBalanceLoading = true;
+      })
+      .addCase(fetchLiveGameBalance.fulfilled, (state, action) => {
+        state.liveBalanceLoading = false;
+        // checkBalance => { status, data: { Balance } }
+        const bal = Number(action.payload?.data?.Balance);
+        state.liveGameBalance = Number.isFinite(bal) ? bal : null;
+      })
+      .addCase(fetchLiveGameBalance.rejected, (state) => {
+        state.liveBalanceLoading = false;
       })
 
       /* ===== TRANSFER FROM GAME ===== */
