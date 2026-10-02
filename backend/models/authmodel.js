@@ -6,7 +6,6 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       lowercase: true,
     },
@@ -183,5 +182,22 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+// Purane version me name par unique index tha — ab duplicate name allowed hai.
+// Legacy "name_1" index DB se hatao (agar exist karta ho).
+const dropLegacyNameIndex = async () => {
+  try {
+    await mongoose.connection.collection("users").dropIndex("name_1");
+    console.log("Dropped legacy index: users.name_1");
+  } catch (err) {
+    // index already absent — ignore
+  }
+};
+
+if (mongoose.connection.readyState === 1) {
+  dropLegacyNameIndex();
+} else {
+  mongoose.connection.once("connected", dropLegacyNameIndex);
+}
 
 module.exports = mongoose.model("users", userSchema);

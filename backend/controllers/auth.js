@@ -420,7 +420,7 @@ const register = async (req, res) => {
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern || {})[0];
 
-      let message = "Duplicate field";
+      let message = "Account already exists with these details";
 
       if (field === "email") {
         message = "Email already registered";
@@ -558,7 +558,16 @@ const getProfile = async (req, res) => {
     // Admin panel alag port par chalta hai, par cookies localhost
     // par share hoti hain — stale admin cookie se client ka
     // profile admin ban jata tha aur / <-> /login loop banta tha.
-    if (String(req.user?.role || "").toLowerCase() === "admin") {
+    // The admin panel uses GET /auth/admin/profile which skips this
+    // block (see authRoutes).
+    const isAdminProfileRoute = String(
+      req.originalUrl || "",
+    ).includes("/auth/admin/profile");
+
+    if (
+      String(req.user?.role || "").toLowerCase() === "admin" &&
+      !isAdminProfileRoute
+    ) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized — admin accounts must use the admin panel",

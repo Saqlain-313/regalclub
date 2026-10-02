@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Gift } from "lucide-react";
+import { useDispatch } from "react-redux";
 
+import { getActivityContent } from "../../redux/slices/activityBannerSlice";
 import BetBonus from "../../components/promo/BetBonus";
 import HowToEarn from "../../components/promo/HowToEarn";
 import JoinedMembers from "../../components/promo/JoinedMembers";
@@ -12,6 +14,12 @@ import ReferralRules from "../../components/promo/ReferralRules";
 
 const PromoPage = () => {
   const [activeTab, setActiveTab] = useState("link");
+  const dispatch = useDispatch();
+
+  // Referral share image (admin-managed) fetch karo
+  useEffect(() => {
+    dispatch(getActivityContent());
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen bg-[#0B0410] text-white relative overflow-hidden">

@@ -37,7 +37,9 @@ export const getAdminProfile = createAsyncThunk(
   "adminAuth/profile",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await api.get("/auth/profile");
+      // Dedicated admin endpoint — /auth/profile rejects admin accounts
+      // (stale-cookie protection on the client site)
+      const { data } = await api.get("/auth/admin/profile");
 
       // ============================================
       // ROLE CHECK

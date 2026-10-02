@@ -51,6 +51,7 @@ const dailyClaimRoutes = require("./routes/dailyClaimRoutes");
 const withdrawalRoutes = require("./routes/withdrawalRoutes");
 const depositRoutes = require("./routes/depositRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
+const activityBannerRoutes = require("./routes/activityBannerRoutes");
 const publicBidRoutes = require("./routes/publicBidRoutes");
 
 const marketRoutes = require("./routes/marketRoutes");
@@ -331,6 +332,7 @@ app.use("/api/daily-claim", dailyClaimRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/deposit", depositRoutes);
 app.use("/api/banner", bannerRoutes);
+app.use("/api/activity-banners", activityBannerRoutes);
 app.use("/api/public-bids", publicBidRoutes);
 
 // =====================================================

@@ -24,6 +24,7 @@ import {
   clearGameUrl,
   resetGameState,
 } from "../../../Client/src/redux/slices/gameSlice";
+import { getProfile } from "../redux/slices/authSlice";
 
 const GamePlayModal = ({
   isOpen,
@@ -325,8 +326,14 @@ useEffect(() => {
   // =========================================================
 
   const handleTransfer = async () => {
-    // Keep your existing transfer logic here.
-    console.log("💰 Transfer clicked");
+    // API wallet -> main wallet (same sync endpoint as Account page)
+    try {
+      await dispatch(checkGamecredit()).unwrap();
+      await dispatch(getProfile()).unwrap();
+      setShowTransferModal(false);
+    } catch (error) {
+      console.error("❌ Transfer failed:", error);
+    }
   };
 
   // =========================================================
@@ -356,6 +363,8 @@ useEffect(() => {
     try {
       // Get latest game balance before destroying session
       await dispatch(checkGamecredit()).unwrap();
+      // Wallet instantly refresh — warna navbar purana credit dikhata rahhta hai
+      await dispatch(getProfile()).unwrap();
     } catch (error) {
       console.error(
         "❌ checkGamecredit failed:",
@@ -399,6 +408,36 @@ useEffect(() => {
       closingRef.current = false;
     }, 500);
   };
+
+  // =========================================================
+  // BROWSER-BACK SAFETY NET
+  // Phone/desktop ka browser back button (ya route change)
+  // modal ko bina handleClose ke unmount kar deta hai — us
+  // case me API wallet ka paisa sync nahi hota tha. Ye
+  // cleanup effect unmount par sync ensure karta hai.
+  // handleClose apna sync khud karta hai, isliye wo case
+  // closingRef se skip hota hai.
+  // =========================================================
+
+  useEffect(() => {
+    return () => {
+      if (closingRef.current) return; // normal close — sync already done
+
+      try {
+        localStorage.setItem("rg_last_game_session", String(Date.now()));
+      } catch {
+        /* storage unavailable */
+      }
+
+      dispatch(checkGamecredit())
+        .unwrap()
+        .catch(() => {})
+        .finally(() => {
+          dispatch(getProfile()).catch(() => {});
+          dispatch(clearGameUrl());
+        });
+    };
+  }, [dispatch]);
 
   // =========================================================
   // CLOSED

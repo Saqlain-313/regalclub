@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { clearError, register } from "../redux/slices/authSlice";
+import { showErrorToast, showSuccessToast } from "../hooks/toast";
 
 // Sirf India support hai
 const countries = [
@@ -141,13 +142,17 @@ const Register = () => {
     try {
       const result = await dispatch(register(userData)).unwrap();
       console.log("Registration successful:", result);
+      showSuccessToast(
+        "Registration Successful",
+        "Welcome! Your account has been created.",
+      );
       navigate("/", { replace: true });
     } catch (err) {
       console.error("Registration failed:", err);
-      const errorElement = document.querySelector(".error-message");
-      if (errorElement) {
-        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      showErrorToast(
+        "Registration Failed",
+        err?.message || "Something went wrong. Please try again.",
+      );
     }
   };
 

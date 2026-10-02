@@ -585,11 +585,36 @@ exports.revealCell = async (req, res) => {
     const isMine = game.minePositions.includes(cell);
 
     if (isMine) {
-      game.status = "lost";
-      game.finishedAt = new Date();
-      game.virtualWin = 0;
+      // CONDITIONAL finish — do parallel reveals me sirf ek hi
+      // game ko "lost" mark kar payega (race-safe)
+      const lostGame = await MinesGame.findOneAndUpdate(
+        {
+          _id: gameId,
+          user: userId,
+          status: "playing",
+        },
+        {
+          $set: {
+            status: "lost",
+            finishedAt: new Date(),
+            virtualWin: 0,
+          },
+        },
+        {
+          new: true,
+        },
+      ).select("+minePositions");
 
-      await game.save();
+      if (!lostGame) {
+        return res.status(400).json({
+          success: false,
+          message: "Game has already been completed",
+        });
+      }
+
+      game.status = "lost";
+      game.finishedAt = lostGame.finishedAt;
+      game.virtualWin = 0;
 
       const io = req.app.get("io");
 
@@ -650,28 +675,99 @@ exports.revealCell = async (req, res) => {
     }
 
     // ---------------------------------------------------------
-    // SAFE CELL
+    // SAFE CELL — ATOMIC CLAIM
     // ---------------------------------------------------------
-    game.openedCells.push(cell);
-    game.safeCells = game.openedCells.length;
+    // openedCells $ne filter se guarantee hota hai ki do parallel
+    // requests (double-click / rapid taps) me ek hi request cell
+    // claim kar sake. Pehle read-check-save tha — race me safeCells
+    // aur multiplier bigad jate the.
+    const claimedGame = await MinesGame.findOneAndUpdate(
+      {
+        _id: gameId,
+        user: userId,
+        status: "playing",
+        openedCells: {
+          $ne: cell,
+        },
+      },
+      {
+        $push: {
+          openedCells: cell,
+        },
+        $inc: {
+          safeCells: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    ).select("+minePositions");
+
+    if (!claimedGame) {
+      return res.status(400).json({
+        success: false,
+        message: "Cell already opened or game finished",
+      });
+    }
+
+    game.openedCells = claimedGame.openedCells;
+    game.safeCells = claimedGame.openedCells.length;
     game.multiplier = getMultiplier(game.safeCells);
+
+    // safeCells $inc se badha tha — actual count se sync karo
+    await MinesGame.updateOne(
+      {
+        _id: gameId,
+      },
+      {
+        $set: {
+          multiplier: game.multiplier,
+          safeCells: game.safeCells,
+        },
+      },
+    );
 
     const safeTotal = TOTAL_CELLS - game.minesCount;
 
     // ---------------------------------------------------------
-    // AUTO WIN
+    // AUTO WIN — CONDITIONAL credit (race-safe)
+    // status "playing" -> "won" transition sirf ek request jeet
+    // sakti hai; credit usi me add hota hai. Isse last-cell reveal
+    // + cashout ka parallel race double-credit nahi kar sakta.
     // ---------------------------------------------------------
     if (game.safeCells >= safeTotal) {
-      game.status = "won";
-
       const virtualWin =
         Number(game.virtualStake || 0) *
         Number(game.multiplier || 1);
 
-      game.virtualWin = virtualWin;
-      game.finishedAt = new Date();
+      const wonGame = await MinesGame.findOneAndUpdate(
+        {
+          _id: gameId,
+          user: userId,
+          status: "playing",
+        },
+        {
+          $set: {
+            status: "won",
+            virtualWin,
+            finishedAt: new Date(),
+          },
+        },
+        {
+          new: true,
+        },
+      );
 
-      await game.save();
+      if (!wonGame) {
+        return res.status(400).json({
+          success: false,
+          message: "Game has already been completed",
+        });
+      }
+
+      game.status = "won";
+      game.virtualWin = virtualWin;
+      game.finishedAt = wonGame.finishedAt;
 
       const updatedUser = await User.findByIdAndUpdate(
         userId,

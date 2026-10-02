@@ -88,7 +88,9 @@ api.interceptors.response.use(
 
   (error) => {
     if (error.response?.status === 401) {
-      const isProfileCheck = error.config?.url?.includes("/auth/profile");
+      const isProfileCheck =
+      error.config?.url?.includes("/auth/profile") ||
+      error.config?.url?.includes("/auth/admin/profile");
 
       if (
         !isProfileCheck &&

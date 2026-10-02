@@ -60,6 +60,7 @@ const MENUS = [
   { name: "Dashboard", path: "/admin/dashboard", icon: <LayoutDashboard size={20} />, color: "blue" },
   { name: "Users", path: "/admin/users", icon: <Users size={20} />, color: "green" },
   { name: "Banners", path: "/admin/banners", icon: <Image size={20} />, color: "purple" },
+  { name: "Activity Banners", path: "/admin/activity-banners", icon: <Sparkles size={20} />, color: "pink" },
   { name: "Platform Games", path: "/admin/platform-games", icon: <Gamepad2 size={20} />, color: "blue" },
   { name: "Deposits", path: "/admin/deposits", icon: <Wallet size={20} />, color: "emerald" },
   { name: "Withdrawals", path: "/admin/withdrawals", icon: <CreditCard size={20} />, color: "orange" },
