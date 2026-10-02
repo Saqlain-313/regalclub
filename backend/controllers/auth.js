@@ -9,37 +9,12 @@ const { sendResetPasswordOTP } = require("../utils/mailer.js");
 const uploadToImgBB = require("../utils/uploadToImgBB");
 
 // ======================================================
-// COUNTRY CONFIGURATION
+// COUNTRY CONFIGURATION — Sirf India support hai
 // ======================================================
 
 const COUNTRY_CONFIG = {
   IN: {
     name: "India",
-    mobileLength: 10,
-  },
-
-  PK: {
-    name: "Pakistan",
-    mobileLength: 10,
-  },
-
-  AE: {
-    name: "UAE",
-    mobileLength: 9,
-  },
-
-  AU: {
-    name: "Australia",
-    mobileLength: 9,
-  },
-
-  BD: {
-    name: "Bangladesh",
-    mobileLength: 10,
-  },
-
-  NP: {
-    name: "Nepal",
     mobileLength: 10,
   },
 };
@@ -53,32 +28,11 @@ const normalizeCountry = (country) => {
     .trim()
     .toLowerCase();
 
-  // Always return the COUNTRY_CONFIG key.
-  // COUNTRY_CONFIG uses ISO-style keys: IN, PK, AE, AU, BD, NP.
+  // Only India supported.
   const aliases = {
     india: "IN",
     in: "IN",
     ind: "IN",
-
-    pakistan: "PK",
-    pk: "PK",
-    pak: "PK",
-
-    bangladesh: "BD",
-    bangla: "BD",
-    bd: "BD",
-    bng: "BD",
-
-    nepal: "NP",
-    np: "NP",
-
-    uae: "AE",
-    ae: "AE",
-    dubai: "AE",
-
-    australia: "AU",
-    au: "AU",
-    aus: "AU",
   };
 
   return aliases[value] || "";
@@ -113,8 +67,7 @@ const validateCountry = (country) => {
     return {
       valid: false,
       country: "",
-      message:
-        "Country is required. Supported countries are India, Pakistan, UAE, Australia, Bangladesh and Nepal.",
+      message: "Country is required. Only India is supported.",
     };
   }
 
@@ -122,8 +75,7 @@ const validateCountry = (country) => {
     return {
       valid: false,
       country: normalized,
-      message:
-        "Unsupported country. Supported countries are India, Pakistan, UAE, Australia, Bangladesh and Nepal.",
+      message: "Unsupported country. Only India is supported.",
     };
   }
 
@@ -142,7 +94,7 @@ const validateMobile = (mobile, country) => {
     return {
       valid: false,
       message:
-        "Invalid country. Supported countries are India, Pakistan, UAE, Australia, Bangladesh and Nepal.",
+        "Invalid country. Only India is supported.",
     };
   }
 
@@ -602,6 +554,17 @@ const getProfile = async (req, res) => {
       });
     }
 
+    // Admin accounts client (user) side par allowed nahi hain.
+    // Admin panel alag port par chalta hai, par cookies localhost
+    // par share hoti hain — stale admin cookie se client ka
+    // profile admin ban jata tha aur / <-> /login loop banta tha.
+    if (String(req.user?.role || "").toLowerCase() === "admin") {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized — admin accounts must use the admin panel",
+      });
+    }
+
     const user = await User.findById(mongoId)
       .select("-password -plainPassword")
       .lean();
@@ -1050,7 +1013,7 @@ const changePassword = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find({})
-      .select("-password -plainPassword")
+      .select("-password")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -1117,6 +1080,239 @@ const updateUserStatus = async (req, res) => {
 };
 
 // ======================================================
+// ADMIN — SET USER WAGERING REQUIREMENT
+// Admin user ke account par ek wagering target (₹) set
+// karta hai. Jab tak user ka total wagered is target tak
+// complete nahi hota, withdrawal capped rahegi.
+// wageringRequired = 0 -> requirement clear.
+// ======================================================
+
+const adminSetUserWagering = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { wageringRequired } = req.body;
+
+    const amount = Number(wageringRequired);
+    if (!Number.isFinite(amount) || amount < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "wageringRequired must be a number >= 0",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.adminWageringRequired = Math.round(amount);
+    await user.save();
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    delete userResponse.plainPassword;
+
+    return res.status(200).json({
+      success: true,
+      message: amount > 0
+        ? `Wagering requirement of ₹${user.adminWageringRequired} set — withdrawal stays capped until wagering completes`
+        : "Wagering requirement cleared",
+      user: userResponse,
+    });
+  } catch (error) {
+    console.error("SET USER WAGERING ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
+  }
+};
+
+// ======================================================
+// ADMIN — UPDATE USER (full edit)
+// Admin can edit: name, email, mobile, wallet credit,
+// status, country, role and password (hashed + plain sync).
+// ======================================================
+
+const adminUpdateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const {
+      name,
+      email,
+      mobile,
+      credit,
+      status,
+      country,
+      role,
+      password,
+    } = req.body;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // An admin cannot change their own role or status
+    // (prevents locking yourself out of the panel)
+    const adminId = String(req.user?._id || req.user?.id || "");
+    if (adminId && adminId === String(user._id)) {
+      if ((role && role !== user.role) || (status && status !== user.status)) {
+        return res.status(403).json({
+          success: false,
+          message: "You cannot change your own role or status",
+        });
+      }
+    }
+
+    const updates = {};
+
+    // NAME
+    if (name !== undefined && name !== null && String(name).trim() !== "") {
+      updates.name = String(name).trim().toLowerCase();
+    }
+
+    // EMAIL
+    if (email !== undefined && email !== null && String(email).trim() !== "") {
+      const cleanEmail = String(email).trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email address",
+        });
+      }
+      updates.email = cleanEmail;
+    }
+
+    // MOBILE
+    if (mobile !== undefined && mobile !== null && String(mobile).trim() !== "") {
+      const cleanMobile = String(mobile).replace(/\D/g, "");
+      if (!/^\d+$/.test(cleanMobile) || cleanMobile.length < 8) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid mobile number",
+        });
+      }
+      updates.mobile = cleanMobile;
+    }
+
+    // WALLET CREDIT
+    if (credit !== undefined && credit !== null && credit !== "") {
+      const newCredit = Number(credit);
+      if (!Number.isFinite(newCredit) || newCredit < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Wallet amount must be a positive number",
+        });
+      }
+      updates.credit = newCredit;
+    }
+
+    // STATUS
+    if (status !== undefined && status !== null && status !== "") {
+      if (!["active", "blocked"].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Status must be active or blocked",
+        });
+      }
+      updates.status = status;
+    }
+
+    // COUNTRY
+    if (country !== undefined && country !== null && String(country).trim() !== "") {
+      updates.country = String(country).trim().toUpperCase();
+    }
+
+    // ROLE
+    if (role !== undefined && role !== null && role !== "") {
+      if (!["admin", "user"].includes(role)) {
+        return res.status(400).json({
+          success: false,
+          message: "Role must be admin or user",
+        });
+      }
+      updates.role = role;
+    }
+
+    // PASSWORD (hash + keep plainPassword in sync — the panel reads it)
+    if (password !== undefined && password !== null && String(password) !== "") {
+      const newPassword = String(password);
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters",
+        });
+      }
+      updates.password = await bcrypt.hash(newPassword, 10);
+      updates.plainPassword = newPassword;
+    }
+
+    // DUPLICATE CHECK for email / mobile
+    if (updates.email || updates.mobile) {
+      const duplicate = await User.findOne({
+        _id: { $ne: user._id },
+        $or: [
+          ...(updates.email ? [{ email: updates.email }] : []),
+          ...(updates.mobile ? [{ mobile: updates.mobile }] : []),
+        ],
+      });
+
+      if (duplicate) {
+        return res.status(400).json({
+          success: false,
+          message: duplicate.email === updates.email
+            ? "Email already in use by another user"
+            : "Mobile number already in use by another user",
+        });
+      }
+    }
+
+    // APPLY
+    Object.assign(user, updates);
+    await user.save();
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    delete userResponse.plainPassword;
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user: userResponse,
+    });
+  } catch (error) {
+    console.error("ADMIN UPDATE USER ERROR:", error);
+
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0];
+      return res.status(400).json({
+        success: false,
+        message: field === "email"
+          ? "Email already registered"
+          : field === "mobile"
+            ? "Mobile number already registered"
+            : "Duplicate field",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
+  }
+};
+
+// ======================================================
 // EXPORTS
 // ======================================================
 
@@ -1131,6 +1327,8 @@ module.exports = {
   changePassword,
   getAllUsers,
   updateUserStatus,
+  adminSetUserWagering,
+  adminUpdateUser,
 
   // Helpers
   normalizeCountry,

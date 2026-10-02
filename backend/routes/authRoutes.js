@@ -13,6 +13,8 @@ const {
   changePassword,
   getAllUsers,
   updateUserStatus,
+  adminSetUserWagering,
+  adminUpdateUser,
 } = require("../controllers/auth");
 
 const { protect, adminProtect } = require("../middleware/authMiddleware");
@@ -65,5 +67,17 @@ router.put(
   adminProtect,
   updateUserStatus,
 );
+
+// Admin — set wagering requirement (₹) on a user's account.
+// 0 = clear. Withdrawal capped until wagering completes.
+router.put(
+  "/admin/users/:userId/wagering",
+  protect,
+  adminProtect,
+  adminSetUserWagering,
+);
+
+// Admin — full user edit (wallet, password, profile, status, role)
+router.put("/admin/users/:userId", protect, adminProtect, adminUpdateUser);
 
 module.exports = router;

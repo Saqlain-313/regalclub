@@ -3,15 +3,19 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Bell,
+  Calendar,
   ChevronRight,
   CircleDollarSign,
   ClipboardList,
+  CreditCard,
   Eye,
   EyeOff,
+  FileText,
   Gift,
   History,
   Home,
   User,
+  Wallet,
   Wallet as WalletIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -182,22 +186,25 @@ export default function WalletDashboard() {
     });
   };
 
+  const depositStatus = (s) => {
+    // "approved" ko user ko "Success" dikhao (deposit-history jaisa)
+    const t = String(s || "").toLowerCase();
+    if (t === "approved") return "Success";
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : "Success";
+  };
+
   const normalizeDeposit = (d) => ({
-    id: d.id || d._id?.slice(-8).toUpperCase() || "N/A",
+    id: d.depositRef || d.transactionId || d.id || d._id?.slice(-8).toUpperCase() || "N/A",
     date: d.date || formatDate(d.createdAt || d.requestedAt),
     amount: d.amount,
-    status: d.status
-      ? d.status.charAt(0).toUpperCase() + d.status.slice(1)
-      : "Success",
+    status: depositStatus(d.status),
   });
 
   const normalizeWithdrawal = (w) => ({
-    id: w.id || w._id?.slice(-8).toUpperCase() || "N/A",
+    id: w.depositRef || w.id || w._id?.slice(-8).toUpperCase() || "N/A",
     date: w.date || formatDate(w.requestedAt || w.createdAt),
     amount: w.amount,
-    status: w.status
-      ? w.status.charAt(0).toUpperCase() + w.status.slice(1)
-      : "Success",
+    status: depositStatus(w.status),
   });
 
   const deposits = depositsFromStore.map(normalizeDeposit);
@@ -221,6 +228,45 @@ export default function WalletDashboard() {
     if (s === "processing")
       return "bg-blue-500/15 text-blue-400 border border-blue-500/30";
     return "bg-[#9B59B6]/15 text-[#9B59B6] border border-[#9B59B6]/30";
+  };
+
+  // ======================================================
+  // HISTORY-STYLE CARD TOKENS (same as /deposit-history
+  // aur /withdrawal-history pages)
+  // ======================================================
+
+  const cardBase =
+    "bg-[#150D22]/90 border border-[#2a1b3d] shadow-[0_4px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.04)]";
+
+  const statusConfig = (status) => {
+    const value = String(status || "").toLowerCase();
+
+    if (["success", "approved", "completed"].includes(value)) {
+      return {
+        label: "Success",
+        badge: "text-[#00E676] bg-[#00E676]/10 border border-[#00E676]/30",
+        bar: "bg-gradient-to-b from-[#00E676] to-transparent",
+      };
+    }
+    if (["pending", "processing"].includes(value)) {
+      return {
+        label: "Pending",
+        badge: "text-[#F1C40F] bg-[#F1C40F]/10 border border-[#F1C40F]/30",
+        bar: "bg-gradient-to-b from-[#F1C40F] to-transparent",
+      };
+    }
+    if (["failed", "rejected"].includes(value)) {
+      return {
+        label: "Failed",
+        badge: "text-red-400 bg-red-500/10 border border-red-500/30",
+        bar: "bg-gradient-to-b from-red-500 to-transparent",
+      };
+    }
+    return {
+      label: status || "Pending",
+      badge: "text-gray-400 bg-gray-500/10 border border-gray-500/30",
+      bar: "bg-gradient-to-b from-gray-500 to-transparent",
+    };
   };
 
   // ======================================================
@@ -263,43 +309,69 @@ export default function WalletDashboard() {
   // ======================================================
 
   return (
-    <div className="min-h-screen bg-[#0B0410] pb-28 font-sans">
-      <div className="max-w-md mx-auto px-4">
+    <div className="min-h-screen bg-[#0B0410] pb-28 font-sans relative overflow-hidden">
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#8E44AD]/10 rounded-full blur-3xl" />
+
+      <div className="relative max-w-md mx-auto px-4">
         {/* Header */}
         <div className="pt-6 pb-4 flex items-center justify-between relative">
-          <h1 className="text-xl font-semibold text-white">Wallet</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75)] flex items-center justify-center flex-shrink-0">
+              <Wallet className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-white tracking-wide">
+                Wallet
+              </h1>
+              <p className="text-[11px] text-gray-400">
+                Manage your balance
+              </p>
+            </div>
+          </div>
           <button>
             <Bell className="w-6 h-6 text-gray-300" strokeWidth={1.8} />
           </button>
         </div>
 
         {/* credit Card */}
-        <div className="relative overflow-hidden rounded-2xl border border-[#9B59B6]/40 bg-gradient-to-br from-[#1C0F2B] to-[#2a1b3d] px-5 py-5 mb-4 shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
-          <div className="flex items-start justify-between">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] px-5 py-5 mb-4 shadow-[0_10px_36px_rgba(58,0,201,0.45)]">
+          <div
+            className="absolute inset-0 opacity-[0.14] pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)",
+              backgroundSize: "18px 18px",
+            }}
+          />
+          <div className="pointer-events-none absolute -right-10 -bottom-14 w-44 h-44 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative flex items-start justify-between">
             <div className="flex-1">
-              <p className="text-sm text-white mb-1.5">
-                Current Wallet credit
+              <p className="text-[10px] font-black tracking-[0.18em] text-white/75 uppercase mb-1.5">
+                Current Wallet Credit
               </p>
               <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-[28px] leading-none font-bold text-gray-300 tracking-tight">
+                <h2 className="text-[30px] leading-none font-black text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
                   {showcredit ? formatcredit(walletcredit) : "••••••••"}
                 </h2>
                 <button onClick={() => setShowcredit(!showcredit)}>
                   {showcredit ? (
-                    <Eye className="w-4 h-4 text-gray-400" strokeWidth={1.8} />
+                    <Eye className="w-4 h-4 text-white/70" strokeWidth={1.8} />
                   ) : (
                     <EyeOff
-                      className="w-4 h-4 text-gray-400"
+                      className="w-4 h-4 text-white/70"
                       strokeWidth={1.8}
                     />
                   )}
                 </button>
               </div>
-              <div className="border-t border-[#9B59B6]/30 pt-3">
-                <span className="text-sm text-gray-400">
-                  Available credit{" "}
+              <div className="border-t border-white/20 pt-3">
+                <span className="text-[11px] font-bold tracking-wider text-white/75 uppercase">
+                  Available Credit{" "}
                 </span>
-                <span className="text-sm font-semibold text-white ml-1">
+                <span className="text-sm font-black text-white ml-1">
                   {formatcredit(walletcredit)}
                 </span>
               </div>
@@ -386,38 +458,53 @@ export default function WalletDashboard() {
             />
           ) : (
             <>
-              <div>
-                {deposits.slice(0, 5).map((d, i) => (
-                  <div
-                    key={d.id || i}
-                    className="flex items-center justify-between px-4 py-2.5 border-b border-[#2a1b3d]/50 last:border-b-0"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-[#9B59B6]/15 flex items-center justify-center flex-shrink-0 border border-[#9B59B6]/30">
-                        <ArrowDownLeft
-                          className="w-3.5 h-3.5 text-[#9B59B6]"
-                          strokeWidth={2.2}
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-white truncate">
-                          #{d.id}
-                        </p>
-                        <p className="text-xs text-gray-400">{d.date}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2.5 flex-shrink-0 ml-2">
-                      <span className="text-sm font-semibold text-white">
-                        {formatAmount(d.amount)}
-                      </span>
+              <div className="px-4 pb-4 space-y-3">
+                {depositsFromStore.slice(0, 5).map((d, i) => {
+                  const status = statusConfig(d.status);
+
+                  return (
+                    <div
+                      key={d._id || d.id || i}
+                      className={`relative rounded-2xl ${cardBase} p-4 overflow-hidden transition-all duration-200 hover:border-[#B45CFF]/40`}
+                    >
+                      {/* Left accent bar */}
                       <span
-                        className={`text-xs px-2.5 py-1 rounded-md font-medium ${statusBadgeClass(d.status)}`}
-                      >
-                        {d.status}
-                      </span>
+                        className={`absolute left-0 top-0 bottom-0 w-[3px] ${status.bar}`}
+                      />
+
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-lg font-black text-white leading-none">
+                            {formatAmount(d.amount)}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-500">
+                            <CreditCard size={10} />
+                            {d.methodTitle || d.methodType || "Deposit"}
+                          </div>
+                        </div>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black tracking-widest uppercase flex-shrink-0 ${status.badge}`}
+                        >
+                          {status.label}
+                        </span>
+                      </div>
+
+                      {/* Txn ID */}
+                      <div className="mt-3 flex items-center gap-1.5 bg-[#12061C] rounded-xl border border-[#2a1b3d] px-3 py-2">
+                        <FileText size={11} className="text-[#B45CFF] flex-shrink-0" />
+                        <span className="text-[10px] font-mono text-gray-300 truncate">
+                          {d.depositRef || d.transactionId || d._id || "—"}
+                        </span>
+                      </div>
+
+                      {/* Date time */}
+                      <div className="mt-2.5 flex items-center gap-1.5 text-[10px] text-gray-500">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(d.createdAt || d.requestedAt)}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <button
@@ -459,38 +546,53 @@ export default function WalletDashboard() {
             />
           ) : (
             <>
-              <div>
-                {withdrawals.slice(0, 5).map((w, i) => (
-                  <div
-                    key={w.id || i}
-                    className="flex items-center justify-between px-4 py-2.5 border-b border-[#2a1b3d]/50 last:border-b-0"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-[#9B59B6]/15 flex items-center justify-center flex-shrink-0 border border-[#9B59B6]/30">
-                        <ArrowUpRight
-                          className="w-3.5 h-3.5 text-[#9B59B6]"
-                          strokeWidth={2.2}
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-white truncate">
-                          #{w.id}
-                        </p>
-                        <p className="text-xs text-gray-400">{w.date}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2.5 flex-shrink-0 ml-2">
-                      <span className="text-sm font-semibold text-white">
-                        {formatAmount(w.amount)}
-                      </span>
+              <div className="px-4 pb-4 space-y-3">
+                {withdrawalsFromStore.slice(0, 5).map((w, i) => {
+                  const status = statusConfig(w.status);
+
+                  return (
+                    <div
+                      key={w._id || w.id || i}
+                      className={`relative rounded-2xl ${cardBase} p-4 overflow-hidden transition-all duration-200 hover:border-[#B45CFF]/40`}
+                    >
+                      {/* Left accent bar */}
                       <span
-                        className={`text-xs px-2.5 py-1 rounded-md font-medium ${statusBadgeClass(w.status)}`}
-                      >
-                        {w.status}
-                      </span>
+                        className={`absolute left-0 top-0 bottom-0 w-[3px] ${status.bar}`}
+                      />
+
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-lg font-black text-white leading-none">
+                            {formatAmount(w.amount)}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-500">
+                            <CreditCard size={10} />
+                            {w.method || w.methodTitle || "Withdrawal"}
+                          </div>
+                        </div>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black tracking-widest uppercase flex-shrink-0 ${status.badge}`}
+                        >
+                          {status.label}
+                        </span>
+                      </div>
+
+                      {/* Txn / reference */}
+                      <div className="mt-3 flex items-center gap-1.5 bg-[#12061C] rounded-xl border border-[#2a1b3d] px-3 py-2">
+                        <FileText size={11} className="text-[#B45CFF] flex-shrink-0" />
+                        <span className="text-[10px] font-mono text-gray-300 truncate">
+                          {w.transactionId || w._id || "—"}
+                        </span>
+                      </div>
+
+                      {/* Date time */}
+                      <div className="mt-2.5 flex items-center gap-1.5 text-[10px] text-gray-500">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(w.createdAt || w.requestedAt)}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <button

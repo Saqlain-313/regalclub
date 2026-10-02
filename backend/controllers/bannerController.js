@@ -50,11 +50,19 @@ exports.uploadBanner = async (req, res) => {
 
 exports.getBanners = async (req, res) => {
   try {
-    const banners = await Banners.findOne();
+    const bannersDoc = await Banners.findOne();
+
+    let list = bannersDoc?.banners || [];
+
+    // Public default: only ACTIVE banners.
+    // Admin panel passes ?all=true to manage every banner.
+    if (req.query.all !== "true") {
+      list = list.filter((b) => b.isActive);
+    }
 
     res.json({
       success: true,
-      data: banners?.banners || [],
+      data: list,
     });
   } catch (err) {
     res.status(500).json({
@@ -123,7 +131,10 @@ exports.updateBanner = async (req, res) => {
     }
 
     if (req.body.isActive !== undefined) {
-      banner.isActive = req.body.isActive;
+      // FormData sends booleans as strings — normalize "false" correctly
+      // (a plain assignment would treat the string "false" as truthy)
+      banner.isActive =
+        req.body.isActive === true || req.body.isActive === "true";
     }
 
     await bannerDoc.save();

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   adminLogin,
   clearError,
+  clearMessage,
 } from "../redux/adminAuthSlice";
 import { useNavigate } from "react-router-dom";
 
@@ -46,6 +47,9 @@ const Login = () => {
       isAuthenticated &&
       admin?.role === "admin"
     ) {
+      // Don't carry the login-success message into
+      // other pages (it re-fired as a toast there)
+      dispatch(clearMessage());
       navigate(
         "/admin/dashboard",
         { replace: true }
@@ -55,6 +59,7 @@ const Login = () => {
     isAuthenticated,
     admin,
     navigate,
+    dispatch,
   ]);
 
   // ==========================================

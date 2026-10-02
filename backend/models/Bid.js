@@ -60,6 +60,24 @@ const bidSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // Currency snapshot at bid time (INR conversion audit).
+    // Ye fields pehle controller likhta tha par schema me the hi
+    // nahi — mongoose silently strip kar deta tha.
+    bidAmountUserCurrency: {
+      type: Number,
+      default: 0,
+    },
+
+    currencyCode: {
+      type: String,
+      default: "INR",
+    },
+
+    currencyRate: {
+      type: Number,
+      default: 1,
+    },
+
     possibleWinAmount: {
       type: Number,
       default: 0,

@@ -256,13 +256,13 @@ const MatkaDashboard = () => {
     return (
       <div className="flex justify-center items-center min-h-[60vh] px-4">
         <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-amber-500"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#B45CFF]"></div>
 
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 animate-pulse"></div>
+            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-[#B45CFF] to-[#7418F5] animate-pulse"></div>
           </div>
 
-          <p className="text-gray-500 text-sm mt-4 text-center font-medium">
+          <p className="text-gray-400 text-sm mt-4 text-center font-medium">
             Loading your dashboard...
           </p>
         </div>
@@ -287,22 +287,26 @@ const MatkaDashboard = () => {
   // ==========================================================
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30 px-3 sm:px-4 py-4 sm:py-6">
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+    <div className="min-h-screen relative overflow-hidden bg-[#0B0410] px-3 sm:px-4 py-4 sm:py-6">
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#3A00C9]/10 rounded-full blur-3xl" />
+      <div className="relative max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
         {/* ==================================================
             WELCOME
         ================================================== */}
 
         <div className="group relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-400 rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition duration-500"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#B45CFF] via-[#7418F5] to-[#3A00C9] rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition duration-500"></div>
 
-          <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-2xl shadow-2xl p-5 sm:p-8 text-white overflow-hidden transform group-hover:scale-[1.01] transition duration-500">
+          <div className="relative bg-gradient-to-r from-[#B45CFF] via-[#7418F5] to-[#3A00C9] rounded-2xl shadow-2xl p-5 sm:p-8 text-white overflow-hidden transform group-hover:scale-[1.01] transition duration-500">
 
             <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-48 h-48 sm:w-96 sm:h-96 bg-white rounded-full filter blur-3xl animate-pulse"></div>
+              <div className="absolute top-0 right-0 w-48 h-48 sm:w-96 sm:h-96 bg-[#150D22]/90 rounded-full filter blur-3xl animate-pulse"></div>
 
-              <div className="absolute bottom-0 left-0 w-36 h-36 sm:w-72 sm:h-72 bg-white rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+              <div className="absolute bottom-0 left-0 w-36 h-36 sm:w-72 sm:h-72 bg-[#150D22]/90 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
             </div>
 
             <div className="relative z-10 flex flex-col gap-4">
@@ -323,7 +327,7 @@ const MatkaDashboard = () => {
 
                 <Link
                   to="/matka/markets"
-                  className="group/btn relative px-4 py-2 sm:px-6 sm:py-3 bg-white text-amber-600 rounded-xl sm:rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 active:scale-95 overflow-hidden text-xs sm:text-sm"
+                  className="group/btn relative px-4 py-2 sm:px-6 sm:py-3 bg-[#150D22]/90 text-[#C77AFF] rounded-xl sm:rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 active:scale-95 overflow-hidden text-xs sm:text-sm"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-amber-50 to-orange-50 opacity-0 group-hover/btn:opacity-100 transition duration-300"></div>
 
@@ -348,84 +352,31 @@ const MatkaDashboard = () => {
               </div>
 
               <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold flex items-center gap-2 flex-wrap">
-                  Welcome back,{" "}
-                  {user?.name?.split(
-                    " "
-                  )[0] ||
-                    "User"}
-                  !
-
-                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300 animate-pulse" />
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2 flex-wrap">
+                  How to Play
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[#C77AFF] animate-pulse" />
                 </h1>
 
-                <p className="text-amber-100/90 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
-                  Today's Matka summary
-                </p>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        {/* ==================================================
-            credit
-        ================================================== */}
-
-        <div className="group relative">
-
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-400/20 via-orange-400/20 to-yellow-400/20 rounded-2xl blur-xl"></div>
-
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4 sm:p-6 overflow-hidden">
-
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute top-0 right-0 w-32 h-32 sm:w-64 sm:h-64 bg-amber-500 rounded-full filter blur-3xl"></div>
-            </div>
-
-            <div className="relative z-10 flex flex-col gap-3">
-
-              <div className="flex items-center gap-3">
-
-                <div className="relative flex-shrink-0">
-
-                  <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-xl blur-md"></div>
-
-                  <div className="relative bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl p-2 sm:p-3 shadow-lg">
-                    <Wallet className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+                <div className="mt-3 space-y-2.5">
+                  <div className="flex items-start gap-2.5 bg-[#0B0410]/35 border border-white/15 rounded-xl px-3 py-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white text-[11px] font-black flex items-center justify-center flex-shrink-0 shadow-[0_0_10px_rgba(180,92,255,0.5)]">1</span>
+                    <p className="text-white text-xs sm:text-sm font-semibold flex items-center mt-0.5">
+                      Pick a market and choose your game type — Jodi, Last Digit or First Digit.
+                    </p>
                   </div>
-
+                  <div className="flex items-start gap-2.5 bg-[#0B0410]/35 border border-white/15 rounded-xl px-3 py-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white text-[11px] font-black flex items-center justify-center flex-shrink-0 shadow-[0_0_10px_rgba(180,92,255,0.5)]">2</span>
+                    <p className="text-white text-xs sm:text-sm font-semibold flex items-center mt-0.5">
+                      Select your numbers, set the bid amount and confirm before the market closes.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5 bg-[#0B0410]/35 border border-white/15 rounded-xl px-3 py-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#00E676] to-[#00C853] text-white text-[11px] font-black flex items-center justify-center flex-shrink-0 shadow-[0_0_10px_rgba(0,230,118,0.5)]">3</span>
+                    <p className="text-white text-xs sm:text-sm font-semibold flex items-center mt-0.5">
+                      Results declare at the result time — winnings are credited to your wallet instantly.
+                    </p>
+                  </div>
                 </div>
-
-                <div className="min-w-0 flex-1">
-
-                  <p className="text-gray-500 text-xs sm:text-sm font-medium">
-                    Available credit
-                  </p>
-
-                  <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent truncate">
-                    {formatCurrency(
-                      user?.credit
-                        ?.local || 0
-                    )}
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="flex items-center justify-between text-gray-400 text-xs bg-gray-50/80 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-gray-200">
-
-                <span className="inline-flex items-center gap-1.5 text-green-600 font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                  Active
-                </span>
-
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                  Updated: Today
-                </span>
-
               </div>
 
             </div>
@@ -453,7 +404,7 @@ const MatkaDashboard = () => {
               icon: Coins,
               gradient:
                 "from-purple-400 to-violet-500",
-              label: "Amount",
+              label: "Your Bet Amount",
               value:
                 formatCurrency(
                   todaySummary?.totalAmount ||
@@ -474,7 +425,7 @@ const MatkaDashboard = () => {
             {
               icon: Trophy,
               gradient:
-                "from-amber-400 to-orange-500",
+                "from-[#B45CFF] to-[#7418F5]",
               label: "Wins",
               value:
                 recentWins > 0
@@ -488,7 +439,7 @@ const MatkaDashboard = () => {
             ) => (
               <div
                 key={index}
-                className="group relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-3 sm:p-4 overflow-hidden"
+                className="group relative bg-[#150D22]/90 backdrop-blur-sm rounded-2xl shadow-lg border border-[#2a1b3d] p-3 sm:p-4 overflow-hidden"
               >
                 <div className="flex items-center gap-2.5 sm:gap-3">
 
@@ -503,11 +454,11 @@ const MatkaDashboard = () => {
 
                   <div className="min-w-0">
 
-                    <p className="text-gray-500 text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">
+                    <p className="text-gray-400 text-[10px] sm:text-xs font-medium uppercase tracking-wider leading-tight">
                       {stat.label}
                     </p>
 
-                    <p className="text-base sm:text-xl font-extrabold text-gray-800 truncate">
+                    <p className="text-base sm:text-xl font-extrabold text-white truncate">
                       {stat.value}
                     </p>
 
@@ -526,13 +477,13 @@ const MatkaDashboard = () => {
 
         <div className="group relative">
 
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-400/20 via-orange-400/20 to-yellow-400/20 rounded-2xl blur-xl"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#B45CFF]/20 via-[#7418F5]/20 to-[#3A00C9]/20 rounded-2xl blur-xl"></div>
 
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 overflow-hidden">
+          <div className="relative bg-[#150D22]/90 backdrop-blur-sm rounded-2xl shadow-xl border border-[#2a1b3d] overflow-hidden">
 
             {/* Header */}
 
-            <div className="p-4 sm:p-6 border-b border-gray-100/50 bg-gradient-to-r from-amber-50/30 to-orange-50/30">
+            <div className="p-4 sm:p-6 border-b border-[#2a1b3d]/50 bg-gradient-to-r from-[#150D22] to-[#12061C]">
 
               <div className="flex items-center justify-between">
 
@@ -540,9 +491,9 @@ const MatkaDashboard = () => {
 
                   <div className="relative flex-shrink-0">
 
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-xl blur-sm"></div>
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-[#B45CFF] to-[#7418F5] rounded-xl blur-sm"></div>
 
-                    <div className="relative bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl p-1.5 sm:p-2.5 shadow-lg">
+                    <div className="relative bg-gradient-to-br from-[#B45CFF] to-[#7418F5] rounded-xl p-1.5 sm:p-2.5 shadow-lg">
                       <Calendar
                         size={16}
                         className="text-white sm:w-5 sm:h-5"
@@ -553,15 +504,15 @@ const MatkaDashboard = () => {
 
                   <div>
 
-                    <h2 className="text-sm sm:text-lg font-extrabold text-gray-800 flex items-center gap-2">
+                    <h2 className="text-sm sm:text-lg font-extrabold text-white flex items-center gap-2">
                       Today's Results
 
-                      <span className="text-[10px] sm:text-xs font-medium bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-full">
+                      <span className="text-[10px] sm:text-xs font-medium bg-gradient-to-r from-[#B45CFF] to-[#7418F5] text-white px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-full">
                         Live
                       </span>
                     </h2>
 
-                    <p className="text-gray-500 text-[10px] sm:text-xs hidden xs:block">
+                    <p className="text-gray-400 text-[10px] sm:text-xs hidden xs:block">
                       Latest winning numbers
                     </p>
 
@@ -571,7 +522,7 @@ const MatkaDashboard = () => {
 
                 <Link
                   to="/matka/results"
-                  className="text-amber-600 text-xs sm:text-sm font-bold flex items-center gap-1 bg-amber-50/80 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-amber-100/80 transition-all duration-300 border border-amber-200/50 active:scale-95"
+                  className="text-[#C77AFF] text-xs sm:text-sm font-bold flex items-center gap-1 bg-[#B45CFF]/10 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-[#B45CFF]/20 transition-all duration-300 border border-[#B45CFF]/30 active:scale-95"
                 >
                   View All
 
@@ -609,7 +560,7 @@ const MatkaDashboard = () => {
                             result._id ||
                             index
                           }
-                          className="p-4 sm:p-5 hover:bg-gradient-to-r hover:from-amber-50/50 hover:to-orange-50/50 transition-all duration-300 active:scale-[0.99]"
+                          className="p-4 sm:p-5 hover:bg-gradient-to-r hover:from-[#B45CFF]/5 hover:to-[#7418F5]/5 transition-all duration-300 active:scale-[0.99]"
                         >
 
                           {/* Market */}
@@ -620,7 +571,7 @@ const MatkaDashboard = () => {
 
                               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0"></div>
 
-                              <span className="font-bold text-gray-800 text-sm sm:text-base truncate">
+                              <span className="font-bold text-white text-sm sm:text-base truncate">
                                 {result.marketName ||
                                   result.marketId?.name ||
                                   "Market"}
@@ -631,7 +582,7 @@ const MatkaDashboard = () => {
                             {/* Digit Type */}
 
                             {result.digitType && (
-                              <span className="ml-2 flex-shrink-0 text-[9px] sm:text-xs font-bold px-2 py-1 rounded-lg bg-amber-100 text-amber-700 border border-amber-200">
+                              <span className="ml-2 flex-shrink-0 text-[9px] sm:text-xs font-bold px-2 py-1 rounded-lg bg-[#B45CFF]/15 text-[#C77AFF] border border-[#B45CFF]/30">
                                 {result.digitType}
                               </span>
                             )}
@@ -687,7 +638,7 @@ const MatkaDashboard = () => {
 
                           <div className="flex justify-end mt-3">
 
-                            <span className="font-extrabold text-transparent bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-sm sm:text-base">
+                            <span className="font-extrabold text-transparent bg-gradient-to-r from-[#B45CFF] to-[#C77AFF] bg-clip-text text-sm sm:text-base">
                               {formatCurrency(
                                 result.totalPayout ||
                                   0
@@ -707,11 +658,11 @@ const MatkaDashboard = () => {
 
                 <div className="flex justify-center mb-4">
 
-                  <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 flex items-center justify-center">
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-gradient-to-r from-[#B45CFF]/15 to-[#7418F5]/15 flex items-center justify-center">
 
                     <Inbox
                       size={40}
-                      className="text-amber-500 sm:w-14 sm:h-14"
+                      className="text-[#B45CFF] sm:w-14 sm:h-14"
                       strokeWidth={1.5}
                     />
 
@@ -719,7 +670,7 @@ const MatkaDashboard = () => {
 
                 </div>
 
-                <p className="text-gray-700 font-bold text-base sm:text-xl">
+                <p className="text-gray-300 font-bold text-base sm:text-xl">
                   No results today
                 </p>
 
@@ -746,7 +697,7 @@ const MatkaDashboard = () => {
               label: "Bid",
               sub: "Play now",
               gradient:
-                "from-amber-400 to-orange-500",
+                "from-[#B45CFF] to-[#7418F5]",
             },
 
             {
@@ -778,7 +729,7 @@ const MatkaDashboard = () => {
                 <Link
                   key={index}
                   to={link.to}
-                  className="group relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-3 sm:p-5 text-center transition-all duration-300 active:scale-95"
+                  className="group relative bg-[#150D22]/90 backdrop-blur-sm rounded-2xl shadow-lg border border-[#2a1b3d] p-3 sm:p-5 text-center transition-all duration-300 active:scale-95"
                 >
 
                   <div className="flex justify-center mb-1.5 sm:mb-2 group-hover:scale-110 transition-transform duration-300">
@@ -794,7 +745,7 @@ const MatkaDashboard = () => {
 
                   </div>
 
-                  <p className="font-extrabold text-gray-700 text-xs sm:text-base group-hover:text-amber-600 transition">
+                  <p className="font-extrabold text-gray-300 text-xs sm:text-base group-hover:text-[#C77AFF] transition">
                     {link.label}
                   </p>
 
@@ -819,7 +770,7 @@ const MatkaDashboard = () => {
 
             <Gem
               size={10}
-              className="text-amber-400 sm:w-3 sm:h-3"
+              className="text-[#B45CFF] sm:w-3 sm:h-3"
             />
 
             Premium Dashboard • Live results

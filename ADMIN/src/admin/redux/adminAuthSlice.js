@@ -159,8 +159,50 @@ export const updateUserStatus = createAsyncThunk(
 );
 
 // ======================================================
+// UPDATE USER (full edit — wallet, password, profile)
+// ======================================================
+
+export const updateUser = createAsyncThunk(
+  "adminAuth/updateUser",
+  async ({ userId, payload }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.put(
+        `/auth/admin/users/${userId}`,
+        payload
+      );
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message ||
+          "Failed to update user"
+      );
+    }
+  }
+);
+
+// ======================================================
 // LOGOUT
 // ======================================================
+
+export const setUserWagering = createAsyncThunk(
+  "adminAuth/setUserWagering",
+  async ({ userId, wageringRequired }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.put(
+        `/auth/admin/users/${userId}/wagering`,
+        { wageringRequired: Number(wageringRequired) }
+      );
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message ||
+          "Failed to set wagering requirement"
+      );
+    }
+  }
+);
 
 export const adminLogout = createAsyncThunk(
   "adminAuth/logout",
@@ -606,6 +648,57 @@ const adminAuthSlice = createSlice({
           state.error =
             action.payload ||
             "Failed to update user status";
+        }
+      )
+
+      // ==================================================
+      // UPDATE USER (full edit)
+      // ==================================================
+
+      .addCase(
+        updateUser.pending,
+        (state) => {
+          state.loading = true;
+          state.error = null;
+          state.success = false;
+        }
+      )
+
+      .addCase(
+        updateUser.fulfilled,
+        (state, action) => {
+          state.loading = false;
+          state.success = true;
+
+          state.message =
+            action.payload?.message || "";
+
+          state.error = null;
+
+          // Sync the users list with the updated user
+          const updated = action.payload?.user;
+          if (updated) {
+            const index = state.users.findIndex(
+              (u) => u._id === updated._id
+            );
+            if (index !== -1) {
+              state.users[index] = {
+                ...state.users[index],
+                ...updated,
+              };
+            }
+          }
+        }
+      )
+
+      .addCase(
+        updateUser.rejected,
+        (state, action) => {
+          state.loading = false;
+          state.success = false;
+          state.error =
+            action.payload ||
+            "Failed to update user";
         }
       )
 

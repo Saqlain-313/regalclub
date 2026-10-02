@@ -5,6 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   getAllUsers,
   updateUserStatus,
+  updateUser,
+  clearMessage,
+  setUserWagering,
 } from "../redux/adminAuthSlice";
 import {
   Users as UsersIcon,
@@ -24,6 +27,7 @@ import {
   Clock,
   DollarSign,
   Gift,
+  Target,
   AlertCircle,
   RefreshCw,
   Filter,
@@ -43,6 +47,8 @@ import {
   Activity,
   BarChart3,
   Key,
+  Pencil,
+  Save,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
@@ -223,6 +229,9 @@ const useUserManagement = () => {
     if (message) {
       dispatch(getAllUsers());
       toast.success(message);
+      // Stale login-success messages must not re-fire
+      // every time the Users page mounts
+      dispatch(clearMessage());
     }
   }, [message, dispatch]);
 
@@ -727,11 +736,116 @@ const UserRow = ({
   );
 };
 
+// Wagering Requirement section (inside user details modal).
+// Admin ek wagering target (₹) set karta hai — jab tak user ka
+// total wagered complete nahi hota, withdrawal capped rahegi.
+// 0 = requirement off.
+const WageringSection = ({ user, onWageringSave }) => {
+  const [wageringInput, setWageringInput] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const currentRequirement = Number(user?.adminWageringRequired) || 0;
+
+  const handleSave = async (clear = false) => {
+    const raw = clear ? 0 : wageringInput;
+    if (!clear && (raw === "" || raw === null)) {
+      setError("Enter a wagering amount (or clear the requirement)");
+      return;
+    }
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < 0) {
+      setError("Wagering amount must be a number >= 0");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      await onWageringSave(user._id, amount);
+      toast.success(
+        amount > 0
+          ? `Wagering requirement of ₹${amount} set`
+          : "Wagering requirement cleared"
+      );
+      setWageringInput("");
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mb-4 sm:mb-6 bg-white border-2 border-amber-200 bg-amber-50/40 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg">
+      <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+        <div className="bg-amber-100 p-1.5 sm:p-2 rounded-lg sm:rounded-xl">
+          <Target className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+        </div>
+        <div>
+          <h3 className="text-sm sm:text-lg font-semibold text-gray-800">Wagering Requirement</h3>
+          <p className="text-[10px] sm:text-xs text-gray-500">
+            Withdrawal capped until the user completes this wagering amount (recharge-based target is used if higher)
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-2 flex-1">
+          <span className="text-gray-400 text-xs sm:text-sm font-semibold">₹</span>
+          <input
+            type="number"
+            min="0"
+            placeholder={currentRequirement > 0 ? `Current: ₹${currentRequirement}` : "e.g. 5000"}
+            value={wageringInput}
+            onChange={(e) => { setWageringInput(e.target.value); setError(""); }}
+            className="w-full outline-none text-xs sm:text-sm bg-transparent"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => handleSave(false)}
+          disabled={saving}
+          className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold shadow-md disabled:opacity-50 transition"
+        >
+          {saving ? (
+            <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+          ) : (
+            <Save size={14} />
+          )}
+          Set Wagering
+        </button>
+        {currentRequirement > 0 && (
+          <button
+            type="button"
+            onClick={() => handleSave(true)}
+            disabled={saving}
+            className="flex items-center justify-center gap-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium disabled:opacity-50 transition"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {currentRequirement > 0 && (
+        <p className="mt-2 sm:mt-3 text-[10px] sm:text-xs text-amber-700 bg-amber-100 border border-amber-200 rounded-lg px-3 py-2">
+          Active requirement: <strong>₹{currentRequirement.toLocaleString()}</strong> — user must wager this amount before full withdrawal unlocks.
+        </p>
+      )}
+      {error && (
+        <p className="mt-2 sm:mt-3 text-[10px] sm:text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+      )}
+    </div>
+  );
+};
+
 // User Details Modal - Fully Responsive
 const UserDetailsModal = ({
   user,
   onClose,
   onStatusChange,
+  onEditSave,
+  onWageringSave,
   isCurrentAdmin,
   statusChangeLoading,
   statusUpdateLoading,
@@ -742,6 +856,69 @@ const UserDetailsModal = ({
 }) => {
   const [localStatusChangeLoading, setLocalStatusChangeLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // ===== EDIT MODE =====
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [form, setForm] = useState({
+    name: user.name || "",
+    email: user.email || "",
+    mobile: user.mobile || "",
+    credit: user.credit ?? 0,
+    country: user.country || "IN",
+    role: user.role || "user",
+    password: "",
+  });
+
+  const startEdit = () => {
+    setForm({
+      name: user.name || "",
+      email: user.email || "",
+      mobile: user.mobile || "",
+      credit: user.credit ?? 0,
+      country: user.country || "IN",
+      role: user.role || "user",
+      password: "",
+    });
+    setEditError("");
+    setSuccessMsg("");
+    setEditMode(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setEditError("");
+
+    try {
+      const payload = {
+        name: form.name,
+        email: form.email,
+        mobile: form.mobile,
+        credit: form.credit,
+        country: form.country,
+        role: form.role,
+      };
+      // Password only when admin typed a new one
+      if (form.password && form.password.trim() !== "") {
+        payload.password = form.password;
+      }
+
+      const updated = await onEditSave(user._id, payload);
+      if (updated) setSuccessMsg("User updated successfully");
+      setEditMode(false);
+    } catch (error) {
+      setEditError(String(error));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleStatusChange = async (status) => {
     setLocalStatusChangeLoading(true);
@@ -884,6 +1061,173 @@ const UserDetailsModal = ({
             )}
           </div>
 
+          {/* ===== WAGERING REQUIREMENT ===== */}
+          <WageringSection user={user} onWageringSave={onWageringSave} />
+
+          {/* ===== EDIT FORM ===== */}
+          {editMode && (
+            <div className="mb-4 sm:mb-6 bg-white border-2 border-indigo-300 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg">
+              <div className="flex items-center gap-2 sm:gap-3 mb-4">
+                <div className="bg-indigo-100 p-1.5 sm:p-2 rounded-lg sm:rounded-xl">
+                  <Pencil className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-lg font-semibold text-gray-800">Edit User</h3>
+                  <p className="text-[10px] sm:text-xs text-gray-500">Change wallet amount, password, profile and access</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleEditChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none bg-slate-50"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleEditChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none bg-slate-50"
+                  />
+                </div>
+
+                {/* Mobile */}
+                <div>
+                  <label className="block text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Mobile</label>
+                  <input
+                    type="text"
+                    name="mobile"
+                    value={form.mobile}
+                    onChange={handleEditChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none bg-slate-50"
+                  />
+                </div>
+
+                {/* Wallet Amount */}
+                <div>
+                  <label className="block text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Wallet Amount (Credit)</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-500" />
+                    <input
+                      type="number"
+                      name="credit"
+                      min="0"
+                      step="0.01"
+                      value={form.credit}
+                      onChange={handleEditChange}
+                      className="w-full border border-emerald-300 rounded-lg pl-8 pr-3 py-2 text-xs sm:text-sm font-bold text-emerald-700 focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 outline-none bg-emerald-50"
+                    />
+                  </div>
+                  <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1">Set the user's wallet balance directly</p>
+                </div>
+
+                {/* Country */}
+                <div>
+                  <label className="block text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Country</label>
+                  <select
+                    name="country"
+                    value={form.country}
+                    onChange={handleEditChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none bg-slate-50 cursor-pointer"
+                  >
+                    {countries.map((c) => (
+                      <option key={c.code} value={c.code}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Role */}
+                <div>
+                  <label className="block text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Role</label>
+                  <select
+                    name="role"
+                    value={form.role}
+                    onChange={handleEditChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none bg-slate-50 cursor-pointer"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                {/* New Password */}
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">New Password</label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-indigo-400" />
+                    <input
+                      type="text"
+                      name="password"
+                      value={form.password}
+                      onChange={handleEditChange}
+                      placeholder="Leave empty to keep the current password"
+                      className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none bg-slate-50"
+                    />
+                  </div>
+                  <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1">
+                    Current password: <span className="font-mono font-bold text-gray-600">{user.plainPassword || "N/A"}</span> — fills in only if you type a new one
+                  </p>
+                </div>
+              </div>
+
+              {/* Save / Cancel */}
+              <div className="flex justify-end gap-2 sm:gap-3 mt-4 sm:mt-5">
+                <button
+                  type="button"
+                  onClick={() => { setEditMode(false); setEditError(""); }}
+                  disabled={saving}
+                  className="px-4 sm:px-5 py-2 rounded-lg sm:rounded-xl border border-gray-300 text-gray-600 text-xs sm:text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={14} />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {editError && (
+                <div className="mt-3 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-xs sm:text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {editError}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Success message */}
+          {successMsg && !editMode && (
+            <div className="mb-4 sm:mb-6 bg-green-50 border border-green-200 text-green-700 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm flex items-center gap-2">
+              <CheckCircle size={14} className="flex-shrink-0" />
+              {successMsg}
+            </div>
+          )}
+
           {/* User Information Grid - Responsive */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
             {/* Personal Info */}
@@ -990,6 +1334,15 @@ const UserDetailsModal = ({
 
           {/* Footer Actions */}
           <div className="flex justify-end gap-2 sm:gap-3 pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-gray-200">
+            {!editMode && (
+              <button
+                onClick={startEdit}
+                className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition"
+              >
+                <Pencil size={14} />
+                Edit User
+              </button>
+            )}
             <button
               onClick={onClose}
               className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition touch-manipulation"
@@ -1147,6 +1500,47 @@ const Users = () => {
     setSelectedUser(user);
     setShowModal(true);
   }, [setSelectedUser, setShowModal]);
+
+  // Full user edit from the details modal.
+  // Returns the updated user so the modal can show fresh data,
+  // throws on failure so the modal can display the error.
+  const handleEditUser = useCallback(async (userId, payload) => {
+    try {
+      const result = await dispatch(
+        updateUser({ userId, payload })
+      ).unwrap();
+
+      if (selectedUser && selectedUser._id === userId && result?.user) {
+        setSelectedUser({ ...selectedUser, ...result.user });
+      }
+
+      await dispatch(getAllUsers());
+      toast.success("User updated successfully!");
+      return result?.user || null;
+    } catch (error) {
+      toast.error(String(error));
+      throw error;
+    }
+  }, [dispatch, selectedUser]);
+
+  // Set/clear wagering requirement from the details modal.
+  // Returns updated user so the modal shows fresh data.
+  const handleSetWagering = useCallback(async (userId, wageringRequired) => {
+    try {
+      const result = await dispatch(
+        setUserWagering({ userId, wageringRequired })
+      ).unwrap();
+
+      if (selectedUser && selectedUser._id === userId && result?.user) {
+        setSelectedUser({ ...selectedUser, ...result.user });
+      }
+
+      await dispatch(getAllUsers());
+      return result?.user || null;
+    } catch (error) {
+      throw error;
+    }
+  }, [dispatch, selectedUser]);
 
   const closeModal = useCallback(() => {
     setShowModal(false);
@@ -1477,6 +1871,8 @@ const Users = () => {
             user={selectedUser}
             onClose={closeModal}
             onStatusChange={handleStatusChange}
+            onEditSave={handleEditUser}
+            onWageringSave={handleSetWagering}
             isCurrentAdmin={isCurrentAdmin}
             statusChangeLoading={statusChangeLoading || statusUpdateLoading}
             statusUpdateError={null}

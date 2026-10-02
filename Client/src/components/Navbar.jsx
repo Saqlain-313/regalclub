@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Circle,
+  CloudDownload,
   Dice5,
   Home as HomeIcon,
   LogIn,
@@ -20,13 +21,39 @@ import { GiChicken } from "react-icons/gi";
 import { MdCasino, MdLocalActivity } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { logout } from "../redux/slices/authSlice";
+import io from "socket.io-client";
+import { logout, getProfile } from "../redux/slices/authSlice";
 
 const Navbar = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
   const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
+
+  // ==========================================================
+  // LIVE WALLET — server pushes "wallet-update" to the user's
+  // socket room on every credit/deduct (bet, win, deposit,
+  // game transfer). The navbar refreshes instantly — no manual
+  // refresh needed.
+  // ==========================================================
+  useEffect(() => {
+    if (!isAuthenticated || !user?._id) return;
+
+    const socket = io("/", { transports: ["websocket"] });
+
+    socket.on("connect", () => {
+      socket.emit("join-user", user._id);
+    });
+
+    socket.on("wallet-update", () => {
+      dispatch(getProfile());
+    });
+
+    return () => {
+      socket.off("wallet-update");
+      socket.disconnect();
+    };
+  }, [isAuthenticated, user?._id, dispatch]);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   // Sidebar collapse state
@@ -221,16 +248,6 @@ const Navbar = ({ children }) => {
     };
 
     return currencyMap[countryCode] || "₹";
-  };
-
-  const getAvatar = () => {
-    const name = getUserDisplayName();
-    return (
-      user?.profilePic ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        name,
-      )}&background=FBBF24&color=fff&size=128`
-    );
   };
 
   // WINZOX Logo Component
@@ -451,7 +468,7 @@ const Navbar = ({ children }) => {
               </Link>
             </div>
 
-            {/* ================= RIGHT - WALLET + ACCOUNT ================= */}
+            {/* ================= RIGHT - WALLET + APK ================= */}
             <div className="flex items-center gap-2">
               {/* Wallet credit */}
               {isAuthenticated && (
@@ -480,40 +497,15 @@ const Navbar = ({ children }) => {
               {/* ================= AUTHENTICATED USER ================= */}
               {isAuthenticated ? (
                 <>
-                  {/* Desktop Avatar + Name */}
-                  <Link
-                    to="/account"
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl text-white hover:bg-[#1C0F2B] transition-all duration-500"
+                  {/* APK Download — white icon only, last position */}
+                  <a
+                    href="/apk/app.apk"
+                    download="RegalClub.apk"
+                    title="Download App (APK)"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-transform duration-300 hover:scale-110"
                   >
-                    <img
-                      src={getAvatar()}
-                      alt={getUserDisplayName()}
-                      className="w-7 h-7 rounded-full object-cover border-2 border-[#9B59B6] shadow-lg transform-gpu hover:scale-110 transition-all duration-300"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          getUserDisplayName(),
-                        )}&background=FBBF24&color=fff&size=128`;
-                      }}
-                    />
-
-                    <span className="text-sm font-bold">
-                      {getUserDisplayName()}
-                    </span>
-                  </Link>
-
-                  {/* Mobile Avatar */}
-                  <Link to="/account" className="md:hidden flex items-center">
-                    <img
-                      src={getAvatar()}
-                      alt={getUserDisplayName()}
-                      className="w-8 h-8 rounded-full object-cover border-2 border-[#9B59B6] shadow-lg transform-gpu hover:scale-110 transition-all duration-300"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          getUserDisplayName(),
-                        )}&background=FBBF24&color=fff&size=128`;
-                      }}
-                    />
-                  </Link>
+                    <CloudDownload size={20} strokeWidth={2.2} />
+                  </a>
                 </>
               ) : (
                 <>
@@ -655,16 +647,16 @@ const Navbar = ({ children }) => {
             {/* Floating Promo Button with 3D */}
             <Link
               to="/deposit"
-              className="absolute left-1/2 -translate-x-1/2 -top-7 group perspective-1000"
+              className="absolute left-1/2 -translate-x-1/2 -top-5 group perspective-1000"
             >
               <div className="relative transform-gpu transition-all duration-700 hover:rotate-y-12 hover:scale-110 hover:-translate-y-2 [transform-style:preserve-3d]">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#B45CFF] to-[#7418F5] blur-2xl opacity-30 group-hover:opacity-70 transition-all duration-700 animate-pulse-slow"></div>
-                <div className="w-[78px] h-[78px] rounded-full bg-[#1C0F2B] shadow-2xl relative border border-[#2a1b3d]">
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex flex-col items-center justify-center group-hover:scale-105 transition-all duration-500">
-                    <span className="text-3xl font-bold text-white leading-none mt-0.5">
+                <div className="w-[56px] h-[56px] rounded-full bg-[#1C0F2B] shadow-2xl relative border border-[#2a1b3d]">
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_14px_rgba(139,43,255,0.6),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex flex-col items-center justify-center group-hover:scale-105 transition-all duration-500">
+                    <span className="text-2xl font-bold text-white leading-none mt-0.5">
                       <PlusIcon
-                        size={42}
-                        className="text-white text-3xl"
+                        size={28}
+                        className="text-white text-2xl"
                         strokeWidth={3}
                       />
                     </span>

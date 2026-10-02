@@ -1,5 +1,7 @@
 // App.js
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./admin/pages/Login";
 import Dashboard from "./admin/pages/Dashboard";
@@ -14,6 +16,7 @@ import DepositSettingsAdmin from "./admin/pages/DepositSettingsAdmin";
 import WithdrawalSettings from "./admin/pages/WithdrawalSettings";
 import CreateWithdrawalSettings from "./admin/pages/createWithdrawalSettings";
 import Banners from "./admin/pages/Banners";
+import AdminPlatformGames from "./admin/pages/AdminPlatformGames";
 
 import PrivateRoute from "./admin/routes/PrivateRoute";
 import AdminLayout from "./admin/layouts/AdminLayout";
@@ -78,11 +81,24 @@ import AdminBettingBonus from "./admin/pages/AdminBettingBonus";
 import AdminWinMultipliers from "./admin/pages/AdminWinMultipliers";
 import MinesAdmin from "./admin/pages/MinesAdmin";
 import BetAdmin from "./admin/pages/BetAdmin";
+import Profile from "./admin/pages/Profile";
 import AdminCommission from "./admin/pages/AdminCommission";
+import ResultControl from "./admin/pages/ResultControl";
 
 function App() {
   return (
-    <Routes>
+    <>
+      {/* Toasts were never mounted in the admin panel — every
+          error/success toast in the admin UI was invisible */}
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        newestOnTop
+        limit={3}
+        theme="dark"
+      />
+
+      <Routes>
       {/* ========================================
           ROOT
       ======================================== */}
@@ -154,6 +170,11 @@ function App() {
           />
 
           <Route
+            path="/admin/profile"
+            element={<Profile />}
+          />
+
+          <Route
             path="/admin/ticketsetiings"
             element={<AdminTicketType />}
           />
@@ -176,6 +197,11 @@ function App() {
           <Route
             path="/admin/currency-rates"
             element={<AdminCurrencyRates />}
+          />
+
+          <Route
+            path="/admin/platform-games"
+            element={<AdminPlatformGames />}
           />
 
           <Route
@@ -363,6 +389,11 @@ function App() {
           />
 
           <Route
+            path="/admin/result-control"
+            element={<ResultControl />}
+          />
+
+          <Route
             path="/admin/admin-wingo-bets"
             element={<AdminBets />}
           />
@@ -389,6 +420,7 @@ function App() {
         </Route>
       </Route>
     </Routes>
+    </>
   );
 }
 

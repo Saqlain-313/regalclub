@@ -762,7 +762,9 @@ exports.declareResult = async (req, res) => {
       });
     }
 
-    if (parsedNextOpenDate.getTime() <= parsedResultDate.getTime()) {
+    // Next open date result date ke BARABAR ya baad me ho sakti hai
+    // (same-day re-open allowed). Sirf past date reject hoti hai.
+    if (parsedNextOpenDate.getTime() < parsedResultDate.getTime()) {
       await session.abortTransaction();
       await session.endSession();
 
@@ -1333,17 +1335,14 @@ exports.declareResult = async (req, res) => {
       // ----------------------------------------------------------
 
       if (!allowedGameTypes.includes(normalizedBidGameType)) {
-        bid.status = "lost";
-        bid.lostAt = new Date();
-        bid.winAmount = 0;
-        bid.resultNumber = null;
+        // Ye game type ab valid nahi hai — par bina declared number
+        // ke bid LOST nahi hogi. Pending rehne do (admin baad me
+        // uska result declare kar sakta hai).
         bid.nextOpenDate = parsedNextOpenDate;
 
         await bid.save({
           session,
         });
-
-        totalLost++;
 
         continue;
       }
@@ -1368,12 +1367,25 @@ exports.declareResult = async (req, res) => {
 
       const bidResultNumber = formattedWinningNumbers[lookupKey];
 
-      bid.resultNumber =
+      const hasDeclaredNumber =
         bidResultNumber !== undefined &&
         bidResultNumber !== null &&
-        str(bidResultNumber) !== ""
-          ? String(bidResultNumber)
-          : null;
+        str(bidResultNumber) !== "";
+
+      // ----------------------------------------------------------
+      // GAME TYPE KA RESULT DECLARE NAHI HUA
+      //
+      // Admin ne sirf kuch game types ke numbers declare kiye hain
+      // (partial declaration). Un game types ki pending bids ko
+      // LOST nahi karte — pending rehne do taaki baad me unka
+      // result declare karke settle ho sake.
+      // ----------------------------------------------------------
+
+      if (!hasDeclaredNumber) {
+        continue;
+      }
+
+      bid.resultNumber = String(bidResultNumber);
 
       // ----------------------------------------------------------
       // TOTAL GAME TYPE BIDS

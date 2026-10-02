@@ -29,18 +29,20 @@ import { showErrorToast } from "../hooks/toast";
 import {
   clearWithdrawalError,
   clearWithdrawalSuccess,
+  fetchWithdrawalEligibility,
   fetchWithdrawalHistory,
   fetchWithdrawalSettings,
   requestWithdrawal,
   selectCurrentWithdrawal,
+  selectEligibilityLoading,
   selectHistoryLoading,
   selectPagination,
   selectRequestError,
   selectRequestLoading,
   selectRequestSuccess,
   selectSettingsError,
-  selectSettingsLoading,
   selectSummary,
+  selectWithdrawalEligibility,
   selectWithdrawalError,
   selectWithdrawalHistory,
   selectWithdrawalMessage,
@@ -54,7 +56,6 @@ const Withdrawal = () => {
 
   // Redux state
   const settings = useSelector(selectWithdrawalSettings);
-  const settingsLoading = useSelector(selectSettingsLoading);
   const settingsError = useSelector(selectSettingsError);
   const withdrawalHistory = useSelector(selectWithdrawalHistory);
   const historyLoading = useSelector(selectHistoryLoading);
@@ -66,6 +67,10 @@ const Withdrawal = () => {
   const currentWithdrawal = useSelector(selectCurrentWithdrawal);
   const error = useSelector(selectWithdrawalError);
   const message = useSelector(selectWithdrawalMessage);
+
+  // Wagering eligibility
+  const eligibility = useSelector(selectWithdrawalEligibility);
+  const eligibilityLoading = useSelector(selectEligibilityLoading);
 
   // Local state
   const [formData, setFormData] = useState({
@@ -100,6 +105,7 @@ const Withdrawal = () => {
 
   useEffect(() => {
     dispatch(fetchWithdrawalSettings());
+    dispatch(fetchWithdrawalEligibility());
     dispatch(fetchWithdrawalHistory());
   }, [dispatch]);
 
@@ -197,6 +203,14 @@ const Withdrawal = () => {
       errors.amount = `Maximum withdrawal amount is ${currencySymbol}${settings?.maxWithdrawal}`;
     } else if (parseFloat(formData.amount) > user?.credit) {
       errors.amount = `Insufficient credit. Available: ${currencySymbol}${user?.credit}`;
+    } else if (
+      eligibility &&
+      parseFloat(formData.amount) > eligibility.maxAllowedWithdrawal
+    ) {
+      errors.amount =
+        eligibility.remainingWagering > 0
+          ? `Wagering pending. Complete ${currencySymbol}${eligibility.remainingWagering} more wagering, or withdraw up to ${currencySymbol}${eligibility.maxAllowedWithdrawal}`
+          : `Insufficient credit. Available: ${currencySymbol}${user?.credit}`;
     }
 
     if (!formData.paymentMethod) {
@@ -431,21 +445,8 @@ const Withdrawal = () => {
     });
   };
 
-  if (settingsLoading) {
-    return (
-      <div className="min-h-screen bg-[#0B0410] flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 border-4 border-[#2a1b3d] border-t-[#B45CFF] rounded-full animate-spin mx-auto"></div>
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#B45CFF] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
-          <p className="mt-4 text-gray-400 font-medium text-sm sm:text-base">
-            Loading withdrawal settings...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // India-only: settings load hone tak page turant render hota hai,
+  // full-screen loader nahi dikhta (settings optional chaining se safe hai)
 
   if (settingsError && !settings) {
     return (
@@ -472,636 +473,744 @@ const Withdrawal = () => {
     );
   }
 
+// temp replacement JSX for Withdrawal.jsx main return (lines 475-1108)
   return (
-    <div className="min-h-screen bg-[#0B0410] py-3 px-3 sm:py-4 sm:px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* ============================================= */}
-        {/* HEADER — responsive */}
-        {/* ============================================= */}
-        <div className="bg-[#1C0F2B] rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6 border border-[#2a1b3d] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-[#9B59B6]/10 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 w-20 sm:w-24 h-20 sm:h-24 bg-[#8E44AD]/10 rounded-full blur-2xl"></div>
+    <div className="min-h-screen bg-[#0B0410] overflow-hidden relative">
+      {/* Decorative background orbs */}
+      <div className="pointer-events-none absolute -top-24 -right-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -left-24 w-64 h-64 bg-[#8E44AD]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-0 w-80 h-80 bg-[#9B59B6]/10 rounded-full blur-3xl" />
 
-          <div className="relative flex flex-col gap-3 sm:gap-4">
-            {/* Top: Back + Title */}
-            <div className="flex items-start gap-2 sm:gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-1.5 sm:p-2 hover:bg-[#2a1b3d] rounded-xl transition-all duration-300 hover:scale-105 flex-shrink-0"
-              >
-                <ArrowLeft size={18} className="text-gray-300 sm:w-5 sm:h-5" />
-              </button>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white flex flex-wrap items-center gap-2">
-                  Withdraw Funds
-                  <span className="text-[9px] sm:text-[10px] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] text-white px-2 py-0.5 rounded-full font-normal">
-                    Secure
-                  </span>
+      <div className="relative px-4 sm:px-6 py-6">
+        <div className="max-w-md w-full mx-auto">
+          {/* ============================================= */}
+          {/* HEADER                                        */}
+          {/* ============================================= */}
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center flex-shrink-0">
+                <Wallet className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold text-white leading-tight">
+                  Withdrawal
                 </h1>
-                <p className="text-[11px] sm:text-xs md:text-sm text-gray-400 mt-0.5">
-                  Withdraw your winnings securely & instantly
+                <p className="text-[11px] text-gray-400">
+                  Withdraw your winnings securely
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#9B59B6]/10 border border-[#9B59B6]/40 rounded-full flex-shrink-0">
+              <Shield className="w-3 h-3 text-[#B45CFF]" />
+              <span className="text-[10px] font-medium text-[#B45CFF]">
+                Secure
+              </span>
+            </span>
+          </div>
+
+          {/* ============================================= */}
+          {/* BALANCE STRIP                                 */}
+          {/* ============================================= */}
+          <div className="mb-5 flex items-center justify-between bg-[#12061C] border border-[#2a1b3d] rounded-xl px-4 py-3">
+            <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+              Available Credit
+            </span>
+            <span className="text-base font-bold text-[#00E676]">
+              {formatCurrency(user?.credit || 0)}
+            </span>
+          </div>
+
+          {/* ============================================= */}
+          {/* STEP 1 — AMOUNT                               */}
+          {/* ============================================= */}
+          <div className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white text-[10px] font-bold flex items-center justify-center">
+                  1
+                </span>
+                Withdrawal Amount
+              </h3>
+              {settings?.processingFee > 0 && (
+                <span className="text-[10px] font-semibold text-[#F1C40F] bg-[#F1C40F]/10 border border-[#F1C40F]/30 px-2 py-0.5 rounded-full">
+                  Fee:{" "}
+                  {settings.processingFeeType === "percentage"
+                    ? `${settings.processingFee}%`
+                    : formatCurrency(settings.processingFee)}
+                </span>
+              )}
+            </div>
+
+            {/* Limits */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="bg-[#12061C] rounded-xl px-3 py-2 border border-[#2a1b3d]">
+                <p className="text-[9px] text-gray-500 uppercase tracking-wide">
+                  Min
+                </p>
+                <p className="text-xs font-bold text-gray-200 truncate">
+                  {formatCurrency(settings?.minWithdrawal || 0)}
+                </p>
+              </div>
+              <div className="bg-[#12061C] rounded-xl px-3 py-2 border border-[#2a1b3d]">
+                <p className="text-[9px] text-gray-500 uppercase tracking-wide">
+                  Max
+                </p>
+                <p className="text-xs font-bold text-gray-200 truncate">
+                  {formatCurrency(settings?.maxWithdrawal || 0)}
                 </p>
               </div>
             </div>
 
-            {/* Bottom: Credit Card — full width mobile */}
-            <div className="w-full bg-[#12061C] px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-xl border border-[#9B59B6]/40 shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
-              <div className="flex items-center gap-2.5 sm:gap-3">
-                <div className="p-1.5 sm:p-2 bg-[#9B59B6]/20 rounded-lg border border-[#9B59B6]/30 flex-shrink-0">
-                  <Wallet className="text-[#9B59B6] w-4 h-4 sm:w-5 sm:h-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium uppercase tracking-wider">
-                    Available credit
-                  </p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#9B59B6] truncate">
-                    {formatCurrency(user?.credit || 0)}
-                  </p>
-                </div>
+            {/* ============================================= */}
+            {/* WAGERING PROGRESS — withdrawal eligibility    */}
+            {/* ============================================= */}
+            {eligibilityLoading ? (
+              <div className="mb-4 flex items-center justify-center gap-2 bg-[#12061C] border border-[#2a1b3d] rounded-xl px-3 py-3">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9B59B6]" />
+                <span className="text-[11px] text-gray-400">
+                  Checking wagering requirement...
+                </span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-[#1C0F2B] rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-3 sm:p-4 md:p-6 border border-[#2a1b3d]">
-              <form onSubmit={handleSubmit}>
-                {/* Withdrawal Limits Info */}
-                <div className="bg-[#12061C] rounded-xl p-3 sm:p-4 mb-4 sm:mb-5 md:mb-6 border border-[#9B59B6]/30">
-                  <div className="flex items-start gap-2 sm:gap-3">
-                    <div className="p-1.5 sm:p-2 bg-[#9B59B6]/20 rounded-lg border border-[#9B59B6]/30 flex-shrink-0">
-                      <Shield className="text-[#9B59B6] w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                        Withdrawal Limits
-                        <Zap className="w-3 h-3 text-[#B45CFF]" />
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mt-2">
-                        <div className="bg-[#1C0F2B] rounded-lg px-2 sm:px-3 py-1.5 border border-[#2a1b3d]">
-                          <p className="text-[9px] sm:text-[10px] text-gray-500">
-                            Min
-                          </p>
-                          <p className="text-xs sm:text-sm font-bold text-gray-200 truncate">
-                            {formatCurrency(settings?.minWithdrawal || 0)}
-                          </p>
-                        </div>
-                        <div className="bg-[#1C0F2B] rounded-lg px-2 sm:px-3 py-1.5 border border-[#2a1b3d]">
-                          <p className="text-[9px] sm:text-[10px] text-gray-500">
-                            Max
-                          </p>
-                          <p className="text-xs sm:text-sm font-bold text-gray-200 truncate">
-                            {formatCurrency(settings?.maxWithdrawal || 0)}
-                          </p>
-                        </div>
-                        {settings?.dailyLimit && (
-                          <div className="bg-[#1C0F2B] rounded-lg px-2 sm:px-3 py-1.5 border border-[#2a1b3d]">
-                            <p className="text-[9px] sm:text-[10px] text-gray-500">
-                              Daily Limit
-                            </p>
-                            <p className="text-xs sm:text-sm font-bold text-gray-200 truncate">
-                              {formatCurrency(settings.dailyLimit)}
-                            </p>
-                          </div>
-                        )}
-                        {settings?.processingFee > 0 && (
-                          <div className="bg-[#1C0F2B] rounded-lg px-2 sm:px-3 py-1.5 border border-[#2a1b3d]">
-                            <p className="text-[9px] sm:text-[10px] text-gray-500">
-                              Fee
-                            </p>
-                            <p className="text-xs sm:text-sm font-bold text-[#F1C40F] truncate">
-                              {settings.processingFeeType === "percentage"
-                                ? `${settings.processingFee}%`
-                                : formatCurrency(settings.processingFee)}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+            ) : eligibility ? (
+              <div className="mb-4 bg-[#12061C] rounded-xl border border-[#2a1b3d] p-3.5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wide">
+                    Wagering Requirement
+                  </span>
+                  {eligibility.remainingWagering <= 0 ? (
+                    <span className="text-[9px] font-semibold text-[#00E676] bg-[#00E676]/10 border border-[#00E676]/30 px-2 py-0.5 rounded-full">
+                      ✓ Completed
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-semibold text-[#F1C40F] bg-[#F1C40F]/10 border border-[#F1C40F]/30 px-2 py-0.5 rounded-full">
+                      Pending
+                    </span>
+                  )}
                 </div>
 
-                {/* Amount Input */}
-                <div className="mb-4 sm:mb-5">
-                  <label className="text-xs sm:text-sm font-bold text-gray-200 block mb-2">
-                    Withdrawal Amount *
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-base sm:text-lg">
-                      {currencySymbol}
-                    </div>
-                    <input
-                      type="number"
-                      name="amount"
-                      value={formData.amount}
-                      onChange={handleChange}
-                      placeholder={`Min: ${settings?.minWithdrawal || 0}`}
-                      className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-3 sm:py-3.5 text-base sm:text-lg bg-[#12061C] text-white border-2 rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all ${
-                        formErrors.amount
-                          ? "border-red-500/50 bg-red-500/5"
-                          : "border-[#2a1b3d] hover:border-[#9B59B6]/40"
+                {/* Progress bar */}
+                <div className="w-full h-2 bg-[#1C0F2B] rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#B45CFF] to-[#7418F5] transition-all duration-500"
+                    style={{
+                      width: `${
+                        eligibility.requiredWagering > 0
+                          ? Math.min(
+                              100,
+                              ((eligibility.wageringCompleted ??
+                                eligibility.totalWagered) /
+                                eligibility.requiredWagering) *
+                                100,
+                            )
+                          : 100
+                      }%`,
+                    }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-[9px] text-gray-500 uppercase">
+                      Target
+                    </p>
+                    <p className="text-[11px] font-bold text-gray-200">
+                      {formatCurrency(eligibility.requiredWagering)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-gray-500 uppercase">
+                      Wagered + Won
+                    </p>
+                    <p className="text-[11px] font-bold text-[#B45CFF]">
+                      {formatCurrency(
+                        eligibility.wageringCompleted ??
+                          eligibility.totalWagered,
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-gray-500 uppercase">
+                      Remaining
+                    </p>
+                    <p
+                      className={`text-[11px] font-bold ${
+                        eligibility.remainingWagering > 0
+                          ? "text-[#F1C40F]"
+                          : "text-[#00E676]"
                       }`}
-                      step="0.01"
-                      min={settings?.minWithdrawal || 0}
-                      max={settings?.maxWithdrawal || 0}
-                    />
-                  </div>
-                  {formErrors.amount && (
-                    <p className="text-red-400 text-[11px] sm:text-xs mt-2 flex items-center gap-1 error-message">
-                      <AlertCircle size={12} /> {formErrors.amount}
+                    >
+                      {formatCurrency(eligibility.remainingWagering)}
                     </p>
-                  )}
-
-                  {/* Fee & Net Amount */}
-                  {formData.amount && parseFloat(formData.amount) > 0 && (
-                    <div className="mt-3 p-3 sm:p-4 bg-[#12061C] rounded-xl border border-[#2a1b3d]">
-                      <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-between sm:items-center">
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div>
-                            <p className="text-[9px] sm:text-[10px] text-gray-500">
-                              Withdrawal
-                            </p>
-                            <p className="text-xs sm:text-sm font-bold text-gray-200">
-                              {formatCurrency(parseFloat(formData.amount))}
-                            </p>
-                          </div>
-                          {fee > 0 && (
-                            <>
-                              <div className="hidden sm:block w-px h-8 bg-[#2a1b3d]"></div>
-                              <div>
-                                <p className="text-[9px] sm:text-[10px] text-gray-500">
-                                  Fee
-                                </p>
-                                <p className="text-xs sm:text-sm font-bold text-red-400">
-                                  -{formatCurrency(fee)}
-                                </p>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 bg-[#9B59B6]/10 px-3 sm:px-4 py-2 rounded-lg border border-[#9B59B6]/30 self-start sm:self-auto">
-                          <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#9B59B6]" />
-                          <div>
-                            <p className="text-[9px] sm:text-[10px] text-gray-400">
-                              Net Amount
-                            </p>
-                            <p className="text-sm sm:text-base font-bold text-[#9B59B6]">
-                              {formatCurrency(netAmount)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
-                {/* Payment Method */}
-                <div className="mb-4 sm:mb-5">
-                  <label className="text-xs sm:text-sm font-bold text-gray-200 block mb-2 sm:mb-3">
-                    Payment Method *
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    {settings?.paymentMethods?.map((method) => (
-                      <button
-                        key={method}
-                        type="button"
-                        onClick={() => handlePaymentMethodChange(method)}
-                        className={`p-2.5 sm:p-3 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 ${
-                          selectedPaymentMethod === method
-                            ? "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] text-white sm:scale-105"
-                            : "border border-[#2a1b3d] bg-[#12061C] text-gray-400 hover:border-[#9B59B6]/50 hover:bg-[#2a1b3d]/50 sm:hover:scale-105"
-                        }`}
-                      >
-                        <div className="flex flex-col items-center gap-1">
-                          <div
-                            className={`p-1.5 rounded-lg ${
-                              selectedPaymentMethod === method
-                                ? "bg-white/20 text-white"
-                                : "bg-[#1C0F2B] text-gray-500 border border-[#2a1b3d]"
-                            }`}
-                          >
-                            {getPaymentMethodIcon(method)}
-                          </div>
-                          <span className="text-[9px] sm:text-xs text-center leading-tight">
-                            {getPaymentMethodName(method)}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                  {formErrors.paymentMethod && (
-                    <p className="text-red-400 text-[11px] sm:text-xs mt-2 flex items-center gap-1">
-                      <AlertCircle size={12} /> {formErrors.paymentMethod}
-                    </p>
-                  )}
-                </div>
-
-                {/* Dynamic Payment Fields */}
-                {selectedPaymentMethod && (
-                  <div className="animate-fadeIn">
-                    {selectedPaymentMethod === "bank_transfer" && (
-                      <div className="bg-[#12061C] p-3 sm:p-4 md:p-5 rounded-xl border border-[#2a1b3d]">
-                        <h4 className="font-bold text-gray-200 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                          <Building2 size={16} className="text-[#9B59B6]" />
-                          Bank Details
-                        </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                          <div className="sm:col-span-2">
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              Account Holder Name *
-                            </label>
-                            <input
-                              type="text"
-                              name="bankDetails.accountHolderName"
-                              value={formData.bankDetails.accountHolderName}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                              placeholder="Enter account holder name"
-                            />
-                            {formErrors["bankDetails.accountHolderName"] && (
-                              <p className="text-red-400 text-[10px] sm:text-xs mt-1">
-                                {formErrors["bankDetails.accountHolderName"]}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              Account Number *
-                            </label>
-                            <input
-                              type="text"
-                              name="bankDetails.accountNumber"
-                              value={formData.bankDetails.accountNumber}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                              placeholder="Enter account number"
-                            />
-                            {formErrors["bankDetails.accountNumber"] && (
-                              <p className="text-red-400 text-[10px] sm:text-xs mt-1">
-                                {formErrors["bankDetails.accountNumber"]}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              Bank Name *
-                            </label>
-                            <input
-                              type="text"
-                              name="bankDetails.bankName"
-                              value={formData.bankDetails.bankName}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                              placeholder="Enter bank name"
-                            />
-                            {formErrors["bankDetails.bankName"] && (
-                              <p className="text-red-400 text-[10px] sm:text-xs mt-1">
-                                {formErrors["bankDetails.bankName"]}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              IFSC Code *
-                            </label>
-                            <input
-                              type="text"
-                              name="bankDetails.ifscCode"
-                              value={formData.bankDetails.ifscCode}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                              placeholder="Enter IFSC code"
-                              maxLength="11"
-                            />
-                            {formErrors["bankDetails.ifscCode"] && (
-                              <p className="text-red-400 text-[10px] sm:text-xs mt-1">
-                                {formErrors["bankDetails.ifscCode"]}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              Branch Name (Optional)
-                            </label>
-                            <input
-                              type="text"
-                              name="bankDetails.branchName"
-                              value={formData.bankDetails.branchName}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                              placeholder="Enter branch name"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {["upi", "phonepe", "googlepay", "paytm"].includes(
-                      selectedPaymentMethod,
-                    ) && (
-                      <div className="bg-[#12061C] p-3 sm:p-4 md:p-5 rounded-xl border border-[#2a1b3d]">
-                        <h4 className="font-bold text-gray-200 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                          <Phone size={16} className="text-[#9B59B6]" />
-                          {getPaymentMethodName(selectedPaymentMethod)} Details
-                        </h4>
-                        <div className="space-y-2.5 sm:space-y-3">
-                          <div>
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              UPI ID *
-                            </label>
-                            <input
-                              type="text"
-                              name="upiDetails.upiId"
-                              value={formData.upiDetails.upiId}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                              placeholder="e.g., user@paytm"
-                            />
-                            {formErrors["upiDetails.upiId"] && (
-                              <p className="text-red-400 text-[10px] sm:text-xs mt-1">
-                                {formErrors["upiDetails.upiId"]}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              UPI Holder Name *
-                            </label>
-                            <input
-                              type="text"
-                              name="upiDetails.upiName"
-                              value={formData.upiDetails.upiName}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                              placeholder="Enter UPI holder name"
-                            />
-                            {formErrors["upiDetails.upiName"] && (
-                              <p className="text-red-400 text-[10px] sm:text-xs mt-1">
-                                {formErrors["upiDetails.upiName"]}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {["paypal", "skrill", "neteller"].includes(
-                      selectedPaymentMethod,
-                    ) && (
-                      <div className="bg-[#12061C] p-3 sm:p-4 md:p-5 rounded-xl border border-[#2a1b3d]">
-                        <h4 className="font-bold text-gray-200 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                          <Mail size={16} className="text-[#9B59B6]" />
-                          {getPaymentMethodName(selectedPaymentMethod)} Details
-                        </h4>
-                        <div>
-                          <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                            Email Address *
-                          </label>
-                          <input
-                            type="email"
-                            name="paypalDetails.email"
-                            value={formData.paypalDetails.email}
-                            onChange={handleChange}
-                            className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                            placeholder="Enter email address"
-                          />
-                          {formErrors["paypalDetails.email"] && (
-                            <p className="text-red-400 text-[10px] sm:text-xs mt-1">
-                              {formErrors["paypalDetails.email"]}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedPaymentMethod === "crypto" && (
-                      <div className="bg-[#12061C] p-3 sm:p-4 md:p-5 rounded-xl border border-[#2a1b3d]">
-                        <h4 className="font-bold text-gray-200 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                          <CreditCard size={16} className="text-[#9B59B6]" />
-                          Cryptocurrency Details
-                        </h4>
-                        <div className="space-y-2.5 sm:space-y-3">
-                          <div>
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              Network *
-                            </label>
-                            <select
-                              name="cryptoDetails.network"
-                              value={formData.cryptoDetails.network}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                            >
-                              <option value="BTC">Bitcoin (BTC)</option>
-                              <option value="ETH">Ethereum (ETH)</option>
-                              <option value="USDT">Tether (USDT)</option>
-                              <option value="BSC">Binance Smart Chain</option>
-                              <option value="SOL">Solana</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="text-[10px] sm:text-xs text-gray-400 font-medium block mb-1">
-                              Wallet Address *
-                            </label>
-                            <input
-                              type="text"
-                              name="cryptoDetails.walletAddress"
-                              value={formData.cryptoDetails.walletAddress}
-                              onChange={handleChange}
-                              className="w-full px-3 sm:px-4 py-2.5 bg-[#1C0F2B] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
-                              placeholder="Enter wallet address"
-                            />
-                            {formErrors["cryptoDetails.walletAddress"] && (
-                              <p className="text-red-400 text-[10px] sm:text-xs mt-1">
-                                {formErrors["cryptoDetails.walletAddress"]}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={requestLoading || !selectedPaymentMethod}
-                  className={`w-full mt-5 sm:mt-6 py-3 sm:py-3.5 font-bold rounded-xl transition-all duration-300 text-sm sm:text-base ${
-                    requestLoading || !selectedPaymentMethod
-                      ? "bg-[#2a1b3d] text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] text-white active:scale-[0.98]"
+                {/* Withdrawal cap notice */}
+                <div
+                  className={`mt-3 flex items-start gap-2 rounded-lg px-3 py-2 border ${
+                    eligibility.remainingWagering > 0
+                      ? "bg-[#F1C40F]/5 border-[#F1C40F]/30"
+                      : "bg-[#00E676]/5 border-[#00E676]/30"
                   }`}
                 >
-                  {requestLoading ? (
-                    <span className="flex items-center justify-center gap-2 sm:gap-3">
-                      <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5" />
-                      Processing...
-                    </span>
+                  {eligibility.remainingWagering > 0 ? (
+                    <>
+                      <AlertCircle className="w-3.5 h-3.5 text-[#F1C40F] flex-shrink-0 mt-0.5" />
+                      <p className="text-[10px] text-gray-300 leading-relaxed">
+                        Wagering pending. You have completed{" "}
+                        <strong className="text-white">
+                          {formatCurrency(eligibility.maxAllowedWithdrawal)}
+                        </strong>{" "}
+                        only. To withdraw the full amount, complete{" "}
+                        <strong className="text-white">
+                          {formatCurrency(eligibility.remainingWagering)}
+                        </strong>{" "}
+                        more wagering.
+                      </p>
+                    </>
                   ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      <Gem className="w-4 h-4" />
-                      Request Withdrawal ({formatCurrency(netAmount || 0)})
-                    </span>
+                    <>
+                      <CheckCircle className="w-3.5 h-3.5 text-[#00E676] flex-shrink-0 mt-0.5" />
+                      <p className="text-[10px] text-gray-300 leading-relaxed">
+                        Wagering complete! You can withdraw your full wallet
+                        balance.
+                      </p>
+                    </>
                   )}
-                </button>
+                </div>
+              </div>
+            ) : null}
 
-                {/* Processing Time */}
-                {settings?.processingTime && (
-                  <div className="mt-3 sm:mt-4 flex items-center justify-center gap-2 text-[11px] sm:text-xs text-gray-400 bg-[#12061C] py-2 rounded-lg border border-[#2a1b3d]">
-                    <Clock
-                      size={12}
-                      className="text-[#9B59B6] sm:w-3.5 sm:h-3.5"
-                    />
-                    <span>
-                      Processing time:{" "}
-                      <strong className="text-gray-200">
-                        {settings.processingTime}
-                      </strong>
+            {/* Amount input */}
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">
+                {currencySymbol}
+              </span>
+              <input
+                type="number"
+                name="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                placeholder={`Min: ${settings?.minWithdrawal || 0}`}
+                className={`w-full rounded-xl border p-3 pl-8 text-base font-semibold text-white bg-[#12061C] transition focus:outline-none focus:ring-2 ${
+                  formErrors.amount
+                    ? "border-red-500/50 focus:ring-red-500/20 bg-red-500/5"
+                    : "border-[#2a1b3d] focus:ring-[#9B59B6]/20 focus:border-[#9B59B6]/50"
+                }`}
+                step="0.01"
+                min={settings?.minWithdrawal || 0}
+                max={settings?.maxWithdrawal || 0}
+              />
+            </div>
+            {formErrors.amount && (
+              <p className="mt-1.5 text-[11px] text-red-400 flex items-center gap-1 error-message">
+                <AlertCircle size={12} /> {formErrors.amount}
+              </p>
+            )}
+
+            {/* Fee & Net breakdown */}
+            {formData.amount && parseFloat(formData.amount) > 0 && (
+              <div className="mt-4 bg-[#12061C] rounded-xl border border-[#2a1b3d] p-3.5 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Withdrawal</span>
+                  <span className="font-bold text-gray-200">
+                    {formatCurrency(parseFloat(formData.amount))}
+                  </span>
+                </div>
+                {fee > 0 && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400">Processing Fee</span>
+                    <span className="font-bold text-red-400">
+                      -{formatCurrency(fee)}
                     </span>
                   </div>
                 )}
-              </form>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-3 sm:space-y-4">
-            {/* Summary */}
-            <div className="bg-[#1C0F2B] rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-3 sm:p-4 md:p-5 border border-[#2a1b3d]">
-              <h3 className="font-bold text-gray-200 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                <TrendingUp size={16} className="text-[#9B59B6]" />
-                Withdrawal Summary
-              </h3>
-              {summary && summary.length > 0 ? (
-                <div className="space-y-2">
-                  {summary.map((item) => (
-                    <div
-                      key={item._id}
-                      className="flex justify-between items-center p-2 bg-[#12061C] rounded-lg border border-[#2a1b3d]"
-                    >
-                      <span className="text-xs sm:text-sm text-gray-400 capitalize flex items-center gap-1.5">
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            item._id === "pending"
-                              ? "bg-[#F1C40F]"
-                              : item._id === "processing"
-                                ? "bg-blue-400"
-                                : item._id === "completed"
-                                  ? "bg-[#00E676]"
-                                  : "bg-gray-400"
-                          }`}
-                        ></div>
-                        {item._id}
-                      </span>
-                      <span className="text-xs sm:text-sm font-bold text-white">
-                        {item.count} ({formatCurrency(item.totalAmount)})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-xs sm:text-sm text-center py-4">
-                  No withdrawals yet
-                </p>
-              )}
-            </div>
-
-            {/* History */}
-            <div className="bg-[#1C0F2B] rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-3 sm:p-4 md:p-5 border border-[#2a1b3d]">
-              <button
-                onClick={() => setShowHistory(!showHistory)}
-                className="w-full flex items-center justify-between p-2 hover:bg-[#2a1b3d]/50 rounded-xl transition-all duration-300"
-              >
-                <span className="flex items-center gap-2 text-gray-200 font-medium text-sm sm:text-base">
-                  <History size={16} className="text-[#9B59B6]" />
-                  <span>Withdrawal History</span>
-                </span>
-                {showHistory ? (
-                  <ChevronUp size={16} className="text-[#9B59B6]" />
-                ) : (
-                  <ChevronDown size={16} className="text-[#9B59B6]" />
-                )}
-              </button>
-
-              {showHistory && (
-                <div className="mt-3 max-h-96 overflow-y-auto custom-scrollbar">
-                  {historyLoading ? (
-                    <div className="flex justify-center py-6">
-                      <Loader2
-                        className="animate-spin text-[#9B59B6]"
-                        size={20}
-                      />
-                    </div>
-                  ) : withdrawalHistory && withdrawalHistory.length === 0 ? (
-                    <p className="text-gray-500 text-xs sm:text-sm text-center py-6">
-                      No withdrawal history
-                    </p>
-                  ) : (
-                    <div className="space-y-2.5 sm:space-y-3">
-                      {withdrawalHistory?.slice(0, 5).map((item) => (
-                        <div
-                          key={item._id}
-                          className="border border-[#2a1b3d] bg-[#12061C] rounded-xl p-2.5 sm:p-3 hover:border-[#9B59B6]/50 transition-all duration-300"
-                        >
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="min-w-0">
-                              <p className="font-bold text-white text-sm sm:text-base">
-                                {formatCurrency(item.amount)}
-                              </p>
-                              <p className="text-[10px] sm:text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                                {getPaymentMethodIcon(item.paymentMethod)}
-                                <span className="truncate">
-                                  {getPaymentMethodName(item.paymentMethod)}
-                                </span>
-                              </p>
-                            </div>
-                            <span
-                              className={`text-[9px] sm:text-[10px] px-2 py-1 rounded-full font-medium flex-shrink-0 ${getStatusBadge(item.status)}`}
-                            >
-                              {item.status.toUpperCase()}
-                            </span>
-                          </div>
-                          <p className="text-[10px] sm:text-xs text-gray-500 mt-2 flex items-center gap-1">
-                            <Clock size={10} />
-                            {formatDate(item.requestedAt)}
-                          </p>
-                        </div>
-                      ))}
-                      {withdrawalHistory?.length > 5 && (
-                        <button className="w-full text-center text-[10px] sm:text-xs text-[#9B59B6] font-medium hover:underline py-2">
-                          View All ({withdrawalHistory.length})
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Support */}
-            <div className="bg-[#1C0F2B] rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-3 sm:p-4 md:p-5 border border-[#2a1b3d]">
-              <div className="flex items-start gap-2.5 sm:gap-3">
-                <div className="p-2 sm:p-2.5 bg-[#9B59B6]/15 rounded-xl border border-[#9B59B6]/30 flex-shrink-0">
-                  <Gift size={16} className="text-[#9B59B6]" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-bold text-gray-200 text-xs sm:text-sm">
-                    Need Help?
-                  </h4>
-                  <p className="text-[11px] sm:text-xs text-gray-400 mt-1 leading-relaxed">
-                    Contact our support team for assistance with your
-                    withdrawal.
-                  </p>
-                  <button
-                    onClick={() => navigate("/support")}
-                    className="text-[11px] sm:text-xs text-[#9B59B6] font-bold hover:text-[#B45CFF] mt-2 inline-flex items-center gap-1 hover:gap-2 transition-all"
-                  >
-                    Contact Support →
-                  </button>
+                <div className="flex items-center justify-between pt-2 border-t border-[#2a1b3d]">
+                  <span className="text-[11px] text-gray-400 font-medium uppercase tracking-wide flex items-center gap-1.5">
+                    <Coins className="w-3.5 h-3.5 text-[#9B59B6]" />
+                    You'll receive
+                  </span>
+                  <span className="text-base font-bold text-[#00E676]">
+                    {formatCurrency(netAmount)}
+                  </span>
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* ============================================= */}
+          {/* STEP 2 — PAYMENT METHOD                       */}
+          {/* ============================================= */}
+          <div className="mt-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white text-[10px] font-bold flex items-center justify-center">
+                  2
+                </span>
+                Payment Method
+              </h3>
+              {!selectedPaymentMethod && (
+                <span className="text-[10px] font-semibold text-red-400 bg-red-500/15 border border-red-500/30 px-2 py-0.5 rounded-full">
+                  Required
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              {settings?.paymentMethods?.map((method) => {
+                const isSelected = selectedPaymentMethod === method;
+
+                return (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => handlePaymentMethodChange(method)}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all duration-150 ${
+                      isSelected
+                        ? "bg-gradient-to-br from-[#B45CFF]/10 via-[#7418F5]/10 to-[#3A00C9]/10 border-[#B45CFF] shadow-[0_0_12px_rgba(180,92,255,0.35)]"
+                        : "border-[#2a1b3d] bg-[#12061C] hover:border-[#9B59B6]/50 hover:bg-[#2a1b3d]/50"
+                    }`}
+                  >
+                    {/* Radio */}
+                    <span
+                      className={`flex items-center justify-center w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
+                        isSelected
+                          ? "border-[#B45CFF] bg-[#0B0410]"
+                          : "border-[#3a2a4d] bg-[#0B0410]"
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9]" />
+                      )}
+                    </span>
+
+                    {/* Icon + label */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] text-white"
+                            : "bg-[#1C0F2B] text-gray-400 border border-[#2a1b3d]"
+                        }`}
+                      >
+                        {getPaymentMethodIcon(method)}
+                      </div>
+                      <p
+                        className={`text-xs font-bold uppercase tracking-wide ${
+                          isSelected ? "text-[#C77AFF]" : "text-gray-400"
+                        }`}
+                      >
+                        {getPaymentMethodName(method)}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {formErrors.paymentMethod && (
+              <p className="text-red-400 text-[11px] mt-2 flex items-center gap-1 error-message">
+                <AlertCircle size={12} /> {formErrors.paymentMethod}
+              </p>
+            )}
+
+            {/* Dynamic Payment Fields */}
+            {selectedPaymentMethod && (
+              <div className="animate-fadeIn mt-4 pt-4 border-t border-[#2a1b3d]">
+                {selectedPaymentMethod === "bank_transfer" && (
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-gray-200 flex items-center gap-2 text-sm">
+                      <Building2 size={16} className="text-[#9B59B6]" />
+                      Bank Details
+                    </h4>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                        Account Holder Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="bankDetails.accountHolderName"
+                        value={formData.bankDetails.accountHolderName}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                        placeholder="Enter account holder name"
+                      />
+                      {formErrors["bankDetails.accountHolderName"] && (
+                        <p className="text-red-400 text-[10px] mt-1 error-message">
+                          {formErrors["bankDetails.accountHolderName"]}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                        Account Number *
+                      </label>
+                      <input
+                        type="text"
+                        name="bankDetails.accountNumber"
+                        value={formData.bankDetails.accountNumber}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                        placeholder="Enter account number"
+                      />
+                      {formErrors["bankDetails.accountNumber"] && (
+                        <p className="text-red-400 text-[10px] mt-1 error-message">
+                          {formErrors["bankDetails.accountNumber"]}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                        Bank Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="bankDetails.bankName"
+                        value={formData.bankDetails.bankName}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                        placeholder="Enter bank name"
+                      />
+                      {formErrors["bankDetails.bankName"] && (
+                        <p className="text-red-400 text-[10px] mt-1 error-message">
+                          {formErrors["bankDetails.bankName"]}
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                          IFSC Code *
+                        </label>
+                        <input
+                          type="text"
+                          name="bankDetails.ifscCode"
+                          value={formData.bankDetails.ifscCode}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                          placeholder="Enter IFSC code"
+                          maxLength="11"
+                        />
+                        {formErrors["bankDetails.ifscCode"] && (
+                          <p className="text-red-400 text-[10px] mt-1 error-message">
+                            {formErrors["bankDetails.ifscCode"]}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                          Branch (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          name="bankDetails.branchName"
+                          value={formData.bankDetails.branchName}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                          placeholder="Enter branch"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {["upi", "phonepe", "googlepay", "paytm"].includes(
+                  selectedPaymentMethod,
+                ) && (
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-gray-200 flex items-center gap-2 text-sm">
+                      <Phone size={16} className="text-[#9B59B6]" />
+                      {getPaymentMethodName(selectedPaymentMethod)} Details
+                    </h4>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                        UPI ID *
+                      </label>
+                      <input
+                        type="text"
+                        name="upiDetails.upiId"
+                        value={formData.upiDetails.upiId}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                        placeholder="e.g., user@paytm"
+                      />
+                      {formErrors["upiDetails.upiId"] && (
+                        <p className="text-red-400 text-[10px] mt-1 error-message">
+                          {formErrors["upiDetails.upiId"]}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                        UPI Holder Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="upiDetails.upiName"
+                        value={formData.upiDetails.upiName}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                        placeholder="Enter UPI holder name"
+                      />
+                      {formErrors["upiDetails.upiName"] && (
+                        <p className="text-red-400 text-[10px] mt-1 error-message">
+                          {formErrors["upiDetails.upiName"]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {["paypal", "skrill", "neteller"].includes(
+                  selectedPaymentMethod,
+                ) && (
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-gray-200 flex items-center gap-2 text-sm">
+                      <Mail size={16} className="text-[#9B59B6]" />
+                      {getPaymentMethodName(selectedPaymentMethod)} Details
+                    </h4>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        name="paypalDetails.email"
+                        value={formData.paypalDetails.email}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                        placeholder="Enter email address"
+                      />
+                      {formErrors["paypalDetails.email"] && (
+                        <p className="text-red-400 text-[10px] mt-1 error-message">
+                          {formErrors["paypalDetails.email"]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {selectedPaymentMethod === "crypto" && (
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-gray-200 flex items-center gap-2 text-sm">
+                      <CreditCard size={16} className="text-[#9B59B6]" />
+                      Cryptocurrency Details
+                    </h4>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                        Network *
+                      </label>
+                      <select
+                        name="cryptoDetails.network"
+                        value={formData.cryptoDetails.network}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                      >
+                        <option value="BTC">Bitcoin (BTC)</option>
+                        <option value="ETH">Ethereum (ETH)</option>
+                        <option value="USDT">Tether (USDT)</option>
+                        <option value="BSC">Binance Smart Chain</option>
+                        <option value="SOL">Solana</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 font-medium block mb-1">
+                        Wallet Address *
+                      </label>
+                      <input
+                        type="text"
+                        name="cryptoDetails.walletAddress"
+                        value={formData.cryptoDetails.walletAddress}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2.5 bg-[#12061C] text-white border border-[#2a1b3d] rounded-xl focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 outline-none transition-all text-sm"
+                        placeholder="Enter wallet address"
+                      />
+                      {formErrors["cryptoDetails.walletAddress"] && (
+                        <p className="text-red-400 text-[10px] mt-1 error-message">
+                          {formErrors["cryptoDetails.walletAddress"]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ============================================= */}
+          {/* STEP 3 — SUMMARY + REQUEST                    */}
+          {/* ============================================= */}
+          <div className="mt-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">
+                You'll receive
+              </span>
+              <span className="text-lg font-bold text-white">
+                {formatCurrency(netAmount || 0)}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={requestLoading || !selectedPaymentMethod}
+              className={`w-full font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-1.5 ${
+                requestLoading || !selectedPaymentMethod
+                  ? "bg-[#2a1b3d] text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] text-white active:scale-[0.98]"
+              }`}
+            >
+              {requestLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Gem className="w-4 h-4" />
+                  Request Withdrawal
+                </>
+              )}
+            </button>
+
+            {settings?.processingTime && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-gray-400">
+                <Clock size={12} className="text-[#9B59B6]" />
+                <span>
+                  Processing time:{" "}
+                  <strong className="text-gray-200">
+                    {settings.processingTime}
+                  </strong>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* ============================================= */}
+          {/* SUMMARY CHIPS                                 */}
+          {/* ============================================= */}
+          {summary && summary.length > 0 && (
+            <div className="mt-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
+              <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300 uppercase tracking-wide mb-3">
+                <TrendingUp size={14} className="text-[#9B59B6]" />
+                Withdrawal Summary
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {summary.map((item) => (
+                  <div
+                    key={item._id}
+                    className="flex items-center justify-between bg-[#12061C] rounded-xl px-3 py-2 border border-[#2a1b3d]"
+                  >
+                    <span className="text-[11px] text-gray-400 capitalize flex items-center gap-1.5">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          item._id === "pending"
+                            ? "bg-[#F1C40F]"
+                            : item._id === "processing"
+                              ? "bg-blue-400"
+                              : item._id === "completed"
+                                ? "bg-[#00E676]"
+                                : "bg-gray-400"
+                        }`}
+                      ></span>
+                      {item._id}
+                    </span>
+                    <span className="text-[11px] font-bold text-white">
+                      {item.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ============================================= */}
+          {/* HISTORY                                       */}
+          {/* ============================================= */}
+          <div className="mt-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="w-full flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2 text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                <History size={14} className="text-[#9B59B6]" />
+                Withdrawal History
+              </span>
+              {showHistory ? (
+                <ChevronUp size={16} className="text-[#9B59B6]" />
+              ) : (
+                <ChevronDown size={16} className="text-[#9B59B6]" />
+              )}
+            </button>
+
+            {showHistory && (
+              <div className="mt-4 space-y-2.5 max-h-96 overflow-y-auto custom-scrollbar">
+                {historyLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="animate-spin text-[#9B59B6]" size={20} />
+                  </div>
+                ) : withdrawalHistory && withdrawalHistory.length === 0 ? (
+                  <p className="text-gray-500 text-xs text-center py-6">
+                    No withdrawal history
+                  </p>
+                ) : (
+                  <>
+                    {withdrawalHistory?.slice(0, 5).map((item) => (
+                      <div
+                        key={item._id}
+                        className="border border-[#2a1b3d] bg-[#12061C] rounded-xl p-3 hover:border-[#9B59B6]/50 transition-all"
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="min-w-0">
+                            <p className="font-bold text-white text-sm">
+                              {formatCurrency(item.amount)}
+                            </p>
+                            <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
+                              {getPaymentMethodIcon(item.paymentMethod)}
+                              <span className="truncate">
+                                {getPaymentMethodName(item.paymentMethod)}
+                              </span>
+                            </p>
+                          </div>
+                          <span
+                            className={`text-[9px] px-2 py-1 rounded-full font-medium flex-shrink-0 ${getStatusBadge(item.status)}`}
+                          >
+                            {item.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-2 flex items-center gap-1">
+                          <Clock size={10} />
+                          {formatDate(item.requestedAt)}
+                        </p>
+                      </div>
+                    ))}
+                    {withdrawalHistory?.length > 5 && (
+                      <p className="text-center text-[10px] text-gray-500 py-1">
+                        Showing latest 5 of {withdrawalHistory.length}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ============================================= */}
+          {/* SUPPORT                                       */}
+          {/* ============================================= */}
+          <div className="mt-5 mb-4 flex items-start gap-3 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
+            <div className="p-2 bg-[#9B59B6]/15 rounded-xl border border-[#9B59B6]/30 flex-shrink-0">
+              <Gift size={16} className="text-[#9B59B6]" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-bold text-gray-200 text-xs">Need Help?</h4>
+              <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                Contact our support team for assistance with your withdrawal.
+              </p>
+              <button
+                onClick={() => navigate("/support")}
+                className="text-[11px] text-[#9B59B6] font-bold hover:text-[#B45CFF] mt-1.5 inline-flex items-center gap-1 transition-all"
+              >
+                Contact Support →
+              </button>
             </div>
           </div>
         </div>
@@ -1174,11 +1283,11 @@ const Withdrawal = () => {
                 onClick={() => {
                   setShowSuccessModal(false);
                   dispatch(clearWithdrawalSuccess());
-                  navigate("/dashboard");
+                  navigate('/account');
                 }}
                 className="w-full py-3 bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] text-white font-bold rounded-xl active:scale-[0.98] transition-all duration-300 text-sm sm:text-base"
               >
-                Go to Dashboard
+                Go to Account
               </button>
             </div>
           </div>

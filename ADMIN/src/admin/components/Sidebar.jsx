@@ -1,6 +1,7 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import {
+  Shield,
   X,
   LayoutDashboard,
   Users,
@@ -59,6 +60,7 @@ const MENUS = [
   { name: "Dashboard", path: "/admin/dashboard", icon: <LayoutDashboard size={20} />, color: "blue" },
   { name: "Users", path: "/admin/users", icon: <Users size={20} />, color: "green" },
   { name: "Banners", path: "/admin/banners", icon: <Image size={20} />, color: "purple" },
+  { name: "Platform Games", path: "/admin/platform-games", icon: <Gamepad2 size={20} />, color: "blue" },
   { name: "Deposits", path: "/admin/deposits", icon: <Wallet size={20} />, color: "emerald" },
   { name: "Withdrawals", path: "/admin/withdrawals", icon: <CreditCard size={20} />, color: "orange" },
   {
@@ -77,6 +79,7 @@ const MENUS = [
   { name: "Bet Admin", path: "/admin/bet-admin", icon: <BarChart3 size={20} />, color: "cyan" },
   { name: "wingo Bets", path: "/admin/admin-wingo-bets", icon: <BarChart3 size={20} />, color: "cyan" },
   { name: "Wingo Commission", path: "/admin/wingo-commission", icon: <Globe size={20} />, color: "gray" },
+  { name: "Result Control", path: "/admin/result-control", icon: <Shield size={20} />, color: "purple" },
 
   {
     name: "Powerhit",

@@ -1,12 +1,8 @@
 import { CheckCircle, Globe, MapPin } from "lucide-react";
 
+// Sirf India support hai
 const countries = [
   { name: "India", flag: "https://flagcdn.com/w80/in.png", code: "IN" },
-  { name: "Australia", flag: "https://flagcdn.com/w80/au.png", code: "AU" },
-  { name: "Pakistan", flag: "https://flagcdn.com/w80/pk.png", code: "PK" },
-  { name: "Bangladesh", flag: "https://flagcdn.com/w80/bd.png", code: "BD" },
-  { name: "Nepal", flag: "https://flagcdn.com/w80/np.png", code: "NP" },
-  { name: "Dubai", flag: "https://flagcdn.com/w80/ae.png", code: "UAE" },
 ];
 
 const CountriesAndDailyClaim = () => {
@@ -24,11 +20,11 @@ const CountriesAndDailyClaim = () => {
 
             <div>
               <h2 className="text-lg md:text-2xl font-black text-white">
-                Available in Countries
+                Available in India
               </h2>
 
               <p className="text-xs text-gray-400 font-medium">
-                Global Lottery Access
+                Indian Lottery Access
               </p>
             </div>
           </div>
@@ -41,11 +37,11 @@ const CountriesAndDailyClaim = () => {
 
         {/* Countries */}
         <div className="overflow-hidden">
-          <div className="grid grid-cols-6">
+          <div className="flex justify-center">
             {countries.map((country, index) => (
               <div
                 key={country.code}
-                className={`group flex flex-col items-center justify-center px-2 py-4 md:py-6 transition-all duration-300 hover:bg-[#1C0F2B] hover:-translate-y-1 rounded-xl`}
+                className={`group flex flex-col items-center justify-center px-6 py-4 md:px-16 md:py-6 transition-all duration-300 hover:bg-[#1C0F2B] hover:-translate-y-1 rounded-xl`}
               >
                 <div className="relative">
                   <img
@@ -69,13 +65,13 @@ const CountriesAndDailyClaim = () => {
           <div className="flex items-center gap-2">
             <MapPin className="text-[#F1C40F]" size={15} />
             <span className="text-xs text-gray-400 font-medium">
-              {countries.length} Countries Supported
+              India Supported
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#00E676] animate-pulse"></span>
-            <span className="text-xs text-gray-400">Available Worldwide</span>
+            <span className="text-xs text-gray-400">Available in India</span>
           </div>
         </div>
       </div>

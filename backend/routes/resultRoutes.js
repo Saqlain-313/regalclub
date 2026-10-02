@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const resultController = require("../controllers/resultController");
-const { protect } = require("../middleware/authMiddleware.js");
+const { protect, adminProtect } = require("../middleware/authMiddleware.js");
 
 // ==================== User Routes ====================
 router.get("/", protect, resultController.getResults);
@@ -12,6 +12,6 @@ router.get("/:resultId", protect, resultController.getResultById);
 router.get("/stats/overview", protect, resultController.getResultStats);
 
 // ==================== Admin Routes ====================
-router.post("/declare", protect, resultController.declareResult);
+router.post("/declare", protect, adminProtect, resultController.declareResult);
 
 module.exports = router;

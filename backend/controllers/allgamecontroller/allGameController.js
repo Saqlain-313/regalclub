@@ -109,6 +109,8 @@ const checkBalance = async (req, res) => {
    TRANSFER BALANCE (ZAP → LOCAL)
 ========================= */
 const transferBalance = async (req, res) => {
+  let lockedUserId = null;
+
   try {
     /* 1️⃣ Find user */
     const user = await AuthModel.findById(req.user._id);
@@ -119,7 +121,25 @@ const transferBalance = async (req, res) => {
       });
     }
 
-    const playerid = String(user.mobile).trim();
+    /* 🛡️ ATOMIC LOCK — only one transfer per user at a time.
+       Without this, two concurrent requests (double-click, sync-on-mount
+       + sync-on-game-close) both read the same provider balance and
+       credit the local wallet twice. */
+    const locked = await AuthModel.findOneAndUpdate(
+      { _id: user._id, transferring: { $ne: true } },
+      { $set: { transferring: true } },
+      { new: true }
+    );
+
+    if (!locked) {
+      return res.status(429).json({
+        status: false,
+        message: "Transfer already in progress, please wait",
+      });
+    }
+
+    lockedUserId = locked._id;
+    const playerid = String(locked.mobile).trim();
 
     /* 2️⃣ Get balance from Zapcore */
     const balRes = await axios.post(
@@ -135,8 +155,8 @@ const transferBalance = async (req, res) => {
     if (!isNaN(zapBalance) && zapBalance > 0) {
       /* 4️⃣ Add balance to local wallet (atomic $inc only — no $set on same field) */
       const updatedUser = await AuthModel.findByIdAndUpdate(
-        user._id,
-        { $inc: { credit: zapBalance + (user.exposure || 0) } },
+        locked._id,
+        { $inc: { credit: zapBalance + (locked.exposure || 0) } },
         { new: true }
       );
 
@@ -163,8 +183,8 @@ const transferBalance = async (req, res) => {
       /* 6️⃣ Rollback if reset fails — atomic $inc (never $set+$inc together) */
       if (resetRes.data?.status !== true) {
         await AuthModel.updateOne(
-          { _id: user._id },
-          { $inc: { credit: -(zapBalance + (user.exposure || 0)) } }
+          { _id: locked._id },
+          { $inc: { credit: -(zapBalance + (locked.exposure || 0)) } }
         );
 
         return res.status(500).json({
@@ -190,9 +210,23 @@ const transferBalance = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       status: false,
-      message: "Transfer error",
+      // Provider (Zapcore) ka actual message forward karo —
+      // e.g. "Your IP address x.x.x.x is not whitelisted"
+      message: error.response?.data?.message || "Transfer error",
       error: error.response?.data || error.message,
     });
+  } finally {
+    /* 🔓 Always release the lock */
+    if (lockedUserId) {
+      try {
+        await AuthModel.updateOne(
+          { _id: lockedUserId },
+          { $set: { transferring: false } }
+        );
+      } catch (e) {
+        console.error("TRANSFER LOCK RELEASE ERROR 👉", e.message);
+      }
+    }
   }
 };
 
@@ -375,14 +409,19 @@ const gameHistory = async (req, res) => {
   try {
     const playerid = String(req.user.mobile).trim();
 
-    const { page = 1, size = 2000, from_date, to_date } = req.query;
+    // Provider limit max 100 per page (docs)
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.size) || 20));
+    const from_date = req.query.from_date || undefined;
+    const to_date = req.query.to_date || undefined;
+
     const response = await axios.post(
-      `${apiUrl}/history?page=${page}&size=${size}`,
+      `${apiUrl}/history`,
       {
         key,
         playerid,
         page,
-        limit: size,
+        limit,
         from_date,
         to_date,
       },
@@ -401,6 +440,58 @@ const gameHistory = async (req, res) => {
 };
 
 /* =========================
+   API GAME WAGERED TOTAL
+   (withdrawal wagering ke liye)
+========================= */
+const HISTORY_FIELD_CANDIDATES = [
+  "bet_amount",
+  "betAmount",
+  "bet",
+  "stake",
+  "turnover",
+  "wager_amount",
+  "amount",
+];
+
+const extractWageredAmount = (item) => {
+  if (!item || typeof item !== "object") return 0;
+
+  for (const field of HISTORY_FIELD_CANDIDATES) {
+    const value = Number(item[field]);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+
+  return 0;
+};
+
+const getApiGameWagered = async (playerid, maxPages = 10) => {
+  let totalWagered = 0;
+
+  for (let page = 1; page <= maxPages; page++) {
+    const response = await axios.post(
+      `${apiUrl}/history`,
+      {
+        key,
+        playerid: String(playerid).trim(),
+        page,
+        limit: 100,
+      },
+      { headers: zapHeaders }
+    );
+
+    const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+    rows.forEach((row) => {
+      totalWagered += extractWageredAmount(row);
+    });
+
+    const lastPage = Number(response.data?.pagination?.last_page) || 1;
+    if (page >= lastPage || rows.length === 0) break;
+  }
+
+  return totalWagered;
+};
+
+/* =========================
    EXPORTS
 ========================= */
 module.exports = {
@@ -414,4 +505,6 @@ module.exports = {
   gameListByGameType,
   gameListByGameTypeAndProvider,
   gameHistory,
+  getApiGameWagered,
+  zapKey: key,
 }

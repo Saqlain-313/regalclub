@@ -4,10 +4,76 @@ const User = require("../models/authmodel");
 const mongoose = require("mongoose");
 const WinMultiplier = require("../models/WinMultiplier");
 const CurrencyRate = require("../models/CurrencyRate");
+const { ensureTodayMarketDay } = require("./marketController");
+
+// ============================================================
+// LIVE WALLET PUSH — emits the fresh credit to the user's
+// private socket room so the navbar updates instantly
+// ============================================================
+const emitWalletUpdate = async (userId) => {
+  try {
+    if (!global.io || !userId) return;
+    const fresh = await User.findById(userId).select("credit");
+    if (!fresh) return;
+    global.io.to(`user-${userId}`).emit("wallet-update", {
+      credit: Number(fresh.credit) || 0,
+    });
+  } catch (e) {
+    // Wallet push is best-effort only
+  }
+};
 
 // ============================================================
 // MARKET DAY HELPERS (marketArray based)
 // ============================================================
+
+// ============================================================
+// MARKET OPEN/CLOSE TIME ENFORCEMENT (server-side)
+// openTime/closeTime "HH:mm" (24h). Overnight markets supported
+// (close < open). Bids sirf open window me allow hote hain.
+// ============================================================
+const parseTimeToMinutes = (t) => {
+  if (!t) return null;
+  const match = String(t).trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  const h = Number(match[1]);
+  const m = Number(match[2]);
+  if (h > 23 || m > 59) return null;
+  return h * 60 + m;
+};
+
+const getMarketOpenStatus = (openTime, closeTime) => {
+  const openMin = parseTimeToMinutes(openTime);
+  const closeMin = parseTimeToMinutes(closeTime);
+
+  // Times configured nahi hain -> block nahi karo (legacy markets)
+  if (openMin === null || closeMin === null) return { open: true };
+
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  // Overnight market (close < open)
+  if (closeMin < openMin) {
+    if (nowMin >= openMin || nowMin <= closeMin) return { open: true };
+    return { open: false, reason: "Market is not open yet" };
+  }
+
+  if (nowMin < openMin) return { open: false, reason: "Market is not open yet" };
+  if (nowMin > closeMin) return { open: false, reason: "Bidding closed for today" };
+  return { open: true };
+};
+
+const enforceMarketOpenWindow = (market) => {
+  const status = getMarketOpenStatus(market?.openTime, market?.closeTime);
+  if (!status.open) {
+    const err = new Error(
+      `${status.reason}. Bids accepted ${market?.openTime || "?"} to ${market?.closeTime || "?"} only.`,
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+};
+
 const toDateKey = (value = new Date()) => {
   const d = value instanceof Date ? new Date(value) : new Date(value);
   if (Number.isNaN(d.getTime())) return null;
@@ -580,8 +646,15 @@ exports.placeBid = async (req, res) => {
         .json({ success: false, message: "Market not found" });
     }
 
+    // Lazy rollover — today's market day must exist for the bid
+    await ensureTodayMarketDay(market);
+
     const marketDay = requireMarketDay(market, marketDayId, marketDate);
     attachMarketDayCompatibility(market, marketDay);
+
+    // Server-side open/close window check — client-side status
+    // par bharosa nahi, yahan strictly enforce hota hai
+    enforceMarketOpenWindow(market);
 
     const marketConfig = validateMarketDigitType(market);
     if (!marketConfig.valid) {
@@ -684,27 +757,57 @@ exports.placeBid = async (req, res) => {
 
     const formattedNumber = formatGameNumber(gameType, number);
 
-    const bid = await Bid.create({
-      userId,
-      marketId,
-      marketDayId: marketDay._id,
-      marketDate: marketDay.marketDate,
-      gameType,
-      number: formattedNumber,
-      bidAmount: amount, // user's actual currency amount
-      bidAmountUserCurrency: amount, // user-currency snapshot
-      currencyCode, // e.g. "AUD"
-      currencyRate: rate, // e.g. 68.37
-      possibleWinAmount, // user's currency (wallet/accounting)
-      transactionId: generateTransactionId(),
-      status: "pending",
-      bidTime: new Date(),
-    });
+    // ==================================================
+    // ATOMIC CREDIT DEDUCTION
+    // Pehle credit deduct karo (guarded — concurrent requests
+    // me double-spend nahi ho sakta), phir bid create. Bid
+    // create fail ho to refund.
+    // ==================================================
+    const creditUpdate = await User.updateOne(
+      { _id: user._id, credit: { $gte: amount } },
+      { $inc: { credit: -amount } },
+    );
 
-    console.log(bid);
+    if (creditUpdate.modifiedCount !== 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Insufficient credit",
+        credit: user.credit,
+        required: amount,
+      });
+    }
+
+    let bid;
+    try {
+      bid = await Bid.create({
+        userId,
+        marketId,
+        marketDayId: marketDay._id,
+        marketDate: marketDay.marketDate,
+        gameType,
+        number: formattedNumber,
+        bidAmount: amount, // user's actual currency amount
+        bidAmountUserCurrency: amount, // user-currency snapshot
+        currencyCode, // e.g. "AUD"
+        currencyRate: rate, // e.g. 68.37
+        possibleWinAmount, // user's currency (wallet/accounting)
+        transactionId: generateTransactionId(),
+        status: "pending",
+        bidTime: new Date(),
+      });
+    } catch (bidError) {
+      // Bid create fail — deducted credit wapas karo
+      await User.updateOne(
+        { _id: user._id },
+        { $inc: { credit: amount } },
+      );
+      throw bidError;
+    }
 
     user.credit = Number(user.credit) - amount;
-    await user.save();
+
+    // Instant wallet push after bid deduction
+    await emitWalletUpdate(userId);
 
     return res.status(201).json({
       success: true,
@@ -756,6 +859,20 @@ exports.placeBid = async (req, res) => {
 // PLACE MULTIPLE BIDS
 // ============================================================
 exports.placeMultipleBids = async (req, res) => {
+  // Lazy rollover BEFORE the transaction starts — the ensure
+  // helper saves outside the session (it is idempotent)
+  try {
+    const uniqueMarketIds = [
+      ...new Set((req.body?.bids || []).map((b) => b?.marketId).filter(Boolean)),
+    ];
+    for (const mid of uniqueMarketIds) {
+      const m = await Market.findById(mid);
+      if (m) await ensureTodayMarketDay(m);
+    }
+  } catch (e) {
+    console.error("Lazy rollover (placeMultipleBids) failed:", e.message);
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -867,6 +984,8 @@ exports.placeMultipleBids = async (req, res) => {
 
       const marketDay = requireMarketDay(market, marketDayId, marketDate);
       attachMarketDayCompatibility(market, marketDay);
+
+      enforceMarketOpenWindow(market);
 
       const marketConfig = validateMarketDigitType(market);
       if (!marketConfig.valid) {
@@ -1061,6 +1180,16 @@ exports.placeMultipleBids = async (req, res) => {
 // PLACE BID ON MULTIPLE NUMBERS
 // ============================================================
 exports.placeBidOnMultipleNumbers = async (req, res) => {
+  // Lazy rollover BEFORE the transaction starts
+  try {
+    if (req.body?.marketId) {
+      const m = await Market.findById(req.body.marketId);
+      if (m) await ensureTodayMarketDay(m);
+    }
+  } catch (e) {
+    console.error("Lazy rollover (placeBidOnMultipleNumbers) failed:", e.message);
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -1124,6 +1253,8 @@ exports.placeBidOnMultipleNumbers = async (req, res) => {
 
     const marketDay = requireMarketDay(market, marketDayId, marketDate);
     attachMarketDayCompatibility(market, marketDay);
+
+    enforceMarketOpenWindow(market);
 
     const marketConfig = validateMarketDigitType(market);
     if (!marketConfig.valid) {
@@ -3033,3 +3164,114 @@ exports.getAllowedGameTypesForMarket = async (req, res) => {
     });
   }
 };
+
+// ============================================================
+// WINGO AUTO RESULT HANDLER — settles all bets for the
+// completed period and credits winners instantly.
+// Standard wingo payouts: number 9x, green/red 2x,
+// violet 4.5x, big/small 2x. Also pushes a live wallet
+// update so the navbar balance changes instantly.
+// ============================================================
+const handlingWinGo1P = async (typeid) => {
+  try {
+    const gameMap = {
+      1: "wingo",
+      3: "wingo3",
+      5: "wingo5",
+      10: "wingo10",
+      11: "trx",
+    };
+    const game = gameMap[typeid] || "wingo";
+
+    // Latest COMPLETED period (result already set)
+    const winGoNow = await Wingo.findOne({ status: { $ne: 0 }, game })
+      .sort({ period: -1 })
+      .limit(1);
+
+    if (!winGoNow) return;
+
+    const result = Number(winGoNow.amount);
+    const period = String(winGoNow.period);
+
+    // Derive colour + size from the result number
+    const colors =
+      result === 0
+        ? ["red", "violet"]
+        : result === 5
+          ? ["green", "violet"]
+          : [result % 2 === 1 ? "green" : "red"];
+    const size = result >= 5 ? "big" : "small";
+
+    // All pending bets for this period
+    const bets = await Bet.find({
+      game,
+      stage: period,
+      status: 0,
+    });
+
+    const payoutFor = (bet) => {
+      const pick = String(bet.bet).toLowerCase().trim();
+
+      // Straight number bet
+      if (/^[0-9]+$/.test(pick)) {
+        return Number(pick) === result ? Number(bet.amount) * 9 : 0;
+      }
+
+      if (pick === "green") {
+        return colors.includes("green") ? Number(bet.amount) * 2 : 0;
+      }
+      if (pick === "red") {
+        return colors.includes("red") ? Number(bet.amount) * 2 : 0;
+      }
+      if (pick === "violet") {
+        return colors.includes("violet") ? Number(bet.amount) * 4.5 : 0;
+      }
+      if (pick === "big") {
+        return size === "big" ? Number(bet.amount) * 2 : 0;
+      }
+      if (pick === "small") {
+        return size === "small" ? Number(bet.amount) * 2 : 0;
+      }
+
+      return 0;
+    };
+
+    for (const bet of bets) {
+      const payout = payoutFor(bet);
+
+      if (payout > 0) {
+        // Winner — credit and mark won
+        await Transaction.create({
+          mobile: bet.mobile,
+          detail: "Win",
+          credit: payout,
+          time: formatDate(Date.now()),
+        });
+
+        await User.updateOne(
+          { mobile: bet.mobile },
+          { $inc: { credit: payout } },
+        );
+
+        await Bet.updateOne(
+          { _id: bet._id },
+          { status: 1, amount: payout, get: payout },
+        );
+
+        // Live wallet push (best-effort)
+        try {
+          const winner = await User.findOne({ mobile: bet.mobile }).select("_id");
+          if (winner) await emitWalletUpdate(winner._id);
+        } catch (e) {
+          // best-effort
+        }
+      } else {
+        await Bet.updateOne({ _id: bet._id }, { status: 2 });
+      }
+    }
+  } catch (error) {
+    console.error("handlingWinGo1P ERROR:", error.message);
+  }
+};
+
+exports.handlingWinGo1P = handlingWinGo1P;

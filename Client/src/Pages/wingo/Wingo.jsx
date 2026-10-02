@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import { Crown, Gem, Shuffle, Zap } from "lucide-react";
+import { AlertCircle, Crown, Shuffle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCircle, FaMinus, FaPlus } from "react-icons/fa";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
@@ -8,7 +8,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 
 import EmptyData from "../../components/EmptyData.jsx";
-import { host } from "../../redux/slices/api.js";
+import { api, host } from "../../redux/slices/api.js";
 import { getProfile } from "../../redux/slices/authSlice.js";
 import {
   getMyBets,
@@ -452,15 +452,20 @@ const Wingo = () => {
       const res = await dispatch(
         getOrderList({ typeid: typeid1, pageno, pageto }),
       ).unwrap();
-      if (res.status) {
-        setWingoPeriodListData(res);
-        setPeriodData(res);
-        if (res.period) setCurrentPeriod(res.period);
-        setTimeout(chartFunction, 100);
+        if (res.status) {
+          setWingoPeriodListData(res);
+          setPeriodData(res);
+          // Period sirf aage badhta hai (stale response guard)
+          if (res.period) {
+            setCurrentPeriod((prev) =>
+              !prev || String(res.period) > String(prev) ? res.period : prev,
+            );
+          }
+          setTimeout(chartFunction, 100);
+        }
+      } catch (err) {
+        console.error("fetchNewData failed:", err);
       }
-    } catch (err) {
-      console.error("fetchNewData failed:", err);
-    }
     await fetchHistory();
   };
 
@@ -473,7 +478,12 @@ const Wingo = () => {
         if (res.status) {
           setWingoPeriodListData(res);
           setPeriodData(res);
-          if (res.period) setCurrentPeriod(res.period);
+          // Period sirf aage badhta hai (stale response guard)
+          if (res.period) {
+            setCurrentPeriod((prev) =>
+              !prev || String(res.period) > String(prev) ? res.period : prev,
+            );
+          }
           setTimeout(chartFunction, 100);
         }
       } catch (err) {
@@ -494,6 +504,27 @@ const Wingo = () => {
     }, 500),
     [dispatch],
   );
+
+  // ============================================================
+  // SERVER-SIDE PERIOD SYNC (source of truth)
+  // currentPeriod sirf aage badhta hai — kabhi piche nahi.
+  // ============================================================
+  const syncCurrentPeriod = useCallback(async (tid) => {
+    try {
+      const { data } = await api.get(`/bet/current-period?typeid=${tid}`);
+      if (data?.success && data.period) {
+        const serverPeriod = String(data.period);
+        setCurrentPeriod((prev) =>
+          !prev || serverPeriod > String(prev) ? serverPeriod : prev,
+        );
+        setPeriodData((prev) =>
+          prev ? { ...prev, period: serverPeriod } : prev,
+        );
+      }
+    } catch (err) {
+      console.error('syncCurrentPeriod failed:', err);
+    }
+  }, []);
 
   const setSocketListeners = useCallback(
     (typeid) => {
@@ -517,9 +548,29 @@ const Wingo = () => {
         setSecondtime1(second1);
         setSecondtime2(second2);
 
+        // Server-authoritative period — arrives with EVERY timer tick,
+        // so every user shows the same period at the same moment
+        if (data.period) {
+          const serverPeriod = String(data.period);
+          setCurrentPeriod((prev) =>
+            !prev || serverPeriod > String(prev) ? serverPeriod : prev,
+          );
+          setPeriodData((prev) =>
+            prev && prev.period !== serverPeriod
+              ? { ...prev, period: serverPeriod }
+              : prev,
+          );
+        }
+
         if (minute === 0 && second1 === 0 && second2 === 0) {
           setOpenTime(true);
           setOpenPopup(false);
+          // Timer complete — server se CURRENT period sync.
+          // Result processing + next-period create mein thoda
+          // time lag sakta hai, isliye chhote retries bhi.
+          syncCurrentPeriod(typeid);
+          setTimeout(() => syncCurrentPeriod(typeid), 1500);
+          setTimeout(() => syncCurrentPeriod(typeid), 3500);
           debouncedFetch(typeid, 1, 10);
           if (activeVoice) playAudio(audio1Ref);
         } else {
@@ -553,6 +604,8 @@ const Wingo = () => {
         resultProcessedRef.current.add(processKey);
 
         try {
+          // Result aane par server se current period bhi re-sync
+          syncCurrentPeriod(typeid);
           await debouncedFetch(typeid, 1, 10);
           if (Number(typeid1) !== Number(typeid)) return;
 
@@ -603,7 +656,7 @@ const Wingo = () => {
         socket.off("data-server", handleDataServer);
       };
     },
-    [activeVoice, debouncedFetch, dispatch, typeid1],
+    [activeVoice, debouncedFetch, dispatch, syncCurrentPeriod, typeid1],
   );
 
   // ============================================================
@@ -695,6 +748,7 @@ const Wingo = () => {
 
       setOpenPopup(false);
       setShowSuccessPopup(true);
+      setBetAlert(false);
       setcredit(1);
       setMultiplier(1);
       setActiveX(0);
@@ -719,6 +773,7 @@ const Wingo = () => {
 
   const selectBetHandle = (data) => {
     setSelectBet(data);
+    setBetAlert(false);
     setTimeout(() => setOpenPopup(true), 100);
   };
 
@@ -761,8 +816,29 @@ const Wingo = () => {
 
   useEffect(() => {
     debouncedFetch(typeid1, pageno, pageto);
+    // Server se current period + time sync (mount par)
+    syncCurrentPeriod(typeid1);
     fetchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // typeid change par bhi server period sync karo
+  useEffect(() => {
+    if (typeid1) syncCurrentPeriod(typeid1);
+  }, [typeid1, syncCurrentPeriod]);
+
+  // Tab background se wapas aane par server se re-sync
+  // (background mein timers throttle hote hain — resync zaroori)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        syncCurrentPeriod(typeid1);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, [typeid1, syncCurrentPeriod]);
 
   useEffect(() => {
     if (typeid1 !== null) {
@@ -1253,7 +1329,10 @@ const Wingo = () => {
             </span>
           </div>
           <p className="mt-1 truncate text-[12px] font-semibold text-gray-300">
-            Period: {wingoPeriodListData?.period || "Loading..."}
+            Period:{" "}
+            {wingoPeriodListData?.period || currentPeriod || (
+              <span className="inline-block h-3 w-16 animate-pulse rounded bg-[#2a1b3d] align-middle" />
+            )}
           </p>
         </div>
       </div>
@@ -1292,130 +1371,140 @@ const Wingo = () => {
         </button>
       </div>
 
+      {/* ===== COLOR BUTTONS — solid, image jaisa ===== */}
       <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
         {[
           {
             key: "x",
             label: "Green",
-            gradient: "from-[#1a5c2e] to-[#0d3a1a]",
-            border: "border-[#00E676]/50",
-            text: "text-[#00E676]",
-            gem: "text-[#00E676]",
+            bg: "bg-[#0FA958]",
+            hover: "hover:bg-[#0C9A50]",
           },
           {
             key: "t",
             label: "Violet",
-            gradient: "from-[#5b2f9c] to-[#3a1d6a]",
-            border: "border-[#B45CFF]/50",
-            text: "text-[#C77AFF]",
-            gem: "text-[#C77AFF]",
+            bg: "bg-[#9B59B6]",
+            hover: "hover:bg-[#8A4CA4]",
           },
           {
             key: "d",
             label: "Red",
-            gradient: "from-[#7a1c1c] to-[#4a0d0d]",
-            border: "border-[#E74C3C]/50",
-            text: "text-[#E74C3C]",
-            gem: "text-[#E74C3C]",
+            bg: "bg-[#E5484D]",
+            hover: "hover:bg-[#D13B40]",
           },
-        ].map(({ key, label, gradient, border, text, gem }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => selectBetHandle(key)}
-            className={`bg-gradient-to-br ${gradient} rounded-2xl border ${border} px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-95`}
-          >
-            <div className="flex items-center justify-between">
-              <span className={`text-sm font-black ${text} sm:text-base`}>
-                {label}
-              </span>
-              <Gem className={`h-6 w-6 ${gem} drop-shadow-sm`} />
-            </div>
-          </button>
-        ))}
+        ].map(({ key, label, bg, hover }) => {
+          const isSelected = selectBet === key;
+
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => {
+                // Toggle: same option dobara click par deselect
+                if (isSelected) {
+                  setSelectBet("");
+                } else {
+                  selectBetHandle(key);
+                }
+              }}
+              className={`relative flex items-center justify-center rounded-xl py-3.5 text-base font-extrabold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:text-lg ${bg} ${hover}`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* ===== Pick a number + Multiplier ===== */}
-      <div className="mt-3 flex flex-col gap-4 rounded-2xl border border-[#2a1b3d] bg-[#12061C] p-3 shadow-sm sm:p-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(180px,200px)] lg:items-stretch lg:gap-4 lg:p-4">
-        {/* Pick a number */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9B59B6] sm:text-xs">
-              Pick a number
-            </span>
-          </div>
-          <div>
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-              {ImgData.map((item, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => selectBetHandle(i)}
-                  className={`flex min-h-[64px] items-center justify-center rounded-xl bg-[#1C0F2B] border border-[#2a1b3d] shadow-sm transition hover:-translate-y-0.5 hover:border-[#9B59B6]/50 hover:shadow-[0_4px_12px_rgba(155,89,182,.25)] active:scale-95 ${
-                    animate ? "animate-bounce" : ""
-                  }`}
-                  style={{ animationDelay: `${i * 0.06}s` }}
-                >
-                  <img
-                    src={item}
-                    alt={i}
-                    className="h-14 w-14 object-contain sm:h-16 sm:w-16 md:h-16 md:w-16"
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* ===== Pick a number ===== */}
+      <div className="mt-3 rounded-2xl border border-[#2a1b3d] bg-[#12061C] p-3 shadow-sm sm:p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9B59B6] sm:text-xs">
+            Pick a number
+          </span>
         </div>
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+          {ImgData.map((item, i) => {
+            const isNumberSelected = selectBet === i;
 
-        {/* Vertical divider — only on lg+ */}
-        <div className="hidden self-stretch border-l border-[#2a1b3d] lg:block" />
-
-        {/* Multiplier */}
-        <div className="lg:w-[190px]">
-          <div className="mb-2 flex items-center gap-1.5">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9B59B6] sm:text-xs">
-              Multiplier
-            </span>
-            <Zap className="h-3.5 w-3.5 text-[#9B59B6]" fill="currentColor" />
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {X_DATA.map((item, i) => (
+            return (
               <button
                 key={i}
                 type="button"
-                onClick={() => {
-                  setActiveX(i);
-                  setMultiplier(item);
-                }}
-                className={`rounded-lg px-2 py-2 text-[11px] font-black transition sm:text-xs ${
-                  activeX === i
-                    ? `${purpleGradient} text-white`
-                    : "border border-[#2a1b3d] bg-[#1C0F2B] text-gray-300 hover:bg-[#2a1b3d] hover:text-white"
-                }`}
+                onClick={() => selectBetHandle(i)}
+                className={`relative flex min-h-[64px] items-center justify-center rounded-full border-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(155,89,182,.25)] active:scale-95 ${
+                  isNumberSelected
+                    ? "border-[#C77AFF] ring-2 ring-[#B45CFF]/40"
+                    : "border-transparent"
+                } ${animate ? "animate-bounce" : ""}`}
+                style={{ animationDelay: `${i * 0.06}s` }}
               >
-                X{item}
+                <img
+                  src={item}
+                  alt={i}
+                  className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+                />
+                {isNumberSelected && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-[10px] font-black text-white shadow">
+                    ✓
+                  </span>
+                )}
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+
+        {/* ===== Random + Multiplier — ek row me ===== */}
+        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            onClick={generateRandomNumber}
+            className={`flex flex-shrink-0 items-center gap-1 rounded-full border px-3.5 py-2 text-[11px] font-extrabold transition ${
+              selectBet === "random"
+                ? `${purpleGradient} text-white`
+                : "border-[#C77AFF]/60 bg-[#12061C] text-[#C77AFF] hover:bg-[#2a1b3d]"
+            }`}
+          >
+            <Shuffle className="h-3.5 w-3.5" />
+            Random
+          </button>
+
+          {X_DATA.map((item, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => {
+                setActiveX(i);
+                setMultiplier(item);
+              }}
+              className={`flex-shrink-0 rounded-full px-3.5 py-2 text-[11px] font-extrabold transition ${
+                activeX === i
+                  ? `${purpleGradient} text-white`
+                  : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d] hover:text-white"
+              }`}
+            >
+              X{item}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
+      {/* ===== Big / Small — full-width split, purple theme ===== */}
+      <div className="mt-3 flex overflow-hidden rounded-xl shadow-md">
         <button
           type="button"
           onClick={() => {
             setActiveBigSmall("l");
             selectBetHandle("l");
           }}
-          className={`relative flex min-h-[52px] items-center justify-center gap-1.5 overflow-hidden rounded-xl py-3 text-sm font-black shadow-md transition hover:-translate-y-0.5 active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
+          className={`flex min-h-[52px] flex-1 items-center justify-center gap-1.5 py-3 text-sm font-black text-white transition-all active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
             activeBigSmall === "l"
-              ? `${purpleGradient} text-white`
-              : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d]"
+              ? "bg-gradient-to-r from-[#B45CFF] to-[#8A3FF0]"
+              : "bg-[#5A3ABF]/60 hover:bg-[#5A3ABF]"
           }`}
         >
-          Big <span className="text-[11px] opacity-70">5–9</span>
+          Big <span className="text-[11px] opacity-80">5–9</span>
           <Crown
-            className={`absolute right-3 h-5 w-5 ${activeBigSmall === "l" ? "text-white/60" : "text-gray-600"}`}
+            className={`h-4 w-4 ${activeBigSmall === "l" ? "text-white/80" : "text-white/40"}`}
           />
         </button>
         <button
@@ -1424,15 +1513,15 @@ const Wingo = () => {
             setActiveBigSmall("n");
             selectBetHandle("n");
           }}
-          className={`relative flex min-h-[52px] items-center justify-center gap-1.5 overflow-hidden rounded-xl py-3 text-sm font-black shadow-md transition hover:-translate-y-0.5 active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
+          className={`flex min-h-[52px] flex-1 items-center justify-center gap-1.5 border-l border-white/10 py-3 text-sm font-black text-white transition-all active:scale-[0.98] sm:min-h-[58px] sm:py-3.5 sm:text-base ${
             activeBigSmall === "n"
-              ? `${purpleGradient} text-white`
-              : "border border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:bg-[#2a1b3d]"
+              ? "bg-gradient-to-r from-[#5A3ABF] to-[#3A2270]"
+              : "bg-[#3A2A6B]/60 hover:bg-[#3A2A6B]"
           }`}
         >
-          Small <span className="text-[11px] opacity-70">0–4</span>
+          Small <span className="text-[11px] opacity-80">0–4</span>
           <Crown
-            className={`absolute right-3 h-5 w-5 ${activeBigSmall === "n" ? "text-white/60" : "text-gray-600"}`}
+            className={`h-4 w-4 ${activeBigSmall === "n" ? "text-white/80" : "text-white/40"}`}
           />
         </button>
       </div>
@@ -1910,6 +1999,16 @@ const Wingo = () => {
                 <span>I agree</span>
                 <span className="font-bold text-[#9B59B6]">Pre-sale rules</span>
               </label>
+
+              {/* Bet error alert — visible inside the modal (the old
+                  place-bet-popup CSS class never existed, so failures
+                  were completely silent) */}
+              {betAlert && messages && (
+                <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-xs font-semibold text-red-400">
+                  <AlertCircle size={14} className="flex-shrink-0" />
+                  {messages}
+                </div>
+              )}
 
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <button

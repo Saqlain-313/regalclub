@@ -51,6 +51,12 @@ const marketDaySchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // Kis game type ka result declare hua (audit)
+    declaredGameType: {
+      type: String,
+      default: null,
+    },
   },
   { _id: true }
 );

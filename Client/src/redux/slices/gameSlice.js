@@ -4,15 +4,16 @@ import { api } from "./api";
 
 /* ===========================
    CHECK GAME credit
+   (pulls the API-wallet balance into the main wallet)
 =========================== */
 export const checkGamecredit = createAsyncThunk(
   "game/checkcredit",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await api.get("/game/balance/transfer", {
+      const { data } = await api.post("/game/balance/transfer", null, {
         withCredentials: true,
       });
-      return data; // ✅ FIXED
+      return data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data || { message: "credit check failed" },
@@ -23,12 +24,14 @@ export const checkGamecredit = createAsyncThunk(
 
 /* ===========================
    TRANSFER credit
+   (same endpoint as checkGamecredit — the old
+    /game/transfer-credit route never existed)
 =========================== */
 export const transferFromGame = createAsyncThunk(
   "game/transferFromGame",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await api.post("/game/transfer-credit");
+      const { data } = await api.post("/game/balance/transfer");
       return data;
     } catch (err) {
       return rejectWithValue(

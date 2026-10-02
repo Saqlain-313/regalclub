@@ -50,6 +50,14 @@ const depositSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // System-generated reference shown to user & admin: REG{digits}
+    depositRef: {
+      type: String,
+      unique: true,
+      index: true,
+      default: "",
+    },
+
     screenshot: {
       type: String,
       default: "",

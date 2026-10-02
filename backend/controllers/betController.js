@@ -10,6 +10,23 @@ const Admin = require("../models/Admin");
 const axios = require("axios");
 const crypto = require("crypto");
 const path = require("path");
+
+// ============================================================
+// LIVE WALLET PUSH — emits the fresh credit to the user's
+// private socket room so the navbar updates instantly
+// ============================================================
+const emitWalletUpdate = async (userId) => {
+  try {
+    if (!global.io || !userId) return;
+    const fresh = await User.findById(userId).select("credit");
+    if (!fresh) return;
+    global.io.to(`user-${userId}`).emit("wallet-update", {
+      credit: Number(fresh.credit) || 0,
+    });
+  } catch (e) {
+    // Wallet push is best-effort only
+  }
+};
 const fs = require("fs");
 require("dotenv").config();
 
@@ -248,6 +265,370 @@ const commissions = async (user, money) => {
 };
 
 // ============================================
+// ADMIN RESULT CONTROL (authorized result system)
+//
+// Admin kisi game ke CURRENT pending period ke liye
+// expected result (0-9) set/clear kar sakta hai.
+// processResultImmediately() timer boundary par yahi
+// locked result use karta hai (random ki jagah).
+// Har change server console mein logged hota hai.
+// ============================================
+
+const GAME_FIELD_MAP = {
+  1: "wingo",
+  3: "wingo3",
+  5: "wingo5",
+  10: "wingo10",
+};
+
+// @route   GET /bet/admin/result-control
+// @access  Admin
+const adminGetResultControl = async (req, res) => {
+  try {
+    const admin = await Admin.findOne();
+
+    return res.status(200).json({
+      success: true,
+      forcedResults: {
+        wingo: admin?.wingo ?? "-1",
+        wingo3: admin?.wingo3 ?? "-1",
+        wingo5: admin?.wingo5 ?? "-1",
+        wingo10: admin?.wingo10 ?? "-1",
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to load result control",
+    });
+  }
+};
+
+// @route   PUT /bet/admin/result-control
+// @body    { typeid: 1|3|5|10, result: 0-9 | -1 }
+//          result = -1 ka matlab "random" (override clear)
+// @access  Admin
+const adminSetResultControl = async (req, res) => {
+  try {
+    const { typeid, result } = req.body;
+
+    const numericType = Number(typeid);
+    const field = GAME_FIELD_MAP[numericType];
+
+    if (!field) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid typeid (1, 3, 5, 10 allowed)",
+      });
+    }
+
+    const numericResult = Number(result);
+    if (
+      !Number.isInteger(numericResult) ||
+      numericResult < -1 ||
+      numericResult > 9
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Result must be an integer between -1 and 9",
+      });
+    }
+
+    const admin = await Admin.findOne();
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin config not found",
+      });
+    }
+
+    admin[field] = String(numericResult);
+    await admin.save();
+
+    console.log(
+      `[RESULT-CONTROL] ${new Date().toISOString()} admin=${
+        req.user?.mobile || req.user?._id
+      } set ${field} -> ${numericResult}`,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        numericResult === -1
+          ? `${field}: result control cleared (random)`
+          : `${field}: next pending period locked to result ${numericResult}`,
+      forcedResults: {
+        wingo: admin.wingo,
+        wingo3: admin.wingo3,
+        wingo5: admin.wingo5,
+        wingo10: admin.wingo10,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to set result control",
+    });
+  }
+};
+
+// ============================================
+// CURRENT PERIOD (server source of truth)
+// @route   GET /bet/current-period?typeid=1|3|5|10
+// Returns pending period + server-computed remaining
+// time — frontend isse period/time sync karta hai.
+// ============================================
+
+const currentPeriod = async (req, res) => {
+  try {
+    const numericType = Number(req.query.typeid);
+    if (![1, 3, 5, 10].includes(numericType)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid typeid" });
+    }
+
+    const game = GAME_FIELD_MAP[numericType];
+    const interval = { 10: 30, 1: 60, 3: 180, 5: 300 }[numericType];
+
+    // Boundary race fix: result process + next period create hone
+    // mein thoda time lag sakta hai — chhota retry lagao
+    let pending = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      pending = await Wingo.findOne({ status: 0, game })
+        .sort({ _id: -1 })
+        .limit(1);
+      if (pending) break;
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    if (!pending) {
+      return res.status(404).json({
+        success: false,
+        message: "No pending period",
+      });
+    }
+
+    // Server-side remaining time (same formula as broadcastTimers)
+    const now = new Date();
+    const totalSeconds =
+      now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    let secondsRemaining = interval - (totalSeconds % interval);
+    if (secondsRemaining === 0) secondsRemaining = interval;
+
+    return res.status(200).json({
+      success: true,
+      period: String(pending.period),
+      secondsRemaining,
+      serverTime: now.toISOString(),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch current period",
+    });
+  }
+};
+
+// ============================================
+// PERIOD-SPECIFIC RESULT CONFIG + AUDIT
+//
+// Admin exact period ke liye result lock karta hai.
+// Validation: period pending/future honi chahiye —
+// closed periods modify nahi ki ja sakte.
+// Har action audit fields ke saath record hota hai.
+// ============================================
+
+const WingoResultConfig = require("../models/WingoResultConfig");
+
+// @route   GET /bet/admin/period-results
+// @access  Admin — saari configs (pending + consumed)
+const adminGetPeriodResults = async (req, res) => {
+  try {
+    const configs = await WingoResultConfig.find()
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      configs,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to load period results",
+    });
+  }
+};
+
+// @route   PUT /bet/admin/period-results
+// @body    { typeid, period, result }  result: 0-9
+// @access  Admin
+const adminSetPeriodResult = async (req, res) => {
+  try {
+    const { typeid, period, result } = req.body;
+
+    const numericType = Number(typeid);
+    const field = GAME_FIELD_MAP[numericType];
+    if (!field) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid typeid (1, 3, 5, 10 allowed)",
+      });
+    }
+
+    const cleanPeriod = String(period || "").trim();
+    if (!/^\d+$/.test(cleanPeriod)) {
+      return res.status(400).json({
+        success: false,
+        message: "Period must be a number",
+      });
+    }
+
+    const numericResult = Number(result);
+    if (!Number.isInteger(numericResult) || numericResult < 0 || numericResult > 9) {
+      return res.status(400).json({
+        success: false,
+        message: "Result must be an integer between 0 and 9",
+      });
+    }
+
+    // Period closed to nahi hai check karo
+    const existingPeriod = await Wingo.findOne({
+      game: field,
+      period: cleanPeriod,
+    });
+
+    if (existingPeriod && existingPeriod.status !== 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Period ${cleanPeriod} already closed — modification not allowed`,
+      });
+    }
+
+    // Future period valid hai? Current pending period se >= honi chahiye
+    const currentPending = await Wingo.findOne({ status: 0, game: field })
+      .sort({ _id: -1 })
+      .limit(1);
+
+    if (currentPending && BigInt(cleanPeriod) < BigInt(String(currentPending.period))) {
+      return res.status(400).json({
+        success: false,
+        message: `Period ${cleanPeriod} is in the past (current pending: ${currentPending.period})`,
+      });
+    }
+
+    const attributes = WingoResultConfig.deriveAttributes(numericResult);
+
+    const existingConfig = await WingoResultConfig.findOne({
+      game: field,
+      period: cleanPeriod,
+    });
+
+    const audit = {
+      updatedByAdminId: req.user?._id,
+      updatedAt: new Date(),
+      action: existingConfig ? "update" : "set",
+    };
+
+    const config = await WingoResultConfig.findOneAndUpdate(
+      { game: field, period: cleanPeriod },
+      {
+        $set: {
+          game: field,
+          period: cleanPeriod,
+          result: numericResult,
+          size: attributes.size,
+          color: attributes.color,
+          // Pehla creator preserve hota hai on update
+          ...(existingConfig
+            ? {}
+            : {
+                createdByAdminId: req.user?._id,
+                createdByMobile: String(req.user?.mobile || ""),
+                createdAt: new Date(),
+              }),
+          ...audit,
+        },
+      },
+      { new: true, upsert: true },
+    );
+
+    console.log(
+      `[RESULT-CONFIG] ${new Date().toISOString()} admin=${
+        req.user?.mobile || req.user?._id
+      } ${audit.action} ${field} period=${cleanPeriod} result=${numericResult} (${attributes.color}/${attributes.size})`,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Period ${cleanPeriod} locked to result ${numericResult} (${attributes.color} / ${attributes.size})`,
+      config,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to set period result",
+    });
+  }
+};
+
+// @route   DELETE /bet/admin/period-results
+// @body    { typeid, period }
+// @access  Admin — sirf pending/unconsumed config remove
+const adminClearPeriodResult = async (req, res) => {
+  try {
+    const { typeid, period } = req.body;
+
+    const field = GAME_FIELD_MAP[Number(typeid)];
+    if (!field) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid typeid",
+      });
+    }
+
+    const config = await WingoResultConfig.findOne({
+      game: field,
+      period: String(period || "").trim(),
+    });
+
+    if (!config) {
+      return res.status(404).json({
+        success: false,
+        message: "No config found for this period",
+      });
+    }
+
+    if (config.consumedAt) {
+      return res.status(400).json({
+        success: false,
+        message: "Result already processed — cannot clear",
+      });
+    }
+
+    await WingoResultConfig.deleteOne({ _id: config._id });
+
+    console.log(
+      `[RESULT-CONFIG] ${new Date().toISOString()} admin=${
+        req.user?.mobile || req.user?._id
+      } clear ${field} period=${config.period}`,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Period ${config.period} result config cleared (random)`,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to clear period result",
+    });
+  }
+};
+
+// ============================================
 // BET PLACEMENT
 // ============================================
 
@@ -385,6 +766,9 @@ const betWinGo = async (req, res) => {
       });
     }
 
+    // Instant wallet push after bid deduction
+    await emitWalletUpdate(user._id);
+
     try {
       await Bet.create({
         id_product,
@@ -513,12 +897,20 @@ const listOrderOld = async (req, res) => {
     const offset = pageno - 1;
     const limit = pageto - pageno + 1;
 
+    // Period number par sort (numeric) — _id insertion order
+    // mismatch karta hai kyunki next period alag flow me create
+    // hota hai (out-of-order history ka root cause yahi tha)
+    const numericCollation = { locale: "en", numericOrdering: true };
+
     const wingo = await Wingo.find({ status: { $ne: 0 }, game })
-      .sort({ _id: -1 })
+      .collation(numericCollation)
+      .sort({ period: -1 })
       .skip(offset)
       .limit(limit);
 
-    const wingoAll = await Wingo.find({ status: { $ne: 0 }, game });
+    const wingoAll = await Wingo.find({ status: { $ne: 0 }, game })
+      .collation(numericCollation)
+      .sort({ period: -1 });
     const period = await Wingo.findOne({ status: 0, game })
       .sort({ _id: -1 })
       .limit(1);
@@ -781,6 +1173,9 @@ const handlingWinGo1P = async (typeid) => {
           { mobile: mobile },
           { $inc: { credit: nhan_duoc } },
         );
+
+        // Instant wallet push to the winner
+        await emitWalletUpdate(bet.userId);
       } else {
         await Bet.updateOne({ _id: bet._id }, { status: 2 });
       }
@@ -1443,4 +1838,10 @@ module.exports = {
   calculateTimer,
   emitGameResult,
   emitTimerUpdate,
+  adminGetResultControl,
+  adminSetResultControl,
+  currentPeriod,
+  adminGetPeriodResults,
+  adminSetPeriodResult,
+  adminClearPeriodResult,
 };

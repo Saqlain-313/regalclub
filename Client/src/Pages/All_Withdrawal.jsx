@@ -883,11 +883,11 @@ const AllWithdrawal = () => {
                 onClick={() => {
                   setShowSuccessModal(false);
                   dispatch(clearWithdrawalSuccess());
-                  navigate('/dashboard');
+                  navigate('/account');
                 }}
                 className="w-full py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition-colors"
               >
-                Go to Dashboard
+                Go to Account
               </button>
             </div>
           </div>

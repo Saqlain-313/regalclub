@@ -2,8 +2,9 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import {
-  Route,
   Routes,
+  Route,
+  Navigate,
   useLocation,
   useNavigate,
 } from "react-router-dom";
@@ -28,6 +29,7 @@ import WithdrawalHistory from "./components/WithdrawalHistory.jsx";
 // ========================================
 import Deposit from "./Pages/Deposit.jsx";
 import DepositHistory from "./Pages/DepositHistory.jsx";
+import GameHistory from "./Pages/GameHistory.jsx";
 import GameCounts from "./Pages/GameCounts.jsx";
 import Homme from "./Pages/Homme.jsx";
 import Login from "./Pages/Login.jsx";
@@ -53,6 +55,7 @@ import GameEntryResultPage from "./Pages/GameEntryResultPage.jsx";
 // Other Pages
 // ========================================
 import Maintenance from "./Pages/Maintenance.jsx";
+import SupportChat from "./Pages/SupportChat.jsx";
 
 // ========================================
 // Matka Pages
@@ -90,6 +93,7 @@ import ChickenGamesPage from "./Pages/games/GamesPages/ChickenGamesPage.jsx";
 import CrashGamesPage from "./Pages/games/GamesPages/CrashGamesPage.jsx";
 import DesiKhelPage from "./Pages/games/GamesPages/DesiKhelPage.jsx";
 import RecommendedPage from "./Pages/games/GamesPages/RecommendedPage.jsx";
+import AllGamesPage from "./Pages/games/GamesPages/Allgames .jsx";
 import TopGamesPage from "./Pages/games/GamesPages/TopGamesPage.jsx";
 import TrendingPage from "./Pages/games/GamesPages/TrendingPage.jsx";
 
@@ -369,6 +373,11 @@ function App() {
     // ========================================
     // REMOVE USER TOKEN
     // ========================================
+    // Client ka token "powerhit" key me hai — ye remove na karo to
+    // isAuthenticated localStorage se wapas true ho jata hai aur
+    // "/ <-> /login" loop banta hai.
+    localStorage.removeItem("powerhit");
+    sessionStorage.removeItem("powerhit");
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
 
@@ -402,9 +411,10 @@ function App() {
   return (
     <>
       <ToastContainer
-        position="top-center"
+        position="top-right"
         newestOnTop
         limit={3}
+        theme="dark"
       />
 
       <ScrollToTop />
@@ -584,6 +594,15 @@ function App() {
             {/* ========================================
                 GAME CATEGORY
             ======================================== */}
+
+            <Route
+              path="/games/all"
+              element={
+                <ProtectedRoute>
+                  <AllGamesPage />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/games/recommended"
@@ -927,6 +946,15 @@ function App() {
               }
             />
 
+            <Route
+              path="/game-history"
+              element={
+                <ProtectedRoute>
+                  <GameHistory />
+                </ProtectedRoute>
+              }
+            />
+
 
             {/* ========================================
                 ACCOUNT
@@ -1039,6 +1067,28 @@ function App() {
               }
             />
 
+
+            {/* ========================================
+                LEGACY ROUTE REDIRECTS
+                Purane/dead links real pages par bhejo
+                warna Maintenance (404) khul jata hai
+            ======================================== */}
+            <Route
+              path="/dashboard"
+              element={<Navigate to="/account" replace />}
+            />
+            <Route
+              path="/support-chat"
+              element={<SupportChat />}
+            />
+            <Route
+              path="/support"
+              element={<Navigate to="/support-chat" replace />}
+            />
+            <Route
+              path="/create-game-entry"
+              element={<Navigate to="/powerhit" replace />}
+            />
 
             {/* ========================================
                 404 / MAINTENANCE

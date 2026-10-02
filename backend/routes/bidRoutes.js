@@ -31,6 +31,7 @@ router.get(
 router.get(
   "/admin/all",
   protect,
+  adminProtect,
   bidController.adminGetAllBids
 );
 
@@ -38,6 +39,7 @@ router.get(
 router.get(
   "/admin/stats",
   protect,
+  adminProtect,
   bidController.adminGetBidStats
 );
 
@@ -45,6 +47,7 @@ router.get(
 router.get(
   "/admin/today",
   protect,
+  adminProtect,
   bidController.adminGetTodayBids
 );
 
@@ -52,6 +55,7 @@ router.get(
 router.get(
   "/admin/market/:marketId",
   protect,
+  adminProtect,
   bidController.getBidsByMarketId
 );
 
@@ -59,6 +63,7 @@ router.get(
 router.get(
   "/admin/lowest/:marketId",
   protect,
+  adminProtect,
   bidController.getLowestBidNumber
 );
 
@@ -66,6 +71,7 @@ router.get(
 router.get(
   "/admin/:bidId",
   protect,
+  adminProtect,
   bidController.adminGetBidById
 );
 
@@ -73,6 +79,7 @@ router.get(
 router.put(
   "/admin/:bidId/status",
   protect,
+  adminProtect,
   bidController.adminUpdateBidStatus
 );
 
@@ -80,6 +87,7 @@ router.put(
 router.delete(
   "/admin/:bidId",
   protect,
+  adminProtect,
   bidController.adminDeleteBid
 );
 

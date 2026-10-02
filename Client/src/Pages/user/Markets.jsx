@@ -501,8 +501,10 @@ const MatkaMarkets = () => {
           isResultDeclared: session?.isResultDeclared ?? false,
           marketDate: session?.marketDate || null,
 
-          // Compute status from the session times
-          status: getMarketStatus(session?.openTime, session?.closeTime),
+          // Status: server-computed prefer karo, warna local fallback
+          status:
+            session?.status ||
+            getMarketStatus(session?.openTime, session?.closeTime),
         };
       }),
     [activeMarkets],
@@ -625,6 +627,9 @@ const MatkaMarkets = () => {
 
   return (
     <div className="scrollbar-hide relative h-screen overflow-y-auto bg-[#0B0410] pb-10">
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/10 rounded-full blur-3xl" />
       <style>{`
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }

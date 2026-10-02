@@ -12,6 +12,47 @@ const GAME_TYPES = {
 
 const getGameTypesByDigitType = (digitType) => GAME_TYPES[digitType] || [];
 
+// ======================================================
+// SERVER-SIDE MARKET STATUS
+// Client apne device clock se status nahi banaye — API har
+// market day par computed status bhejti hai (IST).
+// ======================================================
+const dayStatusFromTimes = (openTime, closeTime) => {
+  const toMin = (t) => {
+    const m = String(t || "").trim().match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return null;
+    return Number(m[1]) * 60 + Number(m[2]);
+  };
+
+  const openMin = toMin(openTime);
+  const closeMin = toMin(closeTime);
+  if (openMin === null || closeMin === null) return "closed";
+
+  // IST (Asia/Kolkata) current minutes
+  const nowStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+  const [nh, nm] = nowStr.split(":").map(Number);
+  const nowMin = nh * 60 + nm;
+
+  if (closeMin < openMin) {
+    if (nowMin >= openMin || nowMin <= closeMin) return "live";
+    return nowMin < openMin ? "upcoming" : "closed";
+  }
+  if (nowMin < openMin) return "upcoming";
+  if (nowMin <= closeMin) return "live";
+  return "closed";
+};
+
+const decorateMarketDayStatus = (day) => ({
+  ...day.toObject(),
+  status: dayStatusFromTimes(day.openTime, day.closeTime),
+  serverTime: new Date().toISOString(),
+});
+
 const validateDigitType = (digitType) => {
   if (!digitType) return "Digit type is required";
   if (!["2-digit", "3-digit"].includes(digitType)) {
@@ -62,6 +103,54 @@ const getTodayDay = (market) => {
     (d) => normalizeDate(d.marketDate)?.getTime() === today.getTime()
   );
 };
+
+// ======================================================
+// LAZY ROLLOVER — ensure TODAY's market day exists.
+// The midnight cron creates the next day only if the server
+// is running at exactly 12:01 AM. If it misses (server down,
+// restart, crash), the market stays stuck on yesterday forever
+// and users cannot place bids. This helper clones the latest
+// day's settings for today whenever today is missing, so the
+// market can never get stuck.
+// Returns the saved market (or the original if nothing changed).
+// ======================================================
+const ensureTodayMarketDay = async (market) => {
+  if (!market || !Array.isArray(market.marketArray)) return market;
+  if (market.marketArray.length === 0) return market;
+  if (getTodayDay(market)) return market;
+
+  const latestDay = market.marketArray.reduce((latest, current) => {
+    const latestDate = normalizeDate(latest?.marketDate);
+    const currentDate = normalizeDate(current?.marketDate);
+    if (!latestDate) return current;
+    if (!currentDate) return latest;
+    return currentDate.getTime() > latestDate.getTime() ? current : latest;
+  }, market.marketArray[0]);
+
+  if (!latestDay) return market;
+
+  market.marketArray.push(
+    buildDay({
+      marketDate: new Date(),
+      openTime: latestDay.openTime,
+      closeTime: latestDay.closeTime,
+      resultTime: latestDay.resultTime,
+      minBid: latestDay.minBid,
+      maxBid: latestDay.maxBid,
+      isActive: latestDay.isActive,
+    })
+  );
+
+  await market.save();
+  console.log(
+    `Market ${market._id}: lazy rollover — created today's market day`
+  );
+
+  return market;
+};
+
+// Exposed for the bid controller (lazy rollover before placing bids)
+exports.ensureTodayMarketDay = ensureTodayMarketDay;
 
 // ======================================================
 // CREATE MASTER MARKET + MARKET DAY ARRAY
@@ -653,6 +742,11 @@ exports.getAllMarkets = async (req, res) => {
       .skip((currentPage - 1) * currentLimit)
       .limit(currentLimit);
 
+    // Lazy rollover — today's day must exist
+    for (const market of markets) {
+      await ensureTodayMarketDay(market);
+    }
+
     let data = markets;
     if (date) {
       const target = normalizeDate(date);
@@ -695,6 +789,9 @@ exports.getMarketById = async (req, res) => {
 
     if (!market) return res.status(404).json({ success: false, message: "Market not found" });
 
+    // Lazy rollover — today's day must exist for bid placement
+    await ensureTodayMarketDay(market);
+
     return res.status(200).json({ success: true, data: market });
   } catch (error) {
     console.error("GET MARKET ERROR:", error);
@@ -707,21 +804,28 @@ exports.getMarketById = async (req, res) => {
 // ======================================================
 exports.getActiveMarkets = async (req, res) => {
   try {
-    const markets = await Market.find({})
-      .select(
-        "name marketId digitType gameTypes image description marketArray createdAt"
-      )
-      .sort({ createdAt: -1 })
-      .lean();
+    const markets = await Market.find({}).sort({ createdAt: -1 });
+
+    // Lazy rollover — make sure today's day exists before responding
+    for (const market of markets) {
+      await ensureTodayMarketDay(market);
+    }
 
     const activeMarkets = markets
       .map((market) => {
-        const activeDays = (market.marketArray || []).filter(
-          (day) => day.isActive === true
-        );
+        const activeDays = (market.marketArray || [])
+          .filter((day) => day.isActive === true)
+          .map(decorateMarketDayStatus);
 
         return {
-          ...market,
+          _id: market._id,
+          name: market.name,
+          marketId: market.marketId,
+          digitType: market.digitType,
+          gameTypes: market.gameTypes,
+          image: market.image,
+          description: market.description,
+          createdAt: market.createdAt,
           marketArray: activeDays,
         };
       })

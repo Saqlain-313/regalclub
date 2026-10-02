@@ -171,6 +171,7 @@ const BannerCard = ({
   banner,
   onEdit,
   onDelete,
+  onToggleActive,
   isEditing,
   editTitle,
   setEditTitle,
@@ -308,6 +309,18 @@ const BannerCard = ({
                 Edit
               </button>
 
+              {/* Show / Hide on client — controls isActive */}
+              <button
+                onClick={() => onToggleActive(banner)}
+                className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg text-white ${
+                  banner.isActive
+                    ? "bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700"
+                    : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                }`}
+              >
+                {banner.isActive ? "Hide" : "Show"}
+              </button>
+
               <button
                 onClick={() => onDelete(banner._id)}
                 className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
@@ -405,6 +418,27 @@ const Banners = () => {
 
     dispatch(deleteBanner(id)).then((res) => {
       if (!res.error) toast.success("🗑️ Banner deleted successfully!");
+    });
+  };
+
+  // Show / Hide a banner on the client site (isActive toggle)
+  const handleToggleActive = (banner) => {
+    const formData = new FormData();
+    formData.append("isActive", banner.isActive ? "false" : "true");
+
+    dispatch(
+      updateBanner({
+        id: banner._id,
+        formData,
+      })
+    ).then((res) => {
+      if (!res.error) {
+        toast.success(
+          banner.isActive
+            ? "Banner hidden from the client site"
+            : "Banner is now live on the client site"
+        );
+      }
     });
   };
 
@@ -672,6 +706,7 @@ const Banners = () => {
                     banner={banner}
                     onEdit={handleEditStart}
                     onDelete={handleDelete}
+                    onToggleActive={handleToggleActive}
                     isEditing={editingId === banner._id}
                     editTitle={editTitle}
                     setEditTitle={setEditTitle}

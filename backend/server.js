@@ -30,6 +30,7 @@ const Transaction = require("./models/Transaction");
 const Commission = require("./models/Commission");
 const Subordinate = require("./models/Subordinate");
 const Admin = require("./models/Admin");
+const WingoResultConfig = require("./models/WingoResultConfig");
 const Level = require("./models/Level");
 const Recharge = require("./models/Recharge");
 require("./cron");
@@ -81,6 +82,7 @@ const mineGameRoutes = require("./routes/minesRoutes");
 const adminWithdrawalRoutes = require("./routes/admin/withdrawalRoutes");
 const depositSettingsRoutes = require("./routes/depositSettingsRoutes");
 const withdrawalSettingsRoutes = require("./routes/withdrawalSettingsRoutes");
+const supportSettingsRoutes = require("./routes/supportSettingsRoutes");
 const adminTicketTypeRoutes = require("./routes/admin/ticketTypeRoutes");
 const winMultiplierRoutes = require("./routes/winMultiplierRoutes");
 
@@ -96,6 +98,85 @@ const adminPowerballDivisionRoutes = require("./routes/admin/powerballDivisionRo
 // =====================================================
 // TRADING SOCKET ENGINE
 // =====================================================
+
+// =====================================================
+// AUTHORITATIVE LIVE PERIODS
+// Single source of truth for the period currently open in
+// each game. Self-heals on restart / crash:
+//   - malformed or missing pending period -> recreated as
+//     (max period of today) + 1 — GAP-FREE by construction
+//   - duplicate pending periods -> removed (kept newest)
+//   - broadcast to every client with the timer tick, so ALL
+//     users see the same period at the same time
+//
+// IMPORTANT: there is NO background interval that creates
+// periods. Creation happens ONLY inside the boundary
+// processing (processResultImmediately) and at startup.
+// A blind interval racing the boundary is what produced
+// skipped periods (38 -> 40).
+// =====================================================
+
+const livePeriods = {};
+
+const isValidPeriodFormat = (p) =>
+  typeof p === "string" && /^\d{12,}$/.test(p);
+
+// Next period = (max period of today) + 1 — never leaves a gap
+const buildNextPeriod = async (game) => {
+  const istNow = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  const dayStamp = istNow.toISOString().slice(0, 10).replace(/-/g, "");
+
+  const lastToday = await Wingo.findOne({
+    game,
+    period: { $regex: `^${dayStamp}` },
+  })
+    .collation({ locale: "en", numericOrdering: true })
+    .sort({ period: -1 })
+    .limit(1);
+
+  if (!lastToday) return `${dayStamp}10001`;
+
+  return String(BigInt(String(lastToday.period)) + BigInt(1));
+};
+
+async function ensurePendingPeriod(game) {
+  const pending = await Wingo.findOne({ status: 0, game })
+    .sort({ _id: -1 })
+    .limit(1);
+
+  const pendingCount = await Wingo.countDocuments({ status: 0, game });
+
+  // Remove duplicate/stale pending periods (keep the newest)
+  if (pendingCount > 1 && pending) {
+    await Wingo.deleteMany({ status: 0, game, _id: { $ne: pending._id } });
+  }
+
+  if (pending && isValidPeriodFormat(String(pending.period))) {
+    livePeriods[game] = String(pending.period);
+    return pending;
+  }
+
+  // No pending period (restart / missed boundary) or malformed
+  // legacy format -> recreate as max+1 (gap-free)
+  const newPeriod = await buildNextPeriod(game);
+
+  const created = await Wingo.create({
+    period: newPeriod,
+    amount: 0,
+    game,
+    status: 0,
+    hashvalue: require("crypto").randomBytes(5).toString("hex"),
+    blocs: 50,
+    time: new Date().toISOString(),
+  });
+
+  livePeriods[game] = String(created.period);
+  console.log(
+    `[PERIOD-HEAL] ${game}: recreated pending period ${created.period}`
+  );
+
+  return created;
+}
 
 // =====================================================
 // APP
@@ -260,6 +341,7 @@ app.use("/api/markets", marketRoutes);
 app.use("/api/bids", bidRoutes);
 app.use("/api/results", resultRoutes);
 app.use("/api/currency", currencyRateRoutes);
+app.use("/api/platform-games", require("./routes/platformGameRoutes"));
 
 app.use("/api", require("./routes/allgameroute/allGameRoute"));
 
@@ -303,6 +385,7 @@ app.use("/api/mine-games", mineGameRoutes);
 app.use("/api/admin/withdrawals", adminWithdrawalRoutes);
 app.use("/api", depositSettingsRoutes);
 app.use("/api/withdrawal-settings", withdrawalSettingsRoutes);
+app.use("/api/support-settings", supportSettingsRoutes);
 app.use("/api/admin/ticket-types", adminTicketTypeRoutes);
 
 // =====================================================
@@ -587,14 +670,10 @@ function calculateTimer(intervalSeconds) {
 async function processResultImmediately(gameName, typeId) {
   try {
     // -------------------------------------------------
-    // 1. Find latest pending period
+    // 1. Ensure a valid pending period exists (self-healing)
+    //    - heals missing/malformed/duplicate pendings
     // -------------------------------------------------
-    const winGoNow = await Wingo.findOne({
-      status: 0,
-      game: gameName,
-    })
-      .sort({ _id: -1 })
-      .limit(1);
+    const winGoNow = await ensurePendingPeriod(gameName);
 
     if (!winGoNow) {
       console.log(`[${gameName}] No pending period found`);
@@ -607,13 +686,63 @@ async function processResultImmediately(gameName, typeId) {
 
     // -------------------------------------------------
     // 2. Generate result
+    //
+    // Priority (tamper-resistant, server-side only):
+    //   a) Period-specific authorized config (audit-logged)
+    //   b) Legacy Admin forced field (current pending period)
+    //   c) Random
     // -------------------------------------------------
-    const resultAmount = Number(betController.generateRandomResult());
+    let finalResult = null;
 
-    const finalResult =
-      Number.isInteger(resultAmount) && resultAmount >= 0 && resultAmount <= 9
-        ? resultAmount
-        : Math.floor(Math.random() * 10);
+    // a) Period-specific config — ek hi baar consume hota hai
+    try {
+      const periodConfig = await WingoResultConfig.findOne({
+        game: gameName,
+        period,
+        consumedAt: null,
+      });
+
+      if (periodConfig) {
+        finalResult = Number(periodConfig.result);
+        console.log(
+          `[${gameName}] PERIOD-CONFIG: period ${period} locked result -> ${finalResult}`,
+        );
+
+        // Consume mark (ek hi baar process ho)
+        await WingoResultConfig.updateOne(
+          { _id: periodConfig._id },
+          { $set: { consumedAt: new Date(), processedResult: finalResult } },
+        );
+      }
+    } catch (configError) {
+      console.error(`[${gameName}] Period config read error:`, configError);
+    }
+
+    // b) Legacy Admin forced field
+    if (finalResult === null) {
+      try {
+        const adminDoc = await Admin.findOne();
+        const forced = Number(adminDoc?.[gameName]);
+        if (Number.isInteger(forced) && forced >= 0 && forced <= 9) {
+          finalResult = forced;
+          console.log(
+            `[${gameName}] ADMIN OVERRIDE: period ${period} forced result -> ${forced}`,
+          );
+        }
+      } catch (overrideError) {
+        console.error(`[${gameName}] Admin override read error:`, overrideError);
+      }
+    }
+
+    // c) Random
+    if (finalResult === null) {
+      const resultAmount = Number(betController.generateRandomResult());
+
+      finalResult =
+        Number.isInteger(resultAmount) && resultAmount >= 0 && resultAmount <= 9
+          ? resultAmount
+          : Math.floor(Math.random() * 10);
+    }
 
     console.log(`[${gameName}] Generated result: ${period} -> ${finalResult}`);
 
@@ -651,8 +780,12 @@ async function processResultImmediately(gameName, typeId) {
 
     // -------------------------------------------------
     // 5. Create next period
+    //
+    // Period ID = (max period of today) + 1 — GAP-FREE.
+    // Count-based numbering skipped numbers whenever a period
+    // was deleted/deduped; max+1 can never skip.
     // -------------------------------------------------
-    const newPeriod = String(BigInt(period) + BigInt(1));
+    const newPeriod = await buildNextPeriod(gameName);
 
     const existingNext = await Wingo.findOne({
       game: gameName,
@@ -674,6 +807,10 @@ async function processResultImmediately(gameName, typeId) {
     } else {
       // console.log(`[${gameName}] Next period ${newPeriod} already exists`);
     }
+
+    // Publish the new pending period so the very next timer tick
+    // broadcasts it to every client
+    livePeriods[gameName] = String(newPeriod);
 
     // -------------------------------------------------
     // 6. Clear admin forced result
@@ -729,6 +866,17 @@ function broadcastTimers() {
     timeUpdate_3: calculateTimer(180),
     timeUpdate_5: calculateTimer(300),
   };
+
+  // Attach the authoritative period to each game's timer tick —
+  // every client now gets the SAME period at the SAME time
+  if (livePeriods.wingo10)
+    timers.timeUpdate_30 = { ...timers.timeUpdate_30, period: livePeriods.wingo10 };
+  if (livePeriods.wingo)
+    timers.timeUpdate_11 = { ...timers.timeUpdate_11, period: livePeriods.wingo };
+  if (livePeriods.wingo3)
+    timers.timeUpdate_3 = { ...timers.timeUpdate_3, period: livePeriods.wingo3 };
+  if (livePeriods.wingo5)
+    timers.timeUpdate_5 = { ...timers.timeUpdate_5, period: livePeriods.wingo5 };
 
   currentTimers = timers;
 
@@ -872,23 +1020,11 @@ const startServer = async () => {
       console.log("Levels initialized");
     }
 
-    // Initialize game periods
+    // Initialize game periods — self-healing (creates in the correct
+    // YYYYMMDD10001+ format, heals malformed legacy ones, dedupes)
     const games = ["wingo", "wingo10", "trx", "wingo3", "wingo5"];
     for (const game of games) {
-      const existing = await Wingo.findOne({ game, status: 0 });
-      if (!existing) {
-        const initialPeriod = Date.now().toString().slice(-8);
-        await Wingo.create({
-          period: initialPeriod,
-          amount: 0,
-          game,
-          status: 0,
-          hashvalue: require("crypto").randomBytes(5).toString("hex"),
-          blocs: 50,
-          time: new Date().toISOString(),
-        });
-        console.log(`Initial period created for ${game}`);
-      }
+      await ensurePendingPeriod(game);
     }
 
     // =================================================

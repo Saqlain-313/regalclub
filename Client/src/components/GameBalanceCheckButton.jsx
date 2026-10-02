@@ -1,9 +1,9 @@
 import { useDispatch, useSelector } from "react-redux";
 import { MdRefresh } from "react-icons/md";
 import { FaSpinner } from "react-icons/fa";
-import { checkGamecredit } from "../reducer/gameSlice";
+import { checkGamecredit } from "../redux/slices/gameSlice";
 import { useEffect, useState } from "react";
-import creditPopup from "./creditPopup";
+import creditPopupComponent from "./BalancePopup";
 
 const GamecreditCheckButton = () => {
   const dispatch = useDispatch();
@@ -48,7 +48,7 @@ const GamecreditCheckButton = () => {
       </button>
 
       {showPopup && (
-        <creditPopup
+        <creditPopupComponent
           message={creditMessage}
           status={creditStatus}
           onClose={() => setShowPopup(false)}

@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { showErrorToast, showSuccessToast } from "../hooks/toast";
-import { clearError, login } from "../redux/slices/authSlice";
+import {
+  clearError,
+  login,
+  resetAuthState,
+} from "../redux/slices/authSlice";
 
 const HERO_IMAGE =
   "https://i.ibb.co/1t9xywcJ/Whats-App-Image-2026-09-23-at-16-22-36-removebg-preview.png";
@@ -12,7 +16,9 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { loading, isAuthenticated } = useSelector((state) => state.auth);
+  const { loading, isAuthenticated, user } = useSelector(
+    (state) => state.auth,
+  );
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -28,11 +34,30 @@ const Login = () => {
   const purpleGradient =
     "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
 
+  // Admin accounts cannot stay logged in on the user side.
+  // Clear the session here instead of bouncing between "/" and "/login"
+  // (ProtectedRoute redirects admins to /login, which used to loop forever).
   useEffect(() => {
+    // Role check case-insensitive — App.jsx ka admin guard lowercase
+    // karta hai; yahan exact match hone par "/ <-> /login" loop banta tha.
+    const isAdminRole = String(user?.role || "")
+      .trim()
+      .toLowerCase()
+      .includes("admin");
+
+    if (isAuthenticated && isAdminRole) {
+      dispatch(resetAuthState());
+      showErrorToast(
+        "Access Denied",
+        "Admin accounts must use the admin panel.",
+      );
+      return;
+    }
+
     if (isAuthenticated) {
       navigate("/", { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate, dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

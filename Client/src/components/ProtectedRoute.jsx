@@ -1,10 +1,30 @@
 // src/components/ProtectedRoute.jsx
 
+import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { useAuth } from "../hooks/useAuth";
+import { resetAuthState } from "../redux/slices/authSlice";
 
 const ProtectedRoute = ({ children }) => {
+  const dispatch = useDispatch();
   const { isAuthenticated, isReady, user } = useAuth();
+
+  const isAdmin = Boolean(
+    user?.role && String(user.role).trim().toLowerCase() === "admin",
+  );
+
+  // ========================================
+  // ADMIN IS NOT ALLOWED ON USER SIDE.
+  // Clear the stale admin session, otherwise the Login page
+  // (isAuthenticated true) and this redirect (admin role) keep
+  // bouncing between "/" and "/login" forever.
+  // ========================================
+  useEffect(() => {
+    if (isReady && isAdmin) {
+      dispatch(resetAuthState());
+    }
+  }, [isReady, isAdmin, dispatch]);
 
   // ========================================
   // WAIT FOR INITIAL PROFILE CHECK ONLY
@@ -27,14 +47,7 @@ const ProtectedRoute = ({ children }) => {
   // ========================================
   // NOT AUTHENTICATED
   // ========================================
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // ========================================
-  // ADMIN IS NOT ALLOWED ON USER SIDE
-  // ========================================
-  if (user?.role && String(user.role).trim().toLowerCase() === "admin") {
+  if (!isAuthenticated || isAdmin) {
     return <Navigate to="/login" replace />;
   }
 

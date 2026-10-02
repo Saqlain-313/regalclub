@@ -6,12 +6,32 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import GamePlayModal from "../../../components/GamePlayModal";
+import { api } from "../../../redux/slices/api";
 
 import {
   clearGameUrl,
   launchGame,
   resetGameState,
 } from "../../../redux/slices/gameSlice";
+
+// Category -> loader icon mapping (admin-added games ke liye bhi)
+const loaderIconByCategory = (category) => {
+  const map = {
+    chicken: GiChicken,
+    mines: GiMineExplosion,
+    aviator: GiAirplane,
+  };
+  return map[category] || MdGamepad;
+};
+
+const loaderTitleByCategory = (category, name) => {
+  const map = {
+    chicken: "Loading Chicken Game...",
+    mines: "Loading Mines...",
+    aviator: "Loading Aviator...",
+  };
+  return map[category] || `Loading ${name || "Game"}...`;
+};
 
 const purpleGradient =
   "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)]";
@@ -26,32 +46,13 @@ const purpleGradient =
  */
 const allGames = [
   {
-    id: "chicken-1",
-    category: "chicken",
-    game_name: "Chicken Road 2.0",
-    game_uid: "562b299961b0ec40f252a832453c67b0",
-    game_type: "Instant",
-    provider: "inout",
-    icon: "https://i.ibb.co/bj8PLGRD/67ff9cb072aefa0252de1fcc-chiken-road-2-1.png",
-    rating: 4.8,
-    players: "2.4K",
-    volatility: "Medium",
-    min_bet: 10,
-    max_bet: 5000,
-    is_featured: true,
-    is_new: false,
-    route: "/chicken",
-    loaderIcon: GiChicken,
-    loaderTitle: "Loading Chicken Game...",
-  },
-  {
     id: "chicken-2",
     category: "chicken",
     game_name: "Chicken Road",
     game_uid: "2126c5c458316ba1f2df65b387b60408",
     game_type: "Instant",
     provider: "inout",
-    icon: "https://i.ibb.co/Z62bz9HP/66158cf70716189b6ee244fc-CHICKEN-ROAD.png",
+    icon: "https://img.huidu123.com/huidu/images/2025-12-15/20251215135317.png",
     rating: 4.5,
     players: "1.8K",
     volatility: "Low",
@@ -59,7 +60,6 @@ const allGames = [
     max_bet: 2500,
     is_featured: false,
     is_new: true,
-    route: "/chicken",
     loaderIcon: GiChicken,
     loaderTitle: "Loading Chicken Game...",
   },
@@ -70,7 +70,7 @@ const allGames = [
     game_uid: "5c4a12fb0a9b296d9b0d5f9e1cd41d65",
     game_type: "Casino Table",
     provider: "Spribe",
-    icon: "https://ossimg.6club-club.com/6club/gamelogo/TB_Chess/811.png",
+    icon: "https://img.huidu123.com/huidu/images/2024-05-27/20240527113743.png",
     rating: 4.7,
     players: "3.9K",
     volatility: "High",
@@ -78,7 +78,6 @@ const allGames = [
     max_bet: 8000,
     is_featured: true,
     is_new: false,
-    route: "/minis",
     loaderIcon: GiMineExplosion,
     loaderTitle: "Loading Mines...",
   },
@@ -89,15 +88,14 @@ const allGames = [
     game_uid: "72ce7e04ce95ee94eef172c0dfd6dc17",
     game_type: "Crash Game",
     provider: "JILI",
-    icon: "https://i.ibb.co/dsm8qBc6/3.png",
+    icon: "https://img.huidu123.com/huidu/images/2024-03-06/20240306151805.png",
     rating: 4.5,
     players: "2.1K",
     volatility: "Medium",
     min_bet: 10,
     max_bet: 5000,
-    is_featured: false,
+    is_featured: true,
     is_new: false,
-    route: "/minis",
     loaderIcon: GiMineExplosion,
     loaderTitle: "Loading Mines...",
   },
@@ -108,7 +106,7 @@ const allGames = [
     game_uid: "a04d1f3eb8ccec8a4823bdf18e3f0e84",
     game_type: "Casino Table",
     provider: "SPB",
-    icon: "http://files.worldcasinoonline.com/Document/Game/Aviator_1697879631441.088.png",
+    icon: "https://img.huidu123.com/huidu/images/2024-05-27/20240527120200.png",
     rating: 4.9,
     players: "5.6K",
     volatility: "High",
@@ -116,9 +114,42 @@ const allGames = [
     max_bet: 10000,
     is_featured: true,
     is_new: false,
-    route: "/aviator",
     loaderIcon: GiAirplane,
     loaderTitle: "Loading Aviator...",
+  },
+  {
+    id: "7up7down-1",
+    category: "instant",
+    game_name: "7Updown",
+    game_uid: "3aca3084a5c1a8c77c52d6147ee3d2ab",
+    game_type: "Instant",
+    provider: "jili",
+    icon: "https://img.huidu123.com/huidu/images/2024-03-06/20240306153756.png@compress",
+    rating: 4.6,
+    volatility: "Low",
+    min_bet: 10,
+    max_bet: 5000,
+    is_featured: true,
+    is_new: false,
+    // route nahi hai — home se click par direct modal launch
+  },
+  {
+    id: "pappu-1",
+    category: "table",
+    game_name: "Pappu Game",
+    game_uid: "e5091890bbb65a5f9ceb657351fa73c1",
+    game_type: "Table",
+    provider: "JILIGaming",
+    icon: "https://img.huidu123.com/huidu/images/2024-03-15/20240315154251.png",
+    rating: 4.8,
+    players: "2.1K",
+    volatility: "Medium",
+    min_bet: 10,
+    max_bet: 5000,
+    is_featured: true,
+    is_new: false,
+    loaderIcon: MdGamepad,
+    loaderTitle: "Loading Pappu Game...",
   },
 ];
 
@@ -134,6 +165,43 @@ const AllGames = ({ isHome = false }) => {
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
+
+  // ============================================================
+  // GAMES FROM ADMIN (backend) — hardcoded list sirf fallback hai
+  // ============================================================
+  const [games, setGames] = useState(allGames);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const { data } = await api.get("/platform-games");
+
+        if (mounted && Array.isArray(data?.games) && data.games.length) {
+          setGames(
+            data.games.map((g) => ({
+              ...g,
+              id: String(g._id || g.game_uid),
+              loaderIcon: loaderIconByCategory(g.category),
+              loaderTitle: loaderTitleByCategory(g.category, g.game_name),
+            })),
+          );
+        }
+      } catch {
+        // API fail -> hardcoded fallback list use hogi
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Home par sirf admin-chosen TOP 6 games; All page par sab
+  const visibleGames = isHome
+    ? games.filter((g) => g.isTop6).slice(0, 6)
+    : games;
 
   // Prevent duplicate auto launch
   const autoLaunchStarted = useRef(false);
@@ -174,7 +242,7 @@ const AllGames = ({ isHome = false }) => {
       return;
     }
 
-    const game = allGames.find((g) => g.game_uid === location.state.gameUid);
+    const game = games.find((g) => g.game_uid === location.state.gameUid);
 
     if (!game) {
       return;
@@ -189,7 +257,7 @@ const AllGames = ({ isHome = false }) => {
         gameId: game.game_uid,
       }),
     );
-  }, [dispatch, isHome, location.state]);
+  }, [dispatch, isHome, location.state, games]);
 
   /*
    * ============================================================
@@ -197,10 +265,10 @@ const AllGames = ({ isHome = false }) => {
    * ============================================================
    */
   useEffect(() => {
-    if (!isHome && gameUrl && selectedGame) {
+    if (gameUrl && selectedGame) {
       setIsGameModalOpen(true);
     }
-  }, [gameUrl, isHome, selectedGame]);
+  }, [gameUrl, selectedGame]);
 
   /*
    * ============================================================
@@ -209,9 +277,9 @@ const AllGames = ({ isHome = false }) => {
    */
   const handlePlay = async (game) => {
     /*
-     * HOME -> GAME'S OWN ROUTE (/chicken, /mines, /aviator)
+     * HOME -> GAME WITH DEDICATED ROUTE (/chicken, /mines, /aviator)
      */
-    if (isHome) {
+    if (isHome && game.route) {
       navigate(game.route, {
         state: {
           autoLaunch: true,
@@ -223,7 +291,8 @@ const AllGames = ({ isHome = false }) => {
     }
 
     /*
-     * NORMAL PAGE (direct click, no home redirect)
+     * HOME -> GAME WITHOUT ROUTE (e.g. 7up7down) — direct modal launch
+     * NORMAL PAGE (direct click, no home redirect) — same
      */
     try {
       setSelectedGame(game);
@@ -318,47 +387,53 @@ const AllGames = ({ isHome = false }) => {
       {/* ========================================================
           ALL GAMES (Chicken + Mines + Aviator)
           ======================================================== */}
-      <div className="bg-[#0B0410] px-3 py-4 sm:px-3 sm:py-6">
-        {/* HEADER */}
-        <div className="mx-auto mb-4 sm:mb-6">
-          <div className="mb-1 flex items-center gap-2 sm:gap-2.5">
-            <div className={`rounded-lg p-2 sm:p-2.5 ${purpleGradient}`}>
-              <GiChicken className="text-lg text-white sm:text-xl" />
+      <div className="bg-[#0B0410] px-4 py-6 sm:px-3">
+        {/* HEADER — Platform recommendation */}
+        <div className="mx-auto mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <FaFire className="w-5 h-5 text-[#B45CFF] flex-shrink-0" />
+              <h2 className="text-lg font-extrabold tracking-tight text-white sm:text-xl leading-tight">
+                Platform recommendation
+              </h2>
             </div>
-
-            <h1 className="text-xl font-bold text-white sm:text-2xl">
-              Popular Games
-            </h1>
+            <button
+              type="button"
+              onClick={() => navigate("/games/all")}
+              className="flex items-center gap-1 flex-shrink-0 text-xs font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-full hover:bg-[#2a1b3d] hover:text-white transition-all"
+            >
+              All
+            </button>
           </div>
-
-          <p className="text-xs text-gray-400 sm:text-sm">
-            Chicken Road, Mines & Aviator — all your favorites in one place
-          </p>
         </div>
 
         {/* GRID */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5 md:grid-cols-4 md:gap-3 lg:grid-cols-5">
-          {allGames.map((game) => (
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
+          {visibleGames.map((game) => (
             <div
               key={game.id}
               onClick={() => handlePlay(game)}
               onMouseEnter={() => setHoveredId(game.id)}
               onMouseLeave={() => setHoveredId(null)}
-              className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] transition-all duration-300 hover:scale-[1.02] hover:border-[#B45CFF]/60 hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)] w-full h-auto"
+              className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-[1.02] hover:border-[#B45CFF]/60 hover:shadow-[0_8px_20px_rgba(155,89,182,0.3)] w-full h-auto"
             >
-              {/* IMAGE - dimensions same rakhe hain */}
-              <div className="relative h-24 w-40 flex-shrink-0 overflow-hidden sm:h-[9rem] sm:w-full">
+              {/* IMAGE */}
+              <div className="relative w-full aspect-[3/4] flex-shrink-0 overflow-hidden bg-[#1C0F2B]">
                 <img
                   src={game.icon}
                   alt={game.game_name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 ${
+                    // Aviator image ke edges white hain — thoda zoom
+                    // karke full-fit karo
+                    game.id === "aviator-1" ? "scale-110" : ""
+                  }`}
                 />
 
                 {/* BADGES */}
-                <div className="absolute left-1.5 top-1.5 flex flex-wrap gap-1 sm:left-2.5 sm:top-2.5">
+                <div className="absolute left-1.5 top-1.5 flex flex-wrap gap-1 sm:left-2 sm:top-2">
                   {game.is_featured && (
                     <span
-                      className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white sm:text-[10px] ${purpleGradient}`}
+                      className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white sm:text-[9px] ${purpleGradient}`}
                     >
                       <FaCrown className="text-[7px] sm:text-[9px]" />
                       HOT
@@ -389,37 +464,42 @@ const AllGames = ({ isHome = false }) => {
                     </div>
                   ) : (
                     <div
-                      className={`rounded-full p-1.5 sm:p-3 ${purpleGradient}`}
+                      className={`rounded-full p-1.5 sm:p-2.5 ${purpleGradient}`}
                     >
-                      <MdPlayCircle className="text-xl text-white sm:text-3xl" />
+                      <MdPlayCircle className="text-lg text-white sm:text-2xl" />
                     </div>
                   )}
                 </div>
               </div>
 
               {/* CONTENT */}
-              <div className="flex min-w-0 flex-1 flex-col justify-center p-0.5 sm:px-2">
-                <div className="mb-1 flex items-start justify-between gap-1.5">
-                  <h3 className="truncate text-sm font-bold text-white sm:text-xs">
+              <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-2">
+                <div className="flex items-center justify-between gap-1.5">
+                  <h3 className="truncate text-xs font-bold text-white sm:text-sm">
                     {game.game_name}
                   </h3>
 
-                  <div className="sm:hidden md:flex flex-shrink-0 items-center gap-0.5">
-                    <MdStar className="text-xs text-[#F1C40F] sm:text-sm" />
-                    <span className="text-[10px] font-bold text-white sm:text-sm">
+                  <div className="flex flex-shrink-0 items-center gap-0.5">
+                    <MdStar className="text-[10px] text-[#F1C40F] sm:text-xs" />
+                    <span className="text-[10px] font-bold text-white sm:text-xs">
                       {game.rating}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-[9px] text-gray-500 sm:gap-4 sm:text-xs">
-                  <span className="flex items-center gap-0.5">
-                    <MdGamepad className="text-[10px] sm:text-xs" />
-                    {game.players}
-                  </span>
+                <div className="flex items-center justify-between text-[9px] text-gray-500 sm:text-[10px]">
+                  {/* "X playing" sirf 7up7down par */}
+                  {game.id === "7up7down-1" ? (
+                    <span className="flex items-center gap-0.5">
+                      <MdGamepad className="text-[10px]" />
+                      {game.players}
+                    </span>
+                  ) : (
+                    <span />
+                  )}
 
-                  <span className="md:flex items-center gap-0.5 text-[#B45CFF] sm:hidden">
-                    <FaFire className="text-[9px] sm:text-xs" />
+                  <span className="flex items-center gap-0.5 text-[#B45CFF]">
+                    <FaFire className="text-[9px]" />
                     {game.volatility}
                   </span>
                 </div>
@@ -432,16 +512,14 @@ const AllGames = ({ isHome = false }) => {
       {/* ========================================================
           GAME MODAL
           ======================================================== */}
-      {!isHome && (
-        <GamePlayModal
-          isOpen={isGameModalOpen}
-          onClose={closeGameModal}
-          gameData={selectedGame}
-          gameUrl={gameUrl}
-          loading={launchLoading}
-          launchError={launchError}
-        />
-      )}
+      <GamePlayModal
+        isOpen={isGameModalOpen}
+        onClose={closeGameModal}
+        gameData={selectedGame}
+        gameUrl={gameUrl}
+        loading={launchLoading}
+        launchError={launchError}
+      />
     </>
   );
 };

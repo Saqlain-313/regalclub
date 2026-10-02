@@ -245,6 +245,10 @@ exports.createDeposit = async (req, res) => {
         // ==========================================
         // 16. CREATE DEPOSIT
         // ==========================================
+        // System reference: REG{digits} — user (wallet / deposit-history)
+        // aur admin dono jagah yehi id show hota hai.
+        const depositRef = `REG${Date.now()}${Math.floor(10 + Math.random() * 90)}`;
+
         const deposit = await Deposit.create({
             user: user._id,
 
@@ -259,6 +263,8 @@ exports.createDeposit = async (req, res) => {
             amount: depositAmount,
 
             transactionId: cleanTransactionId,
+
+            depositRef,
 
             screenshot,
 
@@ -886,6 +892,14 @@ exports.approveDeposit = async (
         await session.commitTransaction();
 
         session.endSession();
+
+        // Instant wallet push to the depositor
+        try {
+          const { emitWalletUpdate } = require("./betController");
+          await emitWalletUpdate(deposit.user);
+        } catch (e) {
+          // best-effort only
+        }
 
         // ==========================================
         // TOTAL REFERRAL COMMISSION

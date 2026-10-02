@@ -1,73 +1,252 @@
-/* Premium toast overrides — matched to TOPX purple theme */
+/* =====================================================
+   PURPLE RING TOAST — VIP theme
+   Existing react-toastify system, restyled only.
+===================================================== */
+
+/* ---------------- CONTAINER POSITION ---------------- */
+
+.Toastify__toast-container--top-right,
+.Toastify__toast-container--top-center {
+  top: 25px !important;
+  right: 25px !important;
+  left: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  width: 330px !important;
+  max-width: calc(100vw - 30px) !important;
+  z-index: 99999 !important;
+}
 
 .Toastify__toast-container {
-  width: auto;
-  max-width: 420px;
-  padding: 0;
+  width: 330px !important;
+  max-width: calc(100vw - 30px) !important;
+  padding: 0 !important;
 }
 
-.premium-toast {
-  border-radius: 18px !important;
+/* Mobile — full width with 15px side spacing */
+@media (max-width: 640px) {
+  .Toastify__toast-container--top-right,
+  .Toastify__toast-container--top-center {
+    top: 15px !important;
+    right: 15px !important;
+    left: 15px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+
+/* ---------------- TOAST CARD ---------------- */
+
+.Toastify__toast {
+  min-height: 75px !important;
+  border-radius: 16px !important;
   padding: 14px 16px !important;
-  background: #1c0f2b !important;
-  border: 1.5px solid #2a1b3d !important;
+  background: linear-gradient(135deg, #29103f, #180b27) !important;
+  border: 1px solid rgba(211, 92, 255, 0.28) !important;
   box-shadow:
-    0 10px 28px rgba(155, 89, 182, 0.25),
-    0 2px 8px rgba(0, 0, 0, 0.5) !important;
-  min-height: unset !important;
+    0 14px 40px rgba(0, 0, 0, 0.55),
+    0 0 26px rgba(211, 92, 255, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  margin-bottom: 12px !important;
+  font-family: inherit !important;
+  color: #e5e7eb !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(8px);
 }
 
-.premium-toast--success {
-  border: 1.5px solid rgba(0, 230, 118, 0.4) !important;
-  box-shadow:
-    0 10px 28px rgba(0, 230, 118, 0.15),
-    0 2px 8px rgba(0, 0, 0, 0.5) !important;
+/* Status accent line on the left edge */
+.premium-toast::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #d35cff, #7a18d5);
 }
 
-.premium-toast--error {
-  border: 1.5px solid rgba(239, 68, 68, 0.4) !important;
-  box-shadow:
-    0 10px 28px rgba(239, 68, 68, 0.15),
-    0 2px 8px rgba(0, 0, 0, 0.5) !important;
+.premium-toast--success::before {
+  background: linear-gradient(180deg, #00e676, #00c853);
 }
 
-.premium-toast--warning {
-  border: 1.5px solid rgba(241, 196, 15, 0.4) !important;
-  box-shadow:
-    0 10px 28px rgba(241, 196, 15, 0.15),
-    0 2px 8px rgba(0, 0, 0, 0.5) !important;
+.premium-toast--error::before {
+  background: linear-gradient(180deg, #f87171, #dc2626);
 }
+
+.premium-toast--warning::before {
+  background: linear-gradient(180deg, #f1c40f, #e67e22);
+}
+
+/* ---------------- BODY LAYOUT ---------------- */
+
+.pr-toast-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+}
+
+/* ---------------- PURPLE RING (rotating) ---------------- */
+
+.pr-toast-ring {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  padding: 2.5px;
+  background: conic-gradient(#d35cff, #7a18d5, #d35cff);
+  animation: prRingSpin 1.5s linear infinite;
+  box-shadow:
+    0 0 12px rgba(211, 92, 255, 0.55),
+    0 0 24px rgba(122, 24, 213, 0.35);
+}
+
+.pr-toast-ring-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #180b27;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Counter-spin keeps the icon upright while the ring rotates */
+  animation: prRingSpinReverse 1.5s linear infinite;
+}
+
+.pr-toast-icon {
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1;
+  font-style: normal;
+}
+
+.pr-toast-icon--success {
+  color: #00e676;
+}
+
+.pr-toast-icon--error {
+  color: #f87171;
+}
+
+.pr-toast-icon--warning {
+  color: #f1c40f;
+}
+
+.pr-toast-icon--info {
+  color: #d35cff;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+@keyframes prRingSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes prRingSpinReverse {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+/* ---------------- TEXT ---------------- */
+
+.pr-toast-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pr-toast-title {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.pr-toast-message {
+  color: #b9a6d9;
+  font-size: 13px;
+  line-height: 1.35;
+  margin: 3px 0 0 0;
+  word-break: break-word;
+}
+
+/* Plain toasts without a title: center the message vertically */
+.premium-toast .pr-toast-text:only-child,
+.pr-toast-body .pr-toast-title:empty {
+  display: none;
+}
+
+/* ---------------- CLOSE BUTTON ---------------- */
 
 .Toastify__close-button {
-  color: #9b59b6 !important;
+  color: #b9a6d9 !important;
   opacity: 1 !important;
-  align-self: center;
+  align-self: center !important;
+  background: transparent !important;
+  border-radius: 10px !important;
+  padding: 4px !important;
+  font-size: 15px !important;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
 .Toastify__close-button:hover {
-  color: #b45cff !important;
+  color: #ffffff !important;
+  background: rgba(211, 92, 255, 0.12) !important;
 }
 
-.premium-toast-progress {
+/* ---------------- PROGRESS BAR (auto-close timer) ---------------- */
+
+.Toastify__progress-bar {
   height: 3px !important;
-  border-radius: 0 0 18px 18px;
-  background: linear-gradient(90deg, #b45cff, #7418f5, #3a00c9) !important;
-  box-shadow:
-    0 0 8px #b45cff,
-    0 0 18px rgba(139, 43, 255, 0.75) !important;
+  border-radius: 0 0 16px 16px;
+  background: linear-gradient(90deg, #d35cff, #7a18d5) !important;
+  box-shadow: 0 0 8px rgba(211, 92, 255, 0.6) !important;
 }
 
-.premium-toast-progress--success {
-  background: linear-gradient(90deg, #00e676, #00c853) !important;
-  box-shadow: 0 0 8px #00e676 !important;
+/* ---------------- OPENING ANIMATION ---------------- */
+/* opacity 0→1, translateX(100px)→0, ~0.4s smooth ease */
+
+@keyframes prToastIn {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.premium-toast-progress--error {
-  background: linear-gradient(90deg, #f87171, #dc2626) !important;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
+.Toastify__toast-enter--top-right,
+.Toastify__toast-enter--top-center {
+  animation: prToastIn 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) !important;
 }
 
-.premium-toast-progress--warning {
-  background: linear-gradient(90deg, #f1c40f, #e67e22) !important;
-  box-shadow: 0 0 8px rgba(241, 196, 15, 0.5) !important;
+/* ---------------- CLOSING ANIMATION ---------------- */
+/* opacity 1→0, translateX(0)→translateX(100px), ~0.4s */
+
+@keyframes prToastOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+.Toastify__toast-exit--top-right,
+.Toastify__toast-exit--top-center {
+  animation: prToastOut 0.4s ease-in forwards !important;
 }

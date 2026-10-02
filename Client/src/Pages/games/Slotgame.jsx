@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FaSpinner } from "react-icons/fa";
+import { FaSpinner, FaArrowLeft, FaSearch, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { MdPlayCircle } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 import { SlotsGames } from "../../Data/GamesData";
 import GamePlayModal from "../../components/GamePlayModal";
@@ -28,6 +28,11 @@ const Slotgame = ({ isHome = false }) => {
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [hasRequestedGames, setHasRequestedGames] = useState(false);
+
+  /* Search + pagination (view-all page — Casino & Live Games style) */
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [gamesPerPage] = useState(24);
 
   // Prevent duplicate auto launch
   const autoLaunchStarted = useRef(false);
@@ -80,12 +85,54 @@ const Slotgame = ({ isHome = false }) => {
 
   /*
    * ============================================================
+   * SEARCH + PAGINATION (view-all page — Casino style)
+   * ============================================================
+   */
+  const filteredGames = useMemo(() => {
+    if (!searchTerm.trim()) return sourceGames;
+
+    return sourceGames.filter((game) =>
+      game.game_name?.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [searchTerm, sourceGames]);
+
+  const totalPages = Math.ceil(filteredGames.length / gamesPerPage);
+  const indexOfLastGame = currentPage * gamesPerPage;
+  const indexOfFirstGame = indexOfLastGame - gamesPerPage;
+  const currentGames = filteredGames.slice(indexOfFirstGame, indexOfLastGame);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, start + 4);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  /*
+   * ============================================================
    * DISPLAY GAMES
+   * Home section shows 12; the /slots view-all page shows
+   * paginated games from the API (game_type: "Slot Game")
    * ============================================================
    */
   const displayGames = useMemo(() => {
-    return sourceGames.slice(0, 12);
-  }, [sourceGames]);
+    return isHome ? sourceGames.slice(0, 12) : currentGames;
+  }, [sourceGames, isHome, currentGames]);
 
   /*
    * ============================================================
@@ -267,17 +314,54 @@ const Slotgame = ({ isHome = false }) => {
       {/* ========================================================
           SLOT GAMES PAGE
           ======================================================== */}
-      <div className="bg-[#0B0410] px-4 py-5 sm:px-3">
+      <div className="bg-[#0B0410] px-4 py-6 sm:px-3">
         {/* HEADER */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[22px]">🎰</span>
-
-            <h2 className="text-[20px] font-extrabold tracking-tight text-white sm:text-[24px]">
-              Slot Games
-            </h2>
+        <div className="mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {/* Back button — only on the /slots view-all page (Casino style) */}
+              {!isHome && (
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  className="flex items-center gap-2 text-gray-300 hover:text-white text-sm font-bold transition-colors bg-[#1C0F2B] border border-[#2a1b3d] hover:bg-[#2a1b3d] hover:border-[#9B59B6]/50 px-4 py-2 rounded-xl flex-shrink-0"
+                >
+                  <FaArrowLeft /> Back
+                </button>
+              )}
+              {/* Rounded bar icon — Platform recommendation style */}
+              <span className="w-2 h-6 rounded-full bg-gradient-to-b from-[#B45CFF] to-[#7418F5] flex-shrink-0" />
+              <h2 className="text-lg font-extrabold tracking-tight text-white sm:text-xl leading-tight">
+                Slot Games
+              </h2>
+            </div>
+            {/* View All — only on the home section, same size as the
+                Casino & Live Games page view-all */}
+            {isHome && (
+              <Link
+                to="/slots"
+                className="flex items-center gap-1 text-xs font-bold text-gray-300 bg-[#1C0F2B] border border-[#2a1b3d] px-3 py-1.5 rounded-xl hover:bg-[#2a1b3d] hover:text-white transition-all flex-shrink-0"
+              >
+                View all
+                <span className="text-lg">›</span>
+              </Link>
+            )}
           </div>
         </div>
+
+        {/* Search bar — below the heading, view-all page only */}
+        {!isHome && (
+          <div className="relative w-full md:w-80 mb-4">
+            <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search slot games..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-[#12061C] border border-[#2a1b3d] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#B45CFF]/60 focus:ring-2 focus:ring-[#B45CFF]/20 transition-all"
+            />
+          </div>
+        )}
 
         <div className="mx-auto">
           {/* API LOADER */}
@@ -296,34 +380,28 @@ const Slotgame = ({ isHome = false }) => {
           ) : (
             <>
               {/* GAME GRID */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 {displayGames.map((game, index) => {
-                  const hideOnMobile = index >= 6;
+                  // Home preview hides games 7+ on mobile;
+                  // the /slots view-all page shows everything (Casino style)
+                  const hideOnMobile = isHome && index >= 6;
 
                   return (
                     <div
                       key={game.game_uid || game.id || index}
                       onClick={() => handlePlay(game)}
                       className={`group relative
-    w-[160px]
-    h-[260px]
-    sm:w-[103%]
-    sm:h-[143px]
-    md:w-[200px]
-    md:h-[300px]
-    lg:w-[165px]
-    lg:h-[320px]
-    xl:w-[230px]
-    xl:h-[340px]
+    w-full
+    aspect-[3/4]
     cursor-pointer
     overflow-hidden
-    rounded-xl
+    rounded-2xl
     border border-[#2a1b3d]
     bg-[#1C0F2B]
     shadow-[0_4px_12px_rgba(0,0,0,0.5)]
     transition-all duration-300
     hover:border-[#B45CFF]/60
-    hover:shadow-[0_6px_18px_rgba(155,89,182,0.25)]
+    hover:shadow-[0_8px_20px_rgba(155,89,182,0.3)]
     ${hideOnMobile ? "hidden md:block" : ""}`}
                     >
                       {/* IMAGE */}
@@ -368,10 +446,79 @@ const Slotgame = ({ isHome = false }) => {
               {displayGames.length === 0 && (
                 <div className="mt-10 rounded-2xl border border-dashed border-[#2a1b3d] bg-[#1C0F2B] py-16 text-center">
                   <h3 className="mb-2 text-lg font-semibold text-white">
-                    No games found
+                    {searchTerm
+                      ? `No results for "${searchTerm}"`
+                      : "No games found"}
                   </h3>
 
-                  <p className="text-gray-400">No games available</p>
+                  <p className="text-gray-400">
+                    {searchTerm
+                      ? "Try a different game name"
+                      : "No games available"}
+                  </p>
+                </div>
+              )}
+
+              {/* PAGINATION — view-all page only (Casino style) */}
+              {!isHome && filteredGames.length > gamesPerPage && (
+                <div className="mt-10">
+                  <div className="hidden sm:flex flex-col md:flex-row items-center justify-center gap-4">
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-300 bg-[#12061C] border border-[#2a1b3d] rounded-lg hover:bg-[#2a1b3d] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      <FaChevronLeft className="text-xs" />
+                      Previous
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {renderPageNumbers().map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => goToPage(pageNum)}
+                          className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
+                            currentPage === pageNum
+                              ? `${purpleGradient} text-white`
+                              : "bg-[#12061C] text-gray-300 border border-[#2a1b3d] hover:bg-[#2a1b3d] hover:text-white"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-300 bg-[#12061C] border border-[#2a1b3d] rounded-lg hover:bg-[#2a1b3d] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      Next
+                      <FaChevronRight className="text-xs" />
+                    </button>
+                  </div>
+
+                  <div className="sm:hidden flex items-center justify-center gap-4 mt-6">
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#12061C] border border-[#2a1b3d] rounded-lg hover:bg-[#2a1b3d] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FaChevronLeft /> Prev
+                    </button>
+
+                    <span className="text-white font-medium">
+                      {currentPage} / {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#12061C] border border-[#2a1b3d] rounded-lg hover:bg-[#2a1b3d] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next <FaChevronRight />
+                    </button>
+                  </div>
                 </div>
               )}
             </>

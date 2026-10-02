@@ -1,37 +1,57 @@
 import {
-  Activity,
+  ArrowDownLeft,
   Calendar,
-  CheckCircle2,
   Clock,
   Copy,
   CreditCard,
   FileText,
-  XCircle,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyDeposits } from "../redux/slices/depositSlice";
 
 // ======================================================
-// CURRENCY CONFIGURATION
+// THEME TOKENS — VIP purple gradient system
 // ======================================================
 
-const getCurrencyConfig = (countryCode) => {
-  const config = {
-    IN: { symbol: "₹", code: "INR", locale: "en-IN" },
-    NP: { symbol: "रु", code: "NPR", locale: "ne-NP" },
-    PK: { symbol: "Rs", code: "PKR", locale: "en-PK" },
-    AU: { symbol: "$", code: "AUD", locale: "en-AU" },
-    CA: { symbol: "$", code: "CAD", locale: "en-CA" },
-    AE: { symbol: "د.إ", code: "AED", locale: "ar-AE" },
-    default: { symbol: "₹", code: "INR", locale: "en-IN" },
+const accentGradient =
+  "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9]";
+const accentGlow =
+  "shadow-[0_0_10px_rgba(180,92,255,0.35),0_4px_20px_rgba(58,0,201,0.35)]";
+const cardBase =
+  "bg-[#150D22]/90 border border-[#2a1b3d] shadow-[0_4px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.04)]";
+const statBox = "bg-[#12061C] rounded-xl border border-[#2a1b3d] px-3 py-2";
+
+// ======================================================
+// STATUS CONFIG — user-facing labels
+// "approved" is shown to users as "Success"
+// ======================================================
+
+const statusConfig = (status) => {
+  const map = {
+    approved: {
+      label: "Success",
+      badge:
+        "text-[#00E676] bg-[#00E676]/10 border border-[#00E676]/30",
+      bar: "bg-gradient-to-b from-[#00E676] to-transparent",
+    },
+    pending: {
+      label: "Pending",
+      badge: "text-[#F1C40F] bg-[#F1C40F]/10 border border-[#F1C40F]/30",
+      bar: "bg-gradient-to-b from-[#F1C40F] to-transparent",
+    },
+    rejected: {
+      label: "Failed",
+      badge: "text-red-400 bg-red-500/10 border border-red-500/30",
+      bar: "bg-gradient-to-b from-red-500 to-transparent",
+    },
   };
-  return config[countryCode] || config.default;
-};
 
-// ======================================================
-// COMPONENT
-// ======================================================
+  return map[String(status).toLowerCase()] || map.pending;
+};
 
 const DepositHistory = () => {
   const dispatch = useDispatch();
@@ -39,213 +59,193 @@ const DepositHistory = () => {
   const { deposits, loading } = useSelector((state) => state.deposit);
   const { user } = useSelector((state) => state.auth);
 
-  // ======================================================
-  // CURRENCY
-  // ======================================================
-
-  const currencyConfig = getCurrencyConfig(user?.country);
-  const currencySymbol = currencyConfig.symbol;
-  const locale = currencyConfig.locale;
-
-  // ======================================================
-  // FORMAT FUNCTIONS
-  // ======================================================
-
-  const formatAmount = (amount) => {
-    const num = parseFloat(amount);
-    if (isNaN(num)) return `${currencySymbol}0`;
-    return `${currencySymbol}${num.toLocaleString(locale)}`;
-  };
-
-  // ======================================================
-  // EFFECTS
-  // ======================================================
-
   useEffect(() => {
     dispatch(getMyDeposits());
   }, [dispatch]);
 
-  // ======================================================
-  // STATUS BADGE
-  // ======================================================
+  const currencySymbol = "₹";
 
-  const getStatusBadge = (status) => {
-    const configs = {
-      approved: {
-        icon: CheckCircle2,
-        className: "bg-[#00E676]/15 text-[#00E676] border-[#00E676]/30",
-        label: "Approved",
-      },
-      rejected: {
-        icon: XCircle,
-        className: "bg-red-500/15 text-red-400 border-red-500/30",
-        label: "Rejected",
-      },
-      pending: {
-        icon: Clock,
-        className: "bg-[#F1C40F]/15 text-[#F1C40F] border-[#F1C40F]/30",
-        label: "Pending",
-      },
-    };
-
-    const config = configs[status] || configs.pending;
-    const Icon = config.icon;
-
-    return (
-      <span
-        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${config.className}`}
-      >
-        <Icon className="w-3 h-3" />
-        {config.label}
-      </span>
-    );
+  const formatAmount = (amount) => {
+    const num = parseFloat(amount);
+    if (isNaN(num)) return `${currencySymbol}0`;
+    return `${currencySymbol}${num.toLocaleString("en-IN")}`;
   };
 
-  // ======================================================
-  // COPY TRANSACTION ID
-  // ======================================================
-
-  const copyTransactionId = (transactionId) => {
-    navigator.clipboard.writeText(transactionId);
+  const formatDate = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
 
-  // ======================================================
-  // LOADING
-  // ======================================================
-
-  if (loading) {
-    return (
-      <div className="min-h-[400px] flex items-center justify-center bg-[#0B0410]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-[3px] border-[#B45CFF] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm text-gray-400 font-medium">
-            Loading deposits...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // ======================================================
-  // UI
-  // ======================================================
+  // Summary stats
+  const totalDeposits = deposits.length;
+  const totalAmount = deposits.reduce(
+    (sum, item) => sum + (Number(item.amount) || 0),
+    0,
+  );
+  const successCount = deposits.filter(
+    (item) => String(item.status).toLowerCase() === "approved",
+  ).length;
 
   return (
-    <div className="relative bg-[#0B0410] overflow-hidden">
-      {/* Decorative background orbs (Purple) */}
-      <div className="pointer-events-none absolute -top-24 -right-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -left-24 w-64 h-64 bg-[#8E44AD]/15 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-[#0B0410] overflow-hidden relative pb-10">
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#8E44AD]/10 rounded-full blur-3xl" />
 
       <div className="relative px-4 sm:px-6 py-6">
         <div className="max-w-md w-full mx-auto">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between gap-4">
+          {/* ===== Header ===== */}
+          <div className="mb-5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center flex-shrink-0">
-                <Activity className="w-5 h-5 text-white" />
+              <div
+                className={`w-11 h-11 rounded-2xl ${accentGradient} ${accentGlow} border border-[#C77AFF] flex items-center justify-center flex-shrink-0`}
+              >
+                <ArrowDownLeft className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">
+                <h1 className="text-xl font-black text-white leading-tight tracking-wide">
                   Deposit History
                 </h1>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Your recent deposit transactions
+                <p className="text-[11px] text-gray-400">
+                  Your deposit transactions
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-[#1C0F2B] rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.4)] border border-[#2a1b3d] flex-shrink-0">
-              <span className="text-xs font-medium text-gray-400">Total</span>
-              <span className="text-sm font-bold text-white">
-                {deposits.length}
+          </div>
+
+          {/* ===== Stats strip ===== */}
+          {deposits.length > 0 && (
+            <div className="grid grid-cols-3 gap-2.5 mb-5">
+              <div className={`${cardBase} rounded-2xl p-3`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <FileText size={11} className="text-[#B45CFF]" />
+                  <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
+                    Total
+                  </span>
+                </div>
+                <p className="text-sm font-black text-white">{totalDeposits}</p>
+              </div>
+              <div className={`${cardBase} rounded-2xl p-3`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Wallet size={11} className="text-[#F1C40F]" />
+                  <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
+                    Amount
+                  </span>
+                </div>
+                <p className="text-sm font-black text-white">
+                  ₹{totalAmount.toLocaleString("en-IN")}
+                </p>
+              </div>
+              <div className={`${cardBase} rounded-2xl p-3`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <TrendingUp size={11} className="text-[#00E676]" />
+                  <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
+                    Success
+                  </span>
+                </div>
+                <p className="text-sm font-black text-[#00E676]">
+                  {successCount}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ===== List ===== */}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2.5 bg-[#150D22]/90 border border-[#2a1b3d] rounded-2xl p-10">
+              <span className="w-5 h-5 border-2 border-[#2a1b3d] border-t-[#B45CFF] rounded-full animate-spin" />
+              <span className="text-sm text-gray-400 font-medium">
+                Loading deposits...
               </span>
             </div>
-          </div>
-
-          {/* Currency Badge */}
-          <div className="mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#9B59B6]/10 border border-[#9B59B6]/40 rounded-full">
-            <span className="text-[10px] font-medium text-[#9B59B6]">
-              Currency: {currencySymbol} {currencyConfig.code}
-            </span>
-          </div>
-
-          {deposits.length === 0 ? (
-            <div className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-10 text-center">
-              <div className="w-12 h-12 bg-[#9B59B6]/15 rounded-full flex items-center justify-center mx-auto mb-3 border border-[#9B59B6]/30">
-                <Activity className="w-5 h-5 text-[#9B59B6]" />
+          ) : deposits.length === 0 ? (
+            <div className="relative bg-[#150D22]/90 border border-[#2a1b3d] rounded-3xl p-10 text-center overflow-hidden">
+              <div className="pointer-events-none absolute -top-14 left-1/2 -translate-x-1/2 w-40 h-32 bg-[#7418F5]/20 rounded-full blur-2xl" />
+              <div className="relative">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl border border-[#B45CFF]/30 bg-[#B45CFF]/10 flex items-center justify-center">
+                  <ArrowDownLeft className="w-8 h-8 text-[#B45CFF]/70" />
+                </div>
+                <p className="text-sm font-black text-white tracking-wide">
+                  No deposits yet
+                </p>
+                <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+                  Make your first deposit and it will
+                  <br />
+                  appear here.
+                </p>
               </div>
-              <h5 className="text-sm font-semibold text-white mb-1">
-                No Deposits Found
-              </h5>
-              <p className="text-xs text-gray-400">
-                You haven't made any deposits yet. Start your first deposit
-                today!
-              </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {deposits.map((item) => (
-                <div
-                  key={item._id}
-                  className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-[#9B59B6]/50 transition-all duration-200 p-4"
-                >
-                  {/* Top row: Amount + Status */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-lg font-bold text-white">
-                      {formatAmount(item.amount)}
-                    </span>
-                    {getStatusBadge(item.status)}
-                  </div>
+              {deposits.map((item) => {
+                const status = statusConfig(item.status);
 
-                  {/* Details */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-gray-400">
-                        <CreditCard className="w-3.5 h-3.5" />
-                        Method
-                      </span>
-                      <span className="font-medium text-gray-200">
-                        {item.methodTitle}
-                      </span>
-                    </div>
+                return (
+                  <div
+                    key={item._id}
+                    className={`relative rounded-2xl ${cardBase} p-4 overflow-hidden transition-all duration-200 hover:border-[#B45CFF]/40`}
+                  >
+                    {/* Left accent bar */}
+                    <span
+                      className={`absolute left-0 top-0 bottom-0 w-[3px] ${status.bar}`}
+                    />
 
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-gray-400">
-                        <Calendar className="w-3.5 h-3.5" />
-                        Date
-                      </span>
-                      <span className="font-medium text-gray-200">
-                        {new Date(item.createdAt).toLocaleString(locale, {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 text-xs pt-2 mt-2 border-t border-[#2a1b3d]">
-                      <span className="flex items-center gap-1.5 text-gray-400 flex-shrink-0">
-                        <FileText className="w-3.5 h-3.5" />
-                        Txn ID
-                      </span>
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-mono text-gray-300 truncate">
-                          {item.transactionId}
-                        </span>
-                        <button
-                          type="button"
-                          className="flex-shrink-0 p-1 hover:bg-[#9B59B6]/20 rounded-md transition-colors"
-                          onClick={() => copyTransactionId(item.transactionId)}
-                          title="Copy Transaction ID"
-                        >
-                          <Copy className="w-3 h-3 text-gray-400 hover:text-[#9B59B6]" />
-                        </button>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-lg font-black text-white leading-none">
+                          {formatAmount(item.amount)}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-500">
+                          <CreditCard size={10} />
+                          {item.methodTitle || item.methodType || "Deposit"}
+                        </div>
                       </div>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black tracking-widest uppercase flex-shrink-0 ${status.badge}`}
+                      >
+                        {status.label}
+                      </span>
+                    </div>
+
+                    {/* Txn ID — system reference REG{digits} */}
+                    <div className="mt-3 flex items-center justify-between gap-2 bg-[#12061C] rounded-xl border border-[#2a1b3d] px-3 py-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <FileText size={11} className="text-[#B45CFF] flex-shrink-0" />
+                        <span className="text-[10px] font-mono text-gray-300 truncate">
+                          {item.depositRef || item.transactionId || "—"}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="p-1 rounded-md hover:bg-[#B45CFF]/15 transition-colors flex-shrink-0"
+                        onClick={() =>
+                          navigator.clipboard.writeText(
+                            item.depositRef || item.transactionId || "",
+                          )
+                        }
+                        title="Copy Transaction ID"
+                      >
+                        <Copy size={11} className="text-gray-400 hover:text-[#B45CFF]" />
+                      </button>
+                    </div>
+
+                    {/* Date time */}
+                    <div className="mt-2.5 flex items-center gap-1.5 text-[10px] text-gray-500">
+                      <Calendar className="w-3 h-3" />
+                      {formatDate(item.createdAt)}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

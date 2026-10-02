@@ -458,22 +458,31 @@ const BidsHistory = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0410] px-4 py-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#0B0410] px-4 py-4 relative overflow-hidden">
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#8E44AD]/10 rounded-full blur-3xl" />
+
+      <div className="relative max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
-              <History size={24} className="text-[#B45CFF]" />
-              Bidding History
-            </h1>
-            <p className="text-sm text-gray-400">
-              {pagination?.total || 0} total bids placed
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75)] flex items-center justify-center flex-shrink-0">
+              <History size={20} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-white tracking-wide">
+                Bidding History
+              </h1>
+              <p className="text-[11px] text-gray-400">
+                {pagination?.total || 0} total bids placed
+              </p>
+            </div>
           </div>
           <button
             onClick={() => dispatch(getBiddingHistory(filter))}
-            className="p-2 bg-[#1C0F2B] rounded-xl border border-[#2a1b3d] hover:border-[#B45CFF]/50 hover:bg-[#2a1b3d] transition-all"
+            className="p-2.5 bg-[#150D22]/90 rounded-xl border border-[#2a1b3d] hover:border-[#B45CFF]/50 hover:bg-[#2a1b3d] transition-all"
           >
             <RefreshCw size={18} className="text-gray-400" />
           </button>
@@ -513,7 +522,7 @@ const BidsHistory = () => {
             ].map((stat, index) => (
               <div
                 key={index}
-                className="bg-[#1C0F2B] rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.5)] border border-[#2a1b3d] p-3"
+                className="bg-[#150D22]/90 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.04)] border border-[#2a1b3d] p-3"
               >
                 <div className="flex items-center gap-2.5">
                   <div
@@ -585,7 +594,7 @@ const BidsHistory = () => {
 
         {/* Bids list */}
         {bidsArray.length > 0 ? (
-          <div className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-hidden">
+          <div className="bg-[#150D22]/90 rounded-2xl border border-[#2a1b3d] shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.04)] overflow-hidden">
             <div className="divide-y divide-[#2a1b3d]">
               {bidsArray.map((bid) => {
                 const statusConfig = getStatusConfig(bid.status);
@@ -752,15 +761,16 @@ const BidsHistory = () => {
           </div>
         ) : (
           /* Empty State */
-          <div className="bg-[#1C0F2B] rounded-2xl shadow-[0_4_12px_rgba(0,0,0,0.5)] border border-[#2a1b3d] p-12 text-center">
-            <div className="text-5xl mb-4 opacity-30">📭</div>
-            <p className="text-gray-300 text-lg font-medium">No Bids Found</p>
-            <p className="text-gray-500 text-sm mt-1">
+          <div className="bg-[#150D22]/90 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.04)] border border-[#2a1b3d] p-12 text-center relative overflow-hidden">
+            <div className="pointer-events-none absolute -top-14 left-1/2 -translate-x-1/2 w-40 h-32 bg-[#7418F5]/20 rounded-full blur-2xl" />
+            <div className="relative text-5xl mb-4 opacity-30">📭</div>
+            <p className="relative text-gray-300 text-lg font-bold">No Bids Found</p>
+            <p className="relative text-gray-500 text-sm mt-1">
               Start exploring active markets and place your first bid!
             </p>
             <Link
               to="/matka/markets"
-              className={`inline-flex items-center gap-2 mt-4 px-6 py-2.5 ${purpleGradient} text-white rounded-xl font-bold transition-all active:scale-[0.98]`}
+              className={`relative inline-flex items-center gap-2 mt-4 px-6 py-2.5 ${purpleGradient} text-white rounded-xl font-bold transition-all active:scale-[0.98]`}
             >
               <Target size={16} />
               Browse Markets

@@ -4,12 +4,16 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "./api";
 
 // ================= GET BANNERS =================
+// ?all=true — the admin panel manages every banner,
+// including inactive ones (public API returns active only).
 
 export const getBanners = createAsyncThunk(
   "banner/getBanners",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await api.get("/banner");
+      const { data } = await api.get("/banner", {
+        params: { all: "true" },
+      });
       return data;
     } catch (err) {
       return rejectWithValue(

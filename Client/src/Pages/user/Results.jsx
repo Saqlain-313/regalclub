@@ -219,9 +219,9 @@ const MatkaResults = () => {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-amber-500"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#B45CFF]"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-8 w-8 rounded-full bg-amber-500 animate-pulse"></div>
+            <div className="h-8 w-8 rounded-full bg-[#B45CFF] animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -229,32 +229,32 @@ const MatkaResults = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30 px-4 sm:px-6 py-6">
+    <div className="min-h-screen bg-[#0B0410] px-4 sm:px-6 py-6 relative overflow-hidden">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-400 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition duration-500"></div>
-          <div className="relative bg-white rounded-2xl shadow-xl p-6 border border-amber-100/50 transform group-hover:scale-[1.01] transition duration-300">
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#B45CFF] via-[#7418F5] to-[#3A00C9] rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition duration-500"></div>
+          <div className="relative bg-[#150D22]/90 rounded-2xl shadow-xl p-6 border border-[#2a1b3d] transform group-hover:scale-[1.01] transition duration-300">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full blur-md"></div>
-                  <div className="relative bg-gradient-to-br from-amber-400 to-orange-500 p-3 rounded-full shadow-lg">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-[#B45CFF] to-[#7418F5] rounded-full blur-md"></div>
+                  <div className="relative bg-gradient-to-br from-[#B45CFF] to-[#7418F5] p-3 rounded-full shadow-lg">
                     <Trophy size={28} className="text-white" />
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
+                  <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#B45CFF] to-[#C77AFF] bg-clip-text text-transparent">
                     Matka Results
                   </h1>
                   <p className="text-gray-500 text-sm flex items-center gap-1">
-                    <Sparkles size={14} className="text-amber-400" />
+                    <Sparkles size={14} className="text-[#B45CFF]" />
                     Live results & statistics
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2 rounded-xl border border-amber-200/50 shadow-inner">
-                <CalendarDays size={16} className="text-amber-600" />
+              <div className="flex items-center gap-2 bg-gradient-to-r from-[#B45CFF]/10 to-[#7418F5]/10 px-4 py-2 rounded-xl border border-[#B45CFF]/30 shadow-inner">
+                <CalendarDays size={16} className="text-[#B45CFF]" />
                 <span className="text-sm font-medium text-gray-700">
                   {new Date().toLocaleDateString("en-IN", {
                     weekday: "short",
@@ -312,8 +312,8 @@ const MatkaResults = () => {
                 <div
                   className={`absolute -inset-1 bg-gradient-to-r ${stat.color} rounded-2xl blur-md opacity-20 group-hover:opacity-40 transition duration-300`}
                 ></div>
-                <div className="relative bg-white rounded-2xl shadow-lg border border-gray-100/50 p-5 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-transparent to-gray-50/50 rounded-full -mr-10 -mt-10"></div>
+                <div className="relative bg-[#150D22]/90 rounded-2xl shadow-lg border border-[#2a1b3d] p-5 overflow-hidden">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-transparent to-[#7418F5]/10 rounded-full -mr-10 -mt-10"></div>
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg ${stat.shadow} transform group-hover:scale-110 transition duration-300`}
@@ -321,10 +321,10 @@ const MatkaResults = () => {
                       <stat.icon size={20} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">
+                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
                         {stat.label}
                       </p>
-                      <p className="text-xl font-extrabold text-gray-800 mt-0.5">
+                      <p className="text-xl font-extrabold text-white mt-0.5">
                         {stat.value}
                       </p>
                     </div>
@@ -337,24 +337,24 @@ const MatkaResults = () => {
 
         {/* Filters */}
         <div className="group relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-400/20 to-orange-400/20 rounded-2xl blur-xl"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-5">
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#B45CFF]/20 to-[#7418F5]/20 rounded-2xl blur-xl"></div>
+          <div className="relative bg-[#150D22]/90 backdrop-blur-sm rounded-2xl shadow-xl border border-[#2a1b3d] p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Filter size={18} className="text-amber-500" />
-              <h2 className="text-sm font-semibold text-gray-700">
+              <Filter size={18} className="text-[#B45CFF]" />
+              <h2 className="text-sm font-semibold text-gray-300">
                 Filter Results
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
                   Market
                 </label>
                 <select
                   name="marketId"
                   value={filter.marketId}
                   onChange={handleFilterChange}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-md transition duration-200"
+                  className="w-full px-3 py-2.5 border border-[#2a1b3d] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-transparent text-sm bg-[#12061C] text-white shadow-sm hover:shadow-md transition duration-200"
                 >
                   <option value="">All Markets</option>
                   {activeMarkets?.map((market) => (
@@ -365,7 +365,7 @@ const MatkaResults = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
                   Start Date
                 </label>
                 <input
@@ -373,11 +373,11 @@ const MatkaResults = () => {
                   name="startDate"
                   value={filter.startDate}
                   onChange={handleFilterChange}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-md transition duration-200"
+                  className="w-full px-3 py-2.5 border border-[#2a1b3d] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-transparent text-sm bg-[#12061C] text-white shadow-sm hover:shadow-md transition duration-200"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
                   End Date
                 </label>
                 <input
@@ -385,13 +385,13 @@ const MatkaResults = () => {
                   name="endDate"
                   value={filter.endDate}
                   onChange={handleFilterChange}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-md transition duration-200"
+                  className="w-full px-3 py-2.5 border border-[#2a1b3d] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-transparent text-sm bg-[#12061C] text-white shadow-sm hover:shadow-md transition duration-200"
                 />
               </div>
               <div className="flex items-end">
                 <button
                   onClick={clearFilters}
-                  className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-white py-2.5 rounded-xl hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300 text-sm font-medium transform hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full bg-gradient-to-r from-[#B45CFF] to-[#7418F5] text-white py-2.5 rounded-xl hover:shadow-lg hover:shadow-[#B45CFF]/30 transition-all duration-300 text-sm font-medium transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Clear Filters
                 </button>
@@ -403,33 +403,33 @@ const MatkaResults = () => {
         {/* Results Table */}
         {results?.length > 0 ? (
           <div className="group relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-400/20 via-orange-400/20 to-yellow-400/20 rounded-2xl blur-xl"></div>
-            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 overflow-hidden">
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#B45CFF]/20 via-[#7418F5]/20 to-[#3A00C9]/20 rounded-2xl blur-xl"></div>
+            <div className="relative bg-[#150D22]/90 backdrop-blur-sm rounded-2xl shadow-xl border border-[#2a1b3d] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100">
-                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    <tr className="bg-gradient-to-r from-[#150D22] to-[#12061C] border-b border-[#2a1b3d]">
+                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                         Market
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                         Winning Numbers
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                         Total Bids
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                         Winners
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                         Total Payout
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                         Date
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100/50">
+                  <tbody className="divide-y divide-[#2a1b3d]/70">
                     {results.map((result, index) => {
                       const marketGradient = getMarketGradient(
                         result.marketName,
@@ -439,7 +439,7 @@ const MatkaResults = () => {
                       return (
                         <tr
                           key={result._id || `${result.marketId?._id || result.marketId}-${result.resultDate}-${index}`}
-                          className="hover:bg-gradient-to-r hover:from-amber-50/50 hover:to-orange-50/50 transition-all duration-300 group/row transform hover:scale-[1.002]"
+                          className="hover:bg-gradient-to-r hover:from-[#B45CFF]/5 hover:to-[#7418F5]/5 transition-all duration-300 group/row transform hover:scale-[1.002]"
                         >
                           <td className="px-4 py-3.5">
                             <div className="flex flex-col items-start gap-1.5">
@@ -452,7 +452,7 @@ const MatkaResults = () => {
                               </span>
 
                               {getDigitType(result) && (
-                                <span className="inline-flex px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-extrabold">
+                                <span className="inline-flex px-2 py-0.5 rounded-full bg-[#B45CFF]/10 text-[#C77AFF] border border-[#B45CFF]/30 text-[9px] font-extrabold">
                                   {getDigitType(result)}
                                 </span>
                               )}
@@ -465,7 +465,7 @@ const MatkaResults = () => {
                                   ({ gameType, number }) => (
                                     <div
                                       key={`${result._id}-${gameType}`}
-                                      className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 rounded-xl border border-green-200 shadow-sm"
+                                      className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#00E676]/10 to-[#00E676]/5 text-[#00E676] rounded-xl border border-[#00E676]/30 shadow-sm"
                                     >
                                       <Award
                                         size={15}
@@ -479,7 +479,7 @@ const MatkaResults = () => {
                                             : getGameTypeLabel(gameType)}
                                         </span>
 
-                                        <span className="font-black text-lg leading-tight">
+                                        <span className="font-black text-lg leading-tight text-white">
                                           {number}
                                         </span>
                                       </div>
@@ -493,12 +493,12 @@ const MatkaResults = () => {
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3.5 text-sm font-semibold text-gray-700">
+                          <td className="px-4 py-3.5 text-sm font-semibold text-gray-300">
                             {result.totalBids || 0}
                           </td>
-                          <td className="px-4 py-3.5 text-sm font-semibold text-gray-700">
+                          <td className="px-4 py-3.5 text-sm font-semibold text-gray-300">
                             <span className="inline-flex items-center gap-1">
-                              <Crown size={14} className="text-amber-400" />
+                              <Crown size={14} className="text-[#F1C40F]" />
                               {result.totalWinningBids || 0}
                             </span>
                           </td>
@@ -525,14 +525,14 @@ const MatkaResults = () => {
           </div>
         ) : (
           <div className="group relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-400/20 to-orange-400/20 rounded-2xl blur-xl"></div>
-            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-16 text-center">
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#B45CFF]/20 to-[#7418F5]/20 rounded-2xl blur-xl"></div>
+            <div className="relative bg-[#150D22]/90 backdrop-blur-sm rounded-2xl shadow-xl border border-[#2a1b3d] p-16 text-center">
               <div className="flex justify-center mb-4">
-                <div className="w-28 h-28 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 flex items-center justify-center animate-float">
-                  <Inbox size={56} className="text-amber-500" strokeWidth={1.5} />
+                <div className="w-28 h-28 rounded-full bg-gradient-to-r from-[#B45CFF]/15 to-[#7418F5]/15 flex items-center justify-center animate-float">
+                  <Inbox size={56} className="text-[#B45CFF]" strokeWidth={1.5} />
                 </div>
               </div>
-              <p className="text-gray-600 text-xl font-semibold">
+              <p className="text-gray-300 text-xl font-semibold">
                 No results found
               </p>
               <p className="text-gray-400 text-sm mt-1">

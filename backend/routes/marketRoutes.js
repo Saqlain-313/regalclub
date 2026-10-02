@@ -54,6 +54,7 @@ router.get(
 router.post(
   "/create",
   protect,
+  adminProtect,
   upload.single("image"),
   marketController.createMarket
 );

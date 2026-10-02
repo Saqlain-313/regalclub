@@ -1132,7 +1132,10 @@ const PlaceBid = () => {
   // RENDER
   // =========================================================
   return (
-    <div className="min-h-screen bg-[#0B0410] px-4 py-4">
+    <div className="min-h-screen bg-[#0B0410] px-4 py-4 relative overflow-hidden">
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/15 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/10 rounded-full blur-3xl" />
       <div className="max-w-6xl mx-auto">
         <button
           onClick={() => navigate("/matka/markets")}

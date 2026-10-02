@@ -36,7 +36,10 @@ export default function HeroSection() {
     dispatch(getBanners());
   }, [dispatch]);
 
-  const displayBanners = banners?.length > 0 ? banners : fallbackBanners;
+  // Only active banners reach the public view (defensive filter —
+  // the backend already filters, this guards against stale data)
+  const activeBanners = (banners || []).filter((b) => b?.isActive !== false);
+  const displayBanners = activeBanners.length > 0 ? activeBanners : fallbackBanners;
 
   const stats = [
     {

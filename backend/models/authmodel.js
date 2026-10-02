@@ -77,6 +77,16 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "blocked"],
       default: "active",
     },
+    // Atomic operation locks (mongoose strict mode strips these
+    // from updates when missing from the schema — must stay here)
+    launching: {
+      type: Boolean,
+      default: false,
+    },
+    transferring: {
+      type: Boolean,
+      default: false,
+    },
     isDemo: {
       type: Boolean,
       default: false,
