@@ -3,20 +3,16 @@ const User = require("../models/authmodel");
 
 // ============================================================
 // GET TOKEN FROM COOKIE / HEADER
+//
+// Priority: Authorization header (admin panel sends Bearer) →
+// powerhit cookie (client user) → adminToken cookie (legacy).
+// Cookies are shared across localhost ports, so adminToken must
+// NEVER win over the user cookie on the client site — a stale
+// admin cookie used to hijack client requests and break /login.
 // ============================================================
 
 const getToken = (req) => {
-  // Admin token
-  if (req.cookies?.adminToken) {
-    return req.cookies.adminToken;
-  }
-
-  // User token
-  if (req.cookies?.powerhit) {
-    return req.cookies.powerhit;
-  }
-
-  // Authorization header
+  // Authorization header — sent explicitly by the admin panel
   const authHeader = req.headers?.authorization;
 
   if (
@@ -24,6 +20,16 @@ const getToken = (req) => {
     authHeader.startsWith("Bearer ")
   ) {
     return authHeader.substring(7).trim();
+  }
+
+  // User token (client site)
+  if (req.cookies?.powerhit) {
+    return req.cookies.powerhit;
+  }
+
+  // Admin token cookie (legacy fallback)
+  if (req.cookies?.adminToken) {
+    return req.cookies.adminToken;
   }
 
   return null;

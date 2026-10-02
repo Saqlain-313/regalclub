@@ -568,6 +568,12 @@ const getProfile = async (req, res) => {
       String(req.user?.role || "").toLowerCase() === "admin" &&
       !isAdminProfileRoute
     ) {
+      // Self-heal: a stale adminToken cookie on the client site (cookies
+      // are shared across localhost ports) would keep authenticating the
+      // visitor as admin and break /login. Clear it here so the next
+      // request is clean.
+      clearAuthCookies(res);
+
       return res.status(401).json({
         success: false,
         message: "Unauthorized — admin accounts must use the admin panel",
