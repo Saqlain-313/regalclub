@@ -405,13 +405,15 @@ const DepositRow = ({
       <td className="px-6 py-4 whitespace-nowrap hidden xl:table-cell">
         <div className="flex items-center gap-1.5 text-xs font-mono text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 max-w-[180px]">
           <FileText className="w-3 h-3 text-indigo-400 flex-shrink-0" />
-          <span className="truncate" title={deposit.transactionId || ''}>
-            {deposit.transactionId || 'N/A'}
+          <span className="truncate" title={deposit.depositRef || deposit.transactionId || ''}>
+            {deposit.depositRef || deposit.transactionId || 'N/A'}
           </span>
         </div>
-        <div className="xl:hidden text-xs text-gray-500 mt-1 truncate max-w-[160px]" title={deposit.transactionId || ''}>
-          {deposit.transactionId || ''}
-        </div>
+        {deposit.depositRef && deposit.transactionId && (
+          <div className="xl:hidden text-xs text-gray-500 mt-1 truncate max-w-[160px]" title={deposit.transactionId}>
+            UTR: {deposit.transactionId}
+          </div>
+        )}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gradient-to-br from-blue-50 to-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm group-hover:shadow-md transition-all duration-300">
@@ -690,7 +692,8 @@ const DetailModal = ({
     { label: 'Mobile', value: deposit.user?.mobile || 'N/A', icon: Phone },
     { label: 'Country', value: deposit.country || 'N/A', icon: Globe },
     { label: 'Amount', value: formatCurrency(deposit.amount, deposit.country), icon: DollarSign, highlight: true },
-    { label: 'UTR / Transaction ID', value: deposit.transactionId || 'N/A', icon: FileText, highlight: true },
+    { label: 'Transaction ID', value: deposit.depositRef || deposit.transactionId || 'N/A', icon: FileText, highlight: true },
+    ...(deposit.transactionId ? [{ label: 'User UTR', value: deposit.transactionId, icon: FileText }] : []),
     { label: 'Payment Method', value: `${deposit.methodType?.toUpperCase() || 'N/A'}${deposit.methodTitle ? ` - ${deposit.methodTitle}` : ''}`, icon: CreditCard },
     { label: 'Status', value: deposit.status, icon: Activity, isBadge: true },
     { label: 'Created', value: formatDate(deposit.createdAt), icon: Calendar },
@@ -945,9 +948,9 @@ const ActionModal = ({
                 </span>
               </div>
               <div className="flex justify-between text-sm gap-3">
-                <span className="text-gray-500 font-medium whitespace-nowrap">UTR / Txn ID:</span>
+                <span className="text-gray-500 font-medium whitespace-nowrap">Txn ID:</span>
                 <span className="font-mono font-semibold text-gray-900 break-all text-right">
-                  {deposit.transactionId || 'N/A'}
+                  {deposit.depositRef || deposit.transactionId || 'N/A'}
                 </span>
               </div>
             </motion.div>

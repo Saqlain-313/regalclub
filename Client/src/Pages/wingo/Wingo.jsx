@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import { Crown, Shuffle } from "lucide-react";
+import { AlertCircle, Crown, Shuffle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCircle, FaMinus, FaPlus } from "react-icons/fa";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
@@ -1407,18 +1407,9 @@ const Wingo = () => {
                   selectBetHandle(key);
                 }
               }}
-              className={`relative flex items-center justify-center rounded-xl py-3.5 text-base font-extrabold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:text-lg ${bg} ${hover} ${
-                isSelected
-                  ? "ring-2 ring-white/70 ring-offset-2 ring-offset-[#1C0F2B]"
-                  : ""
-              }`}
+              className={`relative flex items-center justify-center rounded-xl py-3.5 text-base font-extrabold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:text-lg ${bg} ${hover}`}
             >
               {label}
-              {isSelected && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-[#0B0410] shadow">
-                  ✓
-                </span>
-              )}
             </button>
           );
         })}

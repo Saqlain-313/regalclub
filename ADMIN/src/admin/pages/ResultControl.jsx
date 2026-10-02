@@ -50,6 +50,12 @@ const ResultControl = () => {
   const [periodLoading, setPeriodLoading] = useState(false);
   const [periodError, setPeriodError] = useState("");
 
+  // ===== ENTER PERIOD MODE =====
+  // Admin kisi future period ka result pehle se set kar sakta hai.
+  // Period aane par result automatically apply ho jata hai.
+  const [useEnteredPeriod, setUseEnteredPeriod] = useState(false);
+  const [enteredPeriod, setEnteredPeriod] = useState("");
+
   // Local ticking value — keeps countdown smooth between server syncs
   const tickRef = useRef(null);
   const secondsRef = useRef(0);
@@ -125,9 +131,22 @@ const ResultControl = () => {
     return () => clearTimeout(resync);
   }, [secondsLeft, game, fetchCurrentPeriod]);
 
+  // Period jo lock hogi — entered (future) ya live current period
+  const targetPeriod = useEnteredPeriod
+    ? String(enteredPeriod).trim()
+    : livePeriod;
+
   const save = async () => {
-    if (!livePeriod) {
-      toast.error("No active period right now. Please wait for the next one.");
+    if (!targetPeriod) {
+      toast.error(
+        useEnteredPeriod
+          ? "Please enter a period number"
+          : "No active period right now. Please wait for the next one or use Enter Period."
+      );
+      return;
+    }
+    if (!/^\d+$/.test(targetPeriod)) {
+      toast.error("Period must be a number");
       return;
     }
     if (result === "" || result === null) {
@@ -139,7 +158,7 @@ const ResultControl = () => {
     try {
       const { data } = await api.put("/bet/admin/period-results", {
         typeid: game,
-        period: livePeriod,
+        period: targetPeriod,
         result: Number(result),
       });
       toast.success(data?.message || "Result locked");
@@ -270,6 +289,45 @@ const ResultControl = () => {
           </p>
         )}
 
+        {/* ===== ENTER PERIOD (future pre-set) ===== */}
+        <div className="mb-4 border border-indigo-200 bg-indigo-50/60 rounded-xl p-3">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={useEnteredPeriod}
+              onChange={(e) => {
+                setUseEnteredPeriod(e.target.checked);
+                if (!e.target.checked) setEnteredPeriod("");
+              }}
+              className="w-4 h-4 accent-indigo-600"
+            />
+            <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider">
+              Enter Period (pre-set for a future period)
+            </span>
+          </label>
+
+          {useEnteredPeriod && (
+            <>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Enter future period number, e.g. 20261002100051234"
+                value={enteredPeriod}
+                onChange={(e) =>
+                  setEnteredPeriod(e.target.value.replace(/[^\d]/g, ""))
+                }
+                className="w-full mt-2.5 border border-indigo-300 rounded-xl px-4 py-2.5 text-sm font-mono bg-white outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400"
+              />
+              <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                Period aane par yahan set kiya gaya result{" "}
+                <strong>automatically apply</strong> ho jayega — instant (30s)
+                aur timer (1M / 3M / 5M) dono games ke liye. Past period reject
+                ho jayegi.
+              </p>
+            </>
+          )}
+        </div>
+
         {/* Result picker */}
         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
           Expected Result
@@ -284,7 +342,7 @@ const ResultControl = () => {
                 key={n}
                 type="button"
                 onClick={() => setResult(String(n))}
-                disabled={!livePeriod}
+                disabled={!targetPeriod}
                 className={`h-12 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   selected
                     ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-105"
@@ -318,7 +376,7 @@ const ResultControl = () => {
         <button
           type="button"
           onClick={save}
-          disabled={saving || !livePeriod}
+          disabled={saving || !targetPeriod}
           className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
         >
           {saving ? (
@@ -326,7 +384,10 @@ const ResultControl = () => {
           ) : (
             <Lock className="w-4 h-4" />
           )}
-          Lock Result for {livePeriod ? `Period ${livePeriod}` : "Current Period"}
+          Lock Result for{" "}
+          {targetPeriod
+            ? `Period ${targetPeriod}`
+            : "Current Period"}
         </button>
       </div>
 
