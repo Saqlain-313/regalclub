@@ -63,11 +63,17 @@ const ActivityBanners = () => {
   const handleImageChange = (e, isEdit = false) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (isEdit) setEditImage(file);
-    else setImage(file);
+    if (isEdit) {
+      setEditImage(file);
+      toast.info(`Image selected: ${file.name}`);
+    } else {
+      setImage(file);
+      setImagePreview(file);
+      toast.info(`Image selected: ${file.name}`);
+    }
   };
 
-  const handleUpload = (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault();
 
     if (!image) return toast.error("Please select an image");
@@ -77,43 +83,45 @@ const ActivityBanners = () => {
     formData.append("title", title || "");
     formData.append("navigateTo", navigateTo);
 
-    dispatch(uploadActivityBanner(formData)).then((res) => {
-      if (!res.error) {
-        toast.success("🎉 Activity banner uploaded!");
-        setTitle("");
-        setNavigateTo("/deposit");
-        setImage(null);
-        setImagePreview(null);
-      } else {
-        toast.error(res.error);
-      }
-    });
+    try {
+      await dispatch(uploadActivityBanner(formData)).unwrap();
+      toast.success("🎉 Activity banner uploaded!");
+      setTitle("");
+      setNavigateTo("/deposit");
+      setImage(null);
+      setImagePreview(null);
+    } catch (err) {
+      toast.error(err || "Upload failed. Please try again.");
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!window.confirm("Delete this activity banner?")) return;
 
-    dispatch(deleteActivityBanner(id)).then((res) => {
-      if (!res.error) toast.success("🗑️ Banner deleted!");
-      else toast.error(res.error);
-    });
+    try {
+      await dispatch(deleteActivityBanner(id)).unwrap();
+      toast.success("🗑️ Banner deleted!");
+    } catch (err) {
+      toast.error(err || "Delete failed. Please try again.");
+    }
   };
 
-  const handleToggleActive = (banner) => {
+  const handleToggleActive = async (banner) => {
     const formData = new FormData();
     formData.append("isActive", banner.isActive ? "false" : "true");
 
-    dispatch(updateActivityBanner({ id: banner._id, formData })).then(
-      (res) => {
-        if (!res.error) {
-          toast.success(
-            banner.isActive
-              ? "Banner hidden from /activity"
-              : "Banner is now live on /activity",
-          );
-        } else toast.error(res.error);
-      },
-    );
+    try {
+      await dispatch(
+        updateActivityBanner({ id: banner._id, formData }),
+      ).unwrap();
+      toast.success(
+        banner.isActive
+          ? "Banner hidden from /activity"
+          : "Banner is now live on /activity",
+      );
+    } catch (err) {
+      toast.error(err || "Update failed. Please try again.");
+    }
   };
 
   const handleEditStart = (banner) => {
@@ -123,7 +131,7 @@ const ActivityBanners = () => {
     setEditImage(null);
   };
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
 
     const formData = new FormData();
@@ -132,29 +140,31 @@ const ActivityBanners = () => {
 
     if (editImage) formData.append("image", editImage);
 
-    dispatch(updateActivityBanner({ id: editingId, formData })).then(
-      (res) => {
-        if (!res.error) {
-          toast.success("✨ Banner updated!");
-          setEditingId(null);
-          setEditImage(null);
-        } else toast.error(res.error);
-      },
-    );
+    try {
+      await dispatch(
+        updateActivityBanner({ id: editingId, formData }),
+      ).unwrap();
+      toast.success("✨ Banner updated!");
+      setEditingId(null);
+      setEditImage(null);
+    } catch (err) {
+      toast.error(err || "Update failed. Please try again.");
+    }
   };
 
-  const handleShareImageUpload = () => {
+  const handleShareImageUpload = async () => {
     if (!shareImage) return toast.error("Please select an image");
 
     const formData = new FormData();
     formData.append("image", shareImage);
 
-    dispatch(uploadReferralShareImage(formData)).then((res) => {
-      if (!res.error) {
-        toast.success("🎉 Referral share image updated!");
-        setShareImage(null);
-      } else toast.error(res.error);
-    });
+    try {
+      await dispatch(uploadReferralShareImage(formData)).unwrap();
+      toast.success("🎉 Referral share image updated!");
+      setShareImage(null);
+    } catch (err) {
+      toast.error(err || "Upload failed. Please try again.");
+    }
   };
 
   const routeOptions = [
@@ -246,7 +256,11 @@ const ActivityBanners = () => {
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => setShareImage(e.target.files[0] || null)}
+                  onChange={(e) => {
+                    const file = e.target.files[0] || null;
+                    setShareImage(file);
+                    if (file) toast.info(`Image selected: ${file.name}`);
+                  }}
                 />
                 <span className="w-full border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center hover:border-purple-500 hover:bg-purple-50/50 transition-all cursor-pointer block text-sm text-gray-500">
                   {shareImage

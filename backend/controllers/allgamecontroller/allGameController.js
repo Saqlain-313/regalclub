@@ -76,8 +76,8 @@ const ensureZapPlayer = async (playerid) => {
 ========================= */
 const checkBalance = async (req, res) => {
   try {
-    // playerid na mile to logged-in user ka mobile use karo —
-    // frontend live-wallet polling isse call karti hai
+    // If no playerid in the body, fall back to the logged-in
+    // user's mobile — the frontend live-wallet polling calls this
     const playerid = String(req.body?.playerid || req.user?.mobile || "").trim();
     if (!playerid) {
       return res
@@ -85,8 +85,9 @@ const checkBalance = async (req, res) => {
         .json({ status: false, message: "playerid required" });
     }
 
-    // Key QUERY STRING me jati hai (body me nahi) — warna provider
-    // "Key is required" deta hai. transferBalance bhi yahi karta hai.
+    // The key goes in the QUERY STRING (not the body) — otherwise
+    // the provider returns "Key is required". transferBalance does
+    // the same.
     const response = await axios.post(
       `${apiUrl}/Userbalance?playerid=${encodeURIComponent(playerid)}&key=${encodeURIComponent(key)}`,
       { playerid, key },
@@ -214,7 +215,7 @@ const transferBalance = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       status: false,
-      // Provider (Zapcore) ka actual message forward karo —
+      // Forward the provider's (Zapcore) actual message —
       // e.g. "Your IP address x.x.x.x is not whitelisted"
       message: error.response?.data?.message || "Transfer error",
       error: error.response?.data || error.message,
@@ -253,10 +254,22 @@ const launchGame = async (req, res) => {
       return res.status(400).json({ status: false, message: "Invalid user" });
     }
 
-    /* 🛡️ ATOMIC LOCK — only one launch per user at a time */
+    /* 🛡️ ATOMIC LOCK — only one launch per user at a time.
+       Stale lock auto-expiry: if the process crashes or a network
+       hang leaves the `launching` flag stuck, launching is allowed
+       again after 45s — otherwise the user was permanently stuck
+       with "Launch already in progress". */
+    const STALE_LOCK_MS = 45 * 1000;
     const locked = await AuthModel.findOneAndUpdate(
-      { _id: user._id, launching: { $ne: true } },
-      { $set: { launching: true } },
+      {
+        _id: user._id,
+        $or: [
+          { launching: { $ne: true } },
+          { launchingAt: { $lt: new Date(Date.now() - STALE_LOCK_MS) } },
+          { launchingAt: { $exists: false } },
+        ],
+      },
+      { $set: { launching: true, launchingAt: new Date() } },
       { new: true }
     );
 
@@ -324,7 +337,7 @@ const launchGame = async (req, res) => {
       try {
         await AuthModel.updateOne(
           { _id: lockedUserId },
-          { $set: { launching: false } }
+          { $set: { launching: false }, $unset: { launchingAt: "" } }
         );
       } catch (e) {
         console.error("LOCK RELEASE ERROR 👉", e.message);
@@ -445,7 +458,7 @@ const gameHistory = async (req, res) => {
 
 /* =========================
    API GAME WAGERED TOTAL
-   (withdrawal wagering ke liye)
+   (used by withdrawal wagering)
 ========================= */
 const HISTORY_FIELD_CANDIDATES = [
   "bet_amount",
@@ -480,7 +493,12 @@ const getApiGameWagered = async (playerid, maxPages = 10) => {
         page,
         limit: 100,
       },
-      { headers: zapHeaders }
+      {
+        headers: zapHeaders,
+        // Provider slow/hang -> compute wagering from local games,
+        // the eligibility request must never hang
+        timeout: 8000,
+      }
     );
 
     const rows = Array.isArray(response.data?.data) ? response.data.data : [];

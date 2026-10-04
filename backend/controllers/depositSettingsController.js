@@ -6,7 +6,13 @@ const User = require("../models/authmodel");
 // ===============================
 exports.saveDepositSettings = async (req, res) => {
   try {
-    const { country, countryName, currency, methods } = req.body;
+    const {
+      country,
+      countryName,
+      currency,
+      methods,
+      presetAmounts,
+    } = req.body;
 
     if (!country || !countryName || !currency) {
       return res.status(400).json({
@@ -50,6 +56,12 @@ exports.saveDepositSettings = async (req, res) => {
         countryName,
         currency,
         methods,
+        // Quick amount chips for /deposit — sanitize to positive numbers
+        presetAmounts: Array.isArray(presetAmounts)
+          ? presetAmounts
+              .map((v) => Number(v))
+              .filter((v) => Number.isFinite(v) && v > 0)
+          : [],
       },
       {
         new: true,
@@ -175,69 +187,29 @@ exports.getUserDepositMethods = async (req, res) => {
     }
 
     // ================================
-    // 2. CHECK COUNTRY
+    // 2. COUNTRY — India-only platform: user.country lookup is a
+    //    fallback only; we always resolve settings for 'IN'
     // ================================
-    if (!user.country) {
-      return res.status(400).json({
-        success: false,
-        message: "User country not set.",
-      });
-    }
+    const countryCode = 'IN';
 
     // ================================
-    // 3. COUNTRY NAME -> ISO CODE
+    // 3. FIND DEPOSIT SETTINGS
     // ================================
-    const countryMap = {
-      // India
-      india: "IN",
-
-      // Australia
-      australia: "AU",
-      austraila: "AU",
-
-      // Nepal
-      nepal: "NP",
-
-      // Pakistan
-      pakistan: "PK",
-
-      // Bangladesh
-      bangladesh: "BD",
-
-      // UAE
-      dubai: "AE",
-      uae: "AE",
-      "united arab emirates": "AE",
-    };
-
-    const userCountry = String(user.country)
-      .trim()
-      .toLowerCase();
-
-    // If country name exists in map, use ISO code.
-    // Otherwise assume user.country is already an ISO code.
-    const countryCode =
-      countryMap[userCountry] || userCountry.toUpperCase();
-
-    console.log("USER COUNTRY:", user.country);
-    console.log("NORMALIZED COUNTRY:", userCountry);
-    console.log("COUNTRY CODE:", countryCode);
-
-    // ================================
-    // 4. FIND DEPOSIT SETTINGS
-    // ================================
-    const settings = await DepositSettings.findOne({
+    let settings = await DepositSettings.findOne({
       country: countryCode,
     });
 
     console.log("SETTINGS:", settings);
 
     if (!settings) {
+      // Fallback: any settings doc (India-only platform)
+      settings = await DepositSettings.findOne().lean();
+    }
+
+    if (!settings) {
       return res.status(404).json({
         success: false,
-        message: "Deposit methods not available for your country.",
-        country: user.country,
-        countryCode: countryCode,
+        message: "No deposit methods configured yet. Please contact support.",
       });
     }
 
@@ -267,6 +239,11 @@ exports.getUserDepositMethods = async (req, res) => {
       currency: settings.currency,
 
       methods: activeMethods,
+
+      // Quick amount chips for /deposit (admin managed)
+      presetAmounts: Array.isArray(settings.presetAmounts)
+        ? settings.presetAmounts
+        : [],
     });
   } catch (error) {
     console.error(

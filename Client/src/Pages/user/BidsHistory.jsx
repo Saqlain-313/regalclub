@@ -1,6 +1,7 @@
 import {
   AlertCircle,
   BarChart3,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { clearBidError, getBiddingHistory } from "../../redux/slices/bidSlice";
 import { getCurrencyRates } from "../../redux/slices/currencyRateSlice";
 
@@ -441,6 +442,48 @@ const BidsHistory = () => {
 
   const bidsArray = Array.isArray(bids) ? bids : [];
 
+  // Type tab (market) + date filter — client-side, like /deposit-history
+  const navigate = useNavigate();
+  const [typeTab, setTypeTab] = useState("all");
+  const [dateTab, setDateTab] = useState("all");
+
+  const marketTabs = useMemo(() => {
+    const names = [];
+    bidsArray.forEach((b) => {
+      const name = b.marketId?.name || "N/A";
+      if (!names.includes(name)) names.push(name);
+    });
+    return [
+      { id: "all", label: "All" },
+      ...names.map((n) => ({ id: n, label: n })),
+    ];
+  }, [bidsArray]);
+
+  const filteredBids = useMemo(() => {
+    let list = bidsArray;
+
+    if (typeTab !== "all") {
+      list = list.filter((b) => (b.marketId?.name || "N/A") === typeTab);
+    }
+
+    if (dateTab !== "all") {
+      const now = new Date();
+      let startDate = null;
+      if (dateTab === "today") {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (dateTab === "7days") {
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (dateTab === "30days") {
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+      if (startDate) {
+        list = list.filter((b) => new Date(b.createdAt) >= startDate);
+      }
+    }
+
+    return list;
+  }, [bidsArray, typeTab, dateTab]);
+
   const totalBids = bidsArray.length;
   const totalWon = bidsArray.filter((b) => b.status === "won").length;
   const totalAmount = bidsArray.reduce((sum, b) => sum + (b.bidAmount || 0), 0);
@@ -464,105 +507,89 @@ const BidsHistory = () => {
       <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#8E44AD]/10 rounded-full blur-3xl" />
 
-      <div className="relative max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75)] flex items-center justify-center flex-shrink-0">
-              <History size={20} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-white tracking-wide">
-                Bidding History
-              </h1>
-              <p className="text-[11px] text-gray-400">
-                {pagination?.total || 0} total bids placed
-              </p>
-            </div>
-          </div>
+      <div className="relative max-w-md mx-auto">
+        {/* Header — back style, like /deposit-history */}
+        <div className="mb-5 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#2a1b3d] bg-[#1C0F2B] text-white transition-all active:scale-95"
+            aria-label="Back"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <h1 className="flex-1 text-center text-base font-bold text-white">
+            Bids history
+          </h1>
           <button
             onClick={() => dispatch(getBiddingHistory(filter))}
-            className="p-2.5 bg-[#150D22]/90 rounded-xl border border-[#2a1b3d] hover:border-[#B45CFF]/50 hover:bg-[#2a1b3d] transition-all"
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#2a1b3d] bg-[#1C0F2B] text-gray-400 transition-all hover:text-[#B45CFF] active:scale-95"
+            aria-label="Refresh"
           >
-            <RefreshCw size={18} className="text-gray-400" />
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
 
-        {/* Stats Cards */}
-        {bidsArray.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            {[
-              {
-                icon: Coins,
-                gradient: "from-[#3498DB] to-[#2471A3]",
-                label: "Total Bids",
-                value: totalBids,
-              },
-              {
-                icon: DollarSign,
-                gradient: "from-[#00E676] to-[#00c853]",
-                label: "Invested",
-                value: formatCurrency(totalAmount),
-              },
-              {
-                icon: Trophy,
-                gradient: "from-[#F1C40F] to-[#E67E22]",
-                label: "Won",
-                value: formatWinAmount(totalWinAmount),
-              },
-              {
-                icon: BarChart3,
-                gradient: "from-[#B45CFF] via-[#7418F5] to-[#3A00C9]",
-                label: "Win Rate",
-                value:
-                  totalBids > 0
-                    ? `${Math.round((totalWon / totalBids) * 100)}%`
-                    : "0%",
-              },
-            ].map((stat, index) => (
-              <div
-                key={index}
-                className="bg-[#150D22]/90 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.04)] border border-[#2a1b3d] p-3"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-9 h-9 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg flex-shrink-0`}
-                  >
-                    <stat.icon size={16} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-[9px] font-medium uppercase tracking-wider">
-                      {stat.label}
-                    </p>
-                    <p className="text-sm font-extrabold text-white">
-                      {stat.value}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* TYPE TABS — markets */}
+        {marketTabs.length > 1 && (
+          <div className="mb-3 grid grid-cols-3 gap-2">
+            {marketTabs.slice(0, 3).map(({ id, label }) => {
+              const isActive = typeTab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTypeTab(id)}
+                  className={`flex items-center justify-center rounded-xl py-2.5 border text-[11px] font-bold transition-all active:scale-95 ${
+                    isActive
+                      ? `${purpleGradient} text-white`
+                      : "border-[#2a1b3d] bg-[#1C0F2B] text-gray-400 hover:border-[#9B59B6]/50"
+                  }`}
+                >
+                  <span className="truncate px-1">{label}</span>
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {/* Filter */}
-        <div className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] p-3 shadow-[0_4px_12px_rgba(0,0,0,0.5)] mb-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Filter:
-            </span>
+        {/* STATUS + DATE FILTERS */}
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <div className="relative">
             <select
               value={filter.status}
               onChange={(e) =>
                 setFilter({ ...filter, status: e.target.value, page: 1 })
               }
-              className="px-4 py-1.5 border border-[#2a1b3d] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B45CFF]/30 focus:border-[#B45CFF]/60 text-sm bg-[#12061C] text-white"
+              className="w-full appearance-none rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] px-3 py-2.5 text-xs font-semibold text-gray-300 outline-none transition-all focus:border-[#B45CFF]/60"
             >
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="won">Won</option>
-              <option value="lost">Lost</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="">All</option>
+              <option value="pending">Status: Pending</option>
+              <option value="won">Status: Won</option>
+              <option value="lost">Status: Lost</option>
+              <option value="cancelled">Status: Cancelled</option>
             </select>
+            <ChevronDown
+              size={14}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+          </div>
+
+          <div className="relative">
+            <select
+              value={dateTab}
+              onChange={(e) => setDateTab(e.target.value)}
+              className="w-full appearance-none rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] px-3 py-2.5 text-xs font-semibold text-gray-300 outline-none transition-all focus:border-[#B45CFF]/60"
+            >
+              <option value="all">All time</option>
+              <option value="today">Today</option>
+              <option value="7days">Last 7 days</option>
+              <option value="30days">Last 30 days</option>
+            </select>
+            <ChevronDown
+              size={14}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
           </div>
         </div>
 
@@ -593,10 +620,9 @@ const BidsHistory = () => {
         )}
 
         {/* Bids list */}
-        {bidsArray.length > 0 ? (
-          <div className="bg-[#150D22]/90 rounded-2xl border border-[#2a1b3d] shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.04)] overflow-hidden">
-            <div className="divide-y divide-[#2a1b3d]">
-              {bidsArray.map((bid) => {
+        {filteredBids.length > 0 ? (
+          <div className="space-y-3">
+            {filteredBids.map((bid) => {
                 const statusConfig = getStatusConfig(bid.status);
                 const StatusIcon = statusConfig.icon;
                 const gameTypeDisplay = getGameTypeDisplay(bid.gameType);
@@ -608,24 +634,37 @@ const BidsHistory = () => {
                 return (
                   <div
                     key={bid._id}
-                    className="p-3.5 hover:bg-[#2a1b3d]/40 transition-colors"
+                    className="rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-3.5 transition-all hover:border-[#9B59B6]/50"
                   >
-                    {/* Row 1: Market + Status */}
-                    <div className="flex items-start justify-between mb-2.5">
-                      <div>
-                        <p className="text-sm font-bold text-white">
-                          {bid.marketId?.name || "N/A"}
-                        </p>
-                        <p className="text-[9px] text-gray-500">
-                          {bid.marketId?.marketId || ""}
-                        </p>
-                      </div>
+                    {/* Row 0: tag + status — deposit/withdrawal history style */}
+                    <div className="mb-2.5 flex items-center justify-between gap-2">
+                      <span className="rounded-md bg-gradient-to-r from-[#B45CFF] to-[#7418F5] px-2.5 py-1 text-[10px] font-bold text-white">
+                        Bid
+                      </span>
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-full bg-gradient-to-r ${statusConfig.color} text-white shadow-sm flex-shrink-0`}
+                        className={`inline-flex items-center gap-1 text-[11px] font-bold ${
+                          bid.status === "won"
+                            ? "text-[#00E676]"
+                            : bid.status === "lost"
+                              ? "text-red-400"
+                              : bid.status === "pending"
+                                ? "text-[#F1C40F]"
+                                : "text-gray-400"
+                        }`}
                       >
-                        <StatusIcon size={10} />
+                        <StatusIcon size={11} />
                         {statusConfig.label}
                       </span>
+                    </div>
+
+                    {/* Row 1: Market */}
+                    <div className="mb-2.5">
+                      <p className="text-sm font-bold text-white">
+                        {bid.marketId?.name || "N/A"}
+                      </p>
+                      <p className="text-[9px] text-gray-500">
+                        {bid.marketId?.marketId || ""}
+                      </p>
                     </div>
 
                     {/* Row 2: Game type + Date */}
@@ -719,12 +758,32 @@ const BidsHistory = () => {
                   </div>
                 );
               })}
-            </div>
+          </div>
+        ) : (
+          /* Empty State */
+          <div className="bg-[#150D22]/90 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.04)] border border-[#2a1b3d] p-12 text-center relative overflow-hidden">
+            <div className="pointer-events-none absolute -top-14 left-1/2 -translate-x-1/2 w-40 h-32 bg-[#7418F5]/20 rounded-full blur-2xl" />
+            <div className="relative text-5xl mb-4 opacity-30">📭</div>
+            <p className="relative text-gray-300 text-lg font-bold">No Bids Found</p>
+            <p className="relative text-gray-500 text-sm mt-1">
+              Start exploring active markets and place your first bid!
+            </p>
+            <Link
+              to="/matka/markets"
+              className={`relative inline-flex items-center gap-2 mt-4 px-6 py-2.5 ${purpleGradient} text-white rounded-xl font-bold transition-all active:scale-[0.98]`}
+            >
+              <Target size={16} />
+              Browse Markets
+            </Link>
+          </div>
+        )}
 
-            {/* Pagination */}
-            <div className="px-4 py-3 border-t border-[#2a1b3d] flex flex-col sm:flex-row justify-between items-center gap-2">
+        {/* Pagination */}
+        {filteredBids.length > 0 && (
+          <>
+            <div className="mt-5 flex flex-col sm:flex-row justify-between items-center gap-2">
               <span className="text-sm text-gray-400">
-                Showing {bidsArray.length} of {pagination?.total || 0} bids
+                Showing {filteredBids.length} of {pagination?.total || 0} bids
               </span>
               <div className="flex gap-2">
                 <button
@@ -758,24 +817,10 @@ const BidsHistory = () => {
                 </button>
               </div>
             </div>
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="bg-[#150D22]/90 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.04)] border border-[#2a1b3d] p-12 text-center relative overflow-hidden">
-            <div className="pointer-events-none absolute -top-14 left-1/2 -translate-x-1/2 w-40 h-32 bg-[#7418F5]/20 rounded-full blur-2xl" />
-            <div className="relative text-5xl mb-4 opacity-30">📭</div>
-            <p className="relative text-gray-300 text-lg font-bold">No Bids Found</p>
-            <p className="relative text-gray-500 text-sm mt-1">
-              Start exploring active markets and place your first bid!
+            <p className="py-3 text-center text-xs font-semibold text-gray-500">
+              No more
             </p>
-            <Link
-              to="/matka/markets"
-              className={`relative inline-flex items-center gap-2 mt-4 px-6 py-2.5 ${purpleGradient} text-white rounded-xl font-bold transition-all active:scale-[0.98]`}
-            >
-              <Target size={16} />
-              Browse Markets
-            </Link>
-          </div>
+          </>
         )}
       </div>
     </div>

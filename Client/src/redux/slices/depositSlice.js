@@ -65,6 +65,9 @@ const initialState = {
 
   methods: [],
 
+  // Quick amount chips from admin deposit settings
+  presetAmounts: [],
+
   deposits: [],
 
   loading: false,
@@ -115,6 +118,10 @@ const depositSlice = createSlice({
         state.loading = false;
 
         state.methods = action.payload.methods;
+
+        state.presetAmounts = Array.isArray(action.payload.presetAmounts)
+          ? action.payload.presetAmounts
+          : [];
 
       })
 

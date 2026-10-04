@@ -76,6 +76,7 @@ const useWithdrawalManagement = () => {
     rejectionReason: '',
     adminNotes: '',
     transactionId: '',
+    remark: '',
   });
   const [localFilters, setLocalFilters] = useState(filterParams);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -842,6 +843,20 @@ const StatusModal = ({
 
           <div className="mb-3 sm:mb-4">
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
+              Remark (shown to user)
+            </label>
+            <textarea
+              rows="2"
+              name="remark"
+              value={formData.remark}
+              onChange={handleFormChange}
+              placeholder="e.g. Paid via UPI ref 1234 / Wrong account details"
+              className="w-full rounded-lg sm:rounded-xl border-2 border-gray-200 px-2.5 sm:px-3 py-2 sm:py-2.5 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 outline-none text-xs sm:text-sm"
+            />
+          </div>
+
+          <div className="mb-3 sm:mb-4">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
               Admin Notes (Optional)
             </label>
             <textarea
@@ -1146,6 +1161,7 @@ const AdminWithdrawals = () => {
       rejectionReason: '',
       adminNotes: '',
       transactionId: '',
+      remark: '',
     });
     setShowStatusModal(true);
   }, [setSelectedWithdrawal, setStatusAction, setFormData, setShowStatusModal]);

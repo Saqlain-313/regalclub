@@ -49,9 +49,14 @@ const betRoutes = require("./routes/betRoutes");
 const authRoutes = require("./routes/authRoutes");
 const dailyClaimRoutes = require("./routes/dailyClaimRoutes");
 const withdrawalRoutes = require("./routes/withdrawalRoutes");
+const paymentMethodRoutes = require("./routes/paymentMethodRoutes");
 const depositRoutes = require("./routes/depositRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
 const activityBannerRoutes = require("./routes/activityBannerRoutes");
+const tradeRoutes = require("./routes/tradeRoutes");
+const tradeWebsocket = require("./config/tradeWebsocket");
+const tradeCronJob = require("./controllers/trade/tradeCronJob");
+const tradeTimer = require("./controllers/trade/tradeTimer");
 const publicBidRoutes = require("./routes/publicBidRoutes");
 
 const marketRoutes = require("./routes/marketRoutes");
@@ -241,6 +246,28 @@ app.set("io", io);
 global.io = io;
 
 // =====================================================
+// TRADING WEBSOCKET (raw ws at /ws) + per-minute trade cron
+// =====================================================
+// Trading raw-ws server shares the HTTP server with socket.io —
+// upgrades must be routed manually by path or socket.io's websocket
+// transport breaks.
+tradeWebsocket.init(server);
+server.on("upgrade", (req, socket, head) => {
+  const { pathname } = new URL(req.url, "http://localhost");
+  if (pathname === "/ws") {
+    tradeWebsocket.handleUpgrade(req, socket, head);
+  }
+  // other paths (e.g. /socket.io) are handled by their own listeners
+});
+try {
+  tradeCronJob;
+  console.log("✅ Trade cron started");
+} catch (e) {
+  console.error("Trade cron error:", e.message);
+}
+tradeTimer.start();
+
+// =====================================================
 // CORS
 // =====================================================
 
@@ -330,9 +357,15 @@ app.use("/api", betRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/daily-claim", dailyClaimRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/payment-methods", paymentMethodRoutes);
 app.use("/api/deposit", depositRoutes);
 app.use("/api/banner", bannerRoutes);
 app.use("/api/activity-banners", activityBannerRoutes);
+
+// =====================================================
+// TRADING (merged subdomain app)
+// =====================================================
+app.use("/api/trade", tradeRoutes);
 app.use("/api/public-bids", publicBidRoutes);
 
 // =====================================================

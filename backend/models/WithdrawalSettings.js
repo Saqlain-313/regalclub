@@ -183,6 +183,25 @@ const withdrawalSettingsSchema = new mongoose.Schema({
     type: Number,
     default: 10000,
   },
+
+  // Per-method limits — admin sets separate rules for
+  // UPI/Bank Card withdrawals and USDT withdrawals.
+  // Keys: "upi" | "bank" | "crypto" — blank values fall back
+  // to the global min/max above.
+  methodSettings: {
+    upi: {
+      minWithdrawal: { type: Number, default: null },
+      maxWithdrawal: { type: Number, default: null },
+    },
+    bank: {
+      minWithdrawal: { type: Number, default: null },
+      maxWithdrawal: { type: Number, default: null },
+    },
+    crypto: {
+      minWithdrawal: { type: Number, default: null },
+      maxWithdrawal: { type: Number, default: null },
+    },
+  },
   
   // Notification Templates
   notificationTemplates: {

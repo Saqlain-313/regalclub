@@ -94,8 +94,19 @@ const withdrawalSchema = new mongoose.Schema({
   adminNotes: {
     type: String,
   },
+  // Short note shown to the user in their withdrawal history
+  // (e.g. "Paid via UPI ref 1234" / "Wrong account details")
+  remark: {
+    type: String,
+    default: "",
+  },
   
   // Transaction Details
+  // User-facing order number, e.g. WD20260701123139671050278a
+  orderNumber: {
+    type: String,
+    index: true,
+  },
   transactionId: {
     type: String,
   },

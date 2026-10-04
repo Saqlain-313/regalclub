@@ -22,8 +22,8 @@ const PopularGamesCards = () => {
       id: 2,
       name: "Trading",
       img: tradingIMG,
-      to: "https://trading.regalclub.live/",
-      external: true,
+      to: "/trading",
+      external: false,
     },
     {
       id: 3,

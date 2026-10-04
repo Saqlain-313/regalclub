@@ -22,7 +22,7 @@ const { protect, adminProtect } = require("../middleware/authMiddleware.js");
 // PUBLIC — for /activity and /promo (active content only)
 router.get("/", getActivityContent);
 
-// ADMIN — poora doc (inactive banners bhi)
+// ADMIN — full doc (includes inactive banners)
 router.get("/admin/all", protect, adminProtect, getAllActivityContent);
 
 // ADMIN — activity banner CRUD
@@ -35,6 +35,14 @@ router.post(
 );
 
 router.put(
+  "/referral-image",
+  protect,
+  adminProtect,
+  upload.single("image"),
+  uploadReferralShareImage,
+);
+
+router.put(
   "/:id",
   protect,
   adminProtect,
@@ -43,14 +51,5 @@ router.put(
 );
 
 router.delete("/:id", protect, adminProtect, deleteActivityBanner);
-
-// ADMIN — referral share image (Your Referral Link wali image)
-router.put(
-  "/referral-image",
-  protect,
-  adminProtect,
-  upload.single("image"),
-  uploadReferralShareImage,
-);
 
 module.exports = router;

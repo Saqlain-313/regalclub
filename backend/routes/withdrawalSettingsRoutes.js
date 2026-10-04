@@ -10,7 +10,7 @@ const {protect, adminProtect} = require("../middleware/authMiddleware.js");
 
 
 // Admin only routes
-router.use(protect,);
+router.use(protect, adminProtect);
 
 // CRUD operations
 router.post('/', withdrawalSettingsController.createWithdrawalSettings);

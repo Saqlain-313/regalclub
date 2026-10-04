@@ -17,6 +17,7 @@ import {
   Trophy,
   Users,
   X,
+  ChevronLeft,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -403,6 +404,19 @@ const GameEntryResultPage = () => {
     return colors[status] || "bg-gray-500";
   };
 
+  const getStatusTextColor = (status) => {
+    const colors = {
+      Pending: "text-[#F1C40F]",
+      Active: "text-[#F1C40F]",
+      Completed: "text-[#00E676]",
+      Won: "text-[#00E676]",
+      Lost: "text-red-400",
+      Cancelled: "text-gray-400",
+      Open: "text-[#F1C40F]",
+    };
+    return colors[status] || "text-gray-400";
+  };
+
   const getStatusIcon = (status) => {
     const icons = {
       Pending: Clock,
@@ -498,28 +512,7 @@ const GameEntryResultPage = () => {
 
     return (
       <div>
-        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-          <h2 className="text-lg font-bold text-white flex items-center gap-1.5">
-            <Target className="w-4 h-4 text-[#B45CFF]" /> My Game Entries
-            {activeCountryObject && (
-              <img
-                src={activeCountryObject.flag}
-                alt={activeCountryObject.name}
-                className="w-6 h-4 rounded-sm shadow-md ml-2"
-              />
-            )}
-          </h2>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-3 py-1.5 bg-[#9B59B6]/15 text-[#C77AFF] rounded-full text-xs font-semibold flex items-center gap-1 border border-[#9B59B6]/30">
-              <Gamepad2 className="w-3 h-3" /> {entries.length} entries
-            </span>
-            <span className="px-3 py-1.5 bg-[#3498DB]/15 text-[#3498DB] rounded-full text-xs font-semibold flex items-center gap-1 border border-[#3498DB]/30">
-              {currencySymbol} {currencyConfigObj.code}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="space-y-3">
           {entries.map((entry) => {
             const status = entry.poolStatus || entry.playerStatus || "Pending";
             const entryId = entry.poolId;
@@ -558,17 +551,20 @@ const GameEntryResultPage = () => {
                 key={entryId}
                 className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-[#9B59B6]/50 hover:shadow-[0_6px_18px_rgba(155,89,182,0.2)] transition-all p-4"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-sm font-bold text-white flex items-center gap-1">
-                    <Target className="w-3.5 h-3.5 text-[#B45CFF]" /> Draw #
-                    {entry.drawNo || "N/A"}
+                <div className="flex justify-between items-center mb-3">
+                  <span className="rounded-md bg-gradient-to-r from-[#B45CFF] to-[#7418F5] px-2.5 py-1 text-[10px] font-bold text-white">
+                    Entry
                   </span>
                   <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-semibold text-white flex items-center gap-1 ${getStatusColor(status)}`}
+                    className={`text-[11px] font-bold flex items-center gap-1 ${getStatusTextColor(status)}`}
                   >
-                    <StatusIcon className="w-2.5 h-2.5" /> {status}
+                    <StatusIcon className="w-3 h-3" /> {status}
                   </span>
                 </div>
+
+                <p className="mb-3 text-[11px] font-semibold text-gray-400">
+                  Draw #{entry.drawNo || "N/A"}
+                </p>
 
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   <div className="bg-[#12061C] rounded-lg p-2 text-center border border-[#2a1b3d]">
@@ -632,6 +628,10 @@ const GameEntryResultPage = () => {
             );
           })}
         </div>
+
+        <p className="py-3 text-center text-xs font-semibold text-gray-500">
+          No more
+        </p>
       </div>
     );
   };
@@ -641,68 +641,47 @@ const GameEntryResultPage = () => {
   // ======================================================
 
   return (
-    <div className="relative min-h-screen bg-[#0B0410] overflow-hidden">
-      {/* Decorative purple orbs */}
-      <div className="pointer-events-none absolute -top-24 -right-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -left-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
-
-      <div className="relative px-4 sm:px-6 py-6">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-6 flex items-center gap-3">
-            <div
-              className={`w-11 h-11 rounded-2xl ${purpleGradient} border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75)] flex items-center justify-center flex-shrink-0`}
-            >
-              <Gamepad2 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-white tracking-wide">
-                Game Entry Results
-              </h1>
-              <p className="text-[11px] text-gray-400 mt-0.5">
-                View and manage all your game entries
-              </p>
-            </div>
-          </div>
-
-          {/* Country Badge */}
-          {activeCountryObject && (
-            <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 bg-[#9B59B6]/10 border border-[#9B59B6]/40 rounded-full">
-              <img
-                src={activeCountryObject.flag}
-                alt={activeCountryObject.name}
-                className="w-5 h-3 rounded-sm shadow-md"
-              />
-              <span className="text-xs font-medium text-[#C77AFF]">
-                {activeCountryObject.name}
-              </span>
-              <span className="text-xs font-medium text-[#C77AFF]">
-                • {currencySymbol} {currencyConfigObj.code}
-              </span>
-              {urlCountry && (
-                <span className="text-[10px] text-[#C77AFF] bg-[#9B59B6]/20 px-2 py-0.5 rounded-full">
-                  via URL
-                </span>
-              )}
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl mb-5 flex items-center gap-2 text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {typeof error === "string" ? error : "Something went wrong"}
-            </div>
-          )}
-
-          {renderEntriesList()}
-
-          <DeleteConfirmationPopup
-            isOpen={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-            onConfirm={confirmDelete}
-            entryId={deleteId}
-          />
+    <div className="min-h-screen bg-[#0B0410] pb-10">
+      <div className="mx-auto max-w-md px-4 pt-4">
+        {/* Header — back style, like /deposit-history */}
+        <div className="mb-5 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#2a1b3d] bg-[#1C0F2B] text-white transition-all active:scale-95"
+            aria-label="Back"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <h1 className="flex-1 text-center text-base font-bold text-white">
+            Powerball history
+          </h1>
+          <span className="w-9 flex-shrink-0" />
         </div>
+
+        {/* Country line */}
+        {activeCountryObject && (
+          <p className="mb-4 text-center text-[11px] text-gray-500">
+            {activeCountryObject.name} • {currencySymbol} {currencyConfigObj.code}
+            {urlCountry ? " • via URL" : ""}
+          </p>
+        )}
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl mb-5 flex items-center gap-2 text-sm">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {typeof error === "string" ? error : "Something went wrong"}
+          </div>
+        )}
+
+        {renderEntriesList()}
+
+        <DeleteConfirmationPopup
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={confirmDelete}
+          entryId={deleteId}
+        />
       </div>
     </div>
   );

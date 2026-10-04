@@ -300,7 +300,7 @@ const Trx = () => {
       setPage(newPageNo);
       setPageto(newPageTo);
 
-      await fetchNewData2(newPageNo, newPageTo);
+      await fetchNewData(newPageNo, newPageTo);
 
 
 
@@ -411,6 +411,7 @@ const Trx = () => {
       setPageto(10);
       // Realtime data
       if (msg?.data[1]?.period == wingoHistoryData?.gameslist[0]?.stage && wingoHistoryData?.gameslist[0]?.stage !== undefined && !calledRef.current) {
+        calledRef.current = true;
         debouncedDispatchResult(dispatch, typeid1, pageno, pageto)
         setResultPopup(true)
 
@@ -454,7 +455,7 @@ const Trx = () => {
 
     if (typeid1 === 11) {
 
-      socket.current = io.connect(host); // Your server's URL
+      socket.current = io(host); // Your server's URL
       // Define the event name directly based on typeid1
       const eventName = `timeUpdate_11`;
 
@@ -827,11 +828,10 @@ const Trx = () => {
                   ? "text-base blue-linear text-white font-medium "
                   : "nav-bg text-sm gray-50"
               }`}
-              onClick={() => {
-                setGameHistory("chart");
-                chartFunction();
-                 chartFunction();
-              }}
+onClick={() => {
+  setGameHistory("chart");
+  chartFunction();
+}}
             >
               Chart
             </button>

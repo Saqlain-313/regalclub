@@ -14,7 +14,7 @@ import {
   resetGameState,
 } from "../../../redux/slices/gameSlice";
 
-// Category -> loader icon mapping (admin-added games ke liye bhi)
+// Category -> loader icon mapping (also used for admin-added games)
 const loaderIconByCategory = (category) => {
   const map = {
     chicken: GiChicken,
@@ -40,9 +40,9 @@ const purpleGradient =
  * ============================================================
  * ALL GAMES DATA (Chicken + Mines + Aviator combined)
  * ============================================================
- * Har game object me `id` unique honi chahiye (launchLoading
- * ka per-card check isi se hota hai), aur `loaderIcon` +
- * `loaderTitle` auto-launch full-screen loader ke liye.
+ * Every game object needs a unique `id` (the per-card
+ * launchLoading check is based on it), plus `loaderIcon` and
+ * `loaderTitle` for the auto-launch full-screen loader.
  */
 const allGames = [
   {
@@ -131,7 +131,7 @@ const allGames = [
     max_bet: 5000,
     is_featured: true,
     is_new: false,
-    // route nahi hai — home se click par direct modal launch
+    // no route — launch the modal directly when clicked on home
   },
   {
     id: "pappu-1",
@@ -167,7 +167,7 @@ const AllGames = ({ isHome = false }) => {
   const [hoveredId, setHoveredId] = useState(null);
 
   // ============================================================
-  // GAMES FROM ADMIN (backend) — hardcoded list sirf fallback hai
+  // GAMES FROM ADMIN (backend) — the hardcoded list is only a fallback
   // ============================================================
   const [games, setGames] = useState(allGames);
 
@@ -205,6 +205,9 @@ const AllGames = ({ isHome = false }) => {
 
   // Prevent duplicate auto launch
   const autoLaunchStarted = useRef(false);
+
+  // Double-click guard — no new dispatch while a launch is in progress
+  const launchingRef = useRef(false);
 
   /*
    * ============================================================
@@ -294,6 +297,9 @@ const AllGames = ({ isHome = false }) => {
      * HOME -> GAME WITHOUT ROUTE (e.g. 7up7down) — direct modal launch
      * NORMAL PAGE (direct click, no home redirect) — same
      */
+    if (launchingRef.current) return;
+    launchingRef.current = true;
+
     try {
       setSelectedGame(game);
 
@@ -302,8 +308,11 @@ const AllGames = ({ isHome = false }) => {
           gameId: game.game_uid,
         }),
       ).unwrap();
-    } catch (err) {
-      alert(err || "Failed to launch game");
+    } catch {
+      // No alert/error popup on launch failure —
+      // the modal stays in its loading state and the user can go back
+    } finally {
+      launchingRef.current = false;
     }
   };
 
@@ -423,8 +432,8 @@ const AllGames = ({ isHome = false }) => {
                   src={game.icon}
                   alt={game.game_name}
                   className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 ${
-                    // Aviator image ke edges white hain — thoda zoom
-                    // karke full-fit karo
+                    // The Aviator image has white edges — zoom in a
+                    // little so it fits fully
                     game.id === "aviator-1" ? "scale-110" : ""
                   }`}
                 />

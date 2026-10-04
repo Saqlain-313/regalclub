@@ -39,7 +39,7 @@ exports.getActivityContent = async (req, res) => {
 };
 
 /* ============================================================
-   ADMIN — poora doc (?all=true — inactive banners bhi)
+   ADMIN — full doc (?all=true — includes inactive banners)
 ============================================================ */
 
 exports.getAllActivityContent = async (req, res) => {
@@ -60,7 +60,7 @@ exports.getAllActivityContent = async (req, res) => {
 };
 
 /* ============================================================
-   ADMIN — naya activity banner upload
+   ADMIN — upload a new activity banner
 ============================================================ */
 
 exports.uploadActivityBanner = async (req, res) => {
