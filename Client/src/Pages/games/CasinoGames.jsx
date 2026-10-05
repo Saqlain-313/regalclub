@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FaArrowLeft,
   FaChevronLeft,
@@ -62,28 +62,42 @@ const CasinoGames = ({
     );
   }, [dispatch]);
 
+  // Prevent duplicate auto launch
+  const autoLaunchStarted = useRef(false);
+
+  // Double-click guard — no new dispatch while a launch is in progress
+  const launchingRef = useRef(false);
+
   useEffect(() => {
-    if (!isHome && gameUrl) {
+    if (gameUrl && selectedGame) {
       setIsGameModalOpen(true);
     }
-  }, [gameUrl, isHome]);
+  }, [gameUrl, selectedGame]);
 
-  // ✅ AUTO LAUNCH — jab games list aa jaye tab dhoondein
   useEffect(() => {
     if (
-      !isHome &&
-      location.state?.autoLaunch &&
-      location.state?.gameUid &&
-      gamesByGameType?.length > 0
+      isHome ||
+      !location.state?.autoLaunch ||
+      !location.state?.gameUid ||
+      gamesByGameType?.length === 0 ||
+      autoLaunchStarted.current
     ) {
-      const game = gamesByGameType.find(
-        (g) => g.game_uid === location.state.gameUid,
-      );
-      if (game) {
-        setSelectedGame(game);
-        dispatch(launchGame({ gameId: game.game_uid }));
-      }
+      return;
     }
+
+    const game = gamesByGameType.find(
+      (g) => g.game_uid === location.state.gameUid,
+    );
+
+    if (!game) {
+      return;
+    }
+
+    autoLaunchStarted.current = true;
+
+    setSelectedGame(game);
+
+    dispatch(launchGame({ gameId: game.game_uid }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, isHome, gamesByGameType]);
 
@@ -112,27 +126,28 @@ const CasinoGames = ({
   }, [searchTerm]);
 
   const handlePlay = async (game) => {
-    if (isHome) {
-      navigate("/casino", {
-        state: {
-          autoLaunch: true,
-          gameUid: game.game_uid,
-        },
-      });
-      return;
-    }
-
+    /*
+     * Platform recommendation style — launch directly on home,
+     * no navigation needed. The per-card spinner + modal loader
+     * handle the feedback.
+     */
     if (needsRecharge) {
       setSelectedGame(game);
       setShowRechargeModal(true);
       return;
     }
 
+    if (launchingRef.current) return;
+    launchingRef.current = true;
+
     try {
       setSelectedGame(game);
       await dispatch(launchGame({ gameId: game.game_uid })).unwrap();
-    } catch (err) {
-      alert(err || "Failed to launch game");
+    } catch {
+      // No alert/error popup on launch failure —
+      // the modal stays in its loading state and the user can go back
+    } finally {
+      launchingRef.current = false;
     }
   };
 
@@ -253,7 +268,7 @@ const CasinoGames = ({
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3    gap-2.5 md:gap-3">
             {currentGames.map((game) => (
               <div
                 key={game.game_uid || game.id}
@@ -278,9 +293,14 @@ const CasinoGames = ({
                 />
 
                 <div
-                  className="absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/60 to-transparent 
-                            opacity-0 group-hover:opacity-100 flex items-center 
-                            justify-center transition-opacity duration-300"
+                  className={`absolute inset-0 bg-gradient-to-t from-[#0B0410] via-[#0B0410]/60 to-transparent
+                            flex items-center justify-center transition-opacity duration-300
+                            ${
+                              launchLoading &&
+                              selectedGame?.game_uid === game.game_uid
+                                ? "opacity-100"
+                                : "opacity-0 group-hover:opacity-100"
+                            }`}
                 >
                   {launchLoading && selectedGame?.game_uid === game.game_uid ? (
                     <FaSpinner className="animate-spin text-3xl text-white" />
@@ -437,17 +457,47 @@ const CasinoGames = ({
         </div>
       )}
 
-      {!isHome && (
-        <GamePlayModal
-          isOpen={isGameModalOpen}
-          onClose={closeGameModal}
-          gameData={selectedGame}
-          selectedGame={selectedGame}
-          gameUrl={gameUrl}
-          loading={launchLoading}
-          launchError={launchError}
-        />
-      )}
+      {/* Full screen auto launch loader — Platform recommendation style */}
+      {!isHome &&
+        location.state?.autoLaunch &&
+        location.state?.gameUid &&
+        !gameUrl &&
+        (launchLoading || autoLaunchStarted.current) && (
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+            <div className="flex flex-col items-center justify-center px-6 text-center">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute h-24 w-24 animate-ping rounded-full bg-[#B45CFF]/20" />
+                <div
+                  className={`relative flex h-20 w-20 items-center justify-center rounded-full ${purpleGradient}`}
+                >
+                  <span className="text-4xl">🃏</span>
+                </div>
+              </div>
+              <h2 className="mt-6 text-xl font-bold text-white sm:text-2xl">
+                Loading Live Casino Game...
+              </h2>
+              <p className="mt-2 text-sm text-gray-400">
+                Please wait while the game is opening
+              </p>
+              <div className="mt-5 flex items-center gap-2">
+                <FaSpinner className="animate-spin text-lg text-[#B45CFF]" />
+                <span className="text-sm font-medium text-gray-300">
+                  Launching game...
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+      <GamePlayModal
+        isOpen={isGameModalOpen}
+        onClose={closeGameModal}
+        gameData={selectedGame}
+        selectedGame={selectedGame}
+        gameUrl={gameUrl}
+        loading={launchLoading}
+        launchError={launchError}
+      />
     </>
   );
 };

@@ -9,6 +9,7 @@ import dailyClaimReducer from "./slices/dailyClaimSlice";
 import depositReducer from "./slices/depositSlice";
 import ticketTypeReducer from "./slices/ticketTypeSlice";
 import withdrawalReducer from "./slices/withdrawalSlice";
+import paymentMethodReducer from "./slices/paymentMethodSlice";
 import gameReducer from './slices/gameSlice'
 
 // ========================================
@@ -70,6 +71,7 @@ export const store = configureStore({
     auth: authReducer,
     dailyClaim: dailyClaimReducer,
     withdrawal: withdrawalReducer,
+    paymentMethods: paymentMethodReducer,
     deposit: depositReducer,
     banner: bannerReducer,
     ticketType: ticketTypeReducer,

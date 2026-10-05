@@ -169,9 +169,30 @@ export const adminGetWithdrawalStats = createAsyncThunk(
 
 // ================= INITIAL STATE =================
 
+// ============================================================
+// INDIA DEFAULT WITHDRAWAL SETTINGS — withdrawal keeps working
+// even when the DB has no settings (India-only platform).
+// ============================================================
+const INDIA_DEFAULT_SETTINGS = {
+  isActive: true,
+  country: "IN",
+  currency: "INR",
+  currencySymbol: "₹",
+  minWithdrawal: 100,
+  maxWithdrawal: 100000,
+  processingFee: 2,
+  processingFeeType: "percentage",
+  dailyLimit: 0,
+  weeklyLimit: 0,
+  monthlyLimit: 0,
+  maxWithdrawalsPerDay: 3,
+  paymentMethods: ["upi", "bank_transfer", "crypto"],
+  processingTime: "24-48 hours",
+};
+
 const initialState = {
   // Settings
-  settings: null,
+  settings: INDIA_DEFAULT_SETTINGS,
   settingsLoading: false,
   settingsError: null,
 
@@ -270,14 +291,19 @@ const withdrawalSlice = createSlice({
       })
       .addCase(fetchWithdrawalSettings.fulfilled, (state, action) => {
         state.settingsLoading = false;
-        state.settings = action.payload.data.settings;
+        state.settings = action.payload?.data?.settings || INDIA_DEFAULT_SETTINGS;
         state.summary = action.payload.data.summary || [];
         state.message = action.payload.message;
       })
       .addCase(fetchWithdrawalSettings.rejected, (state, action) => {
         state.settingsLoading = false;
+        // Do NOT set the general `error` on settings failures —
+        // otherwise the Withdrawal page showed a "Withdrawal
+        // Failed" toast on every refresh. Defaults are enough.
         state.settingsError = action.payload;
-        state.error = action.payload;
+        // India defaults — withdrawal must never be blocked by
+        // missing settings
+        state.settings = INDIA_DEFAULT_SETTINGS;
       })
 
       // ============ FETCH ELIGIBILITY (WAGERING) ============

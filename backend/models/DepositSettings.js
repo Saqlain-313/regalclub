@@ -88,6 +88,13 @@ const depositSettingsSchema = new mongoose.Schema(
     },
 
     methods: [paymentMethodSchema],
+
+    // Quick amount chips shown on the /deposit page
+    // (managed from the admin Deposit Methods panel)
+    presetAmounts: {
+      type: [Number],
+      default: [],
+    },
   },
   {
     timestamps: true,

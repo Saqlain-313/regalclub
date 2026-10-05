@@ -1148,7 +1148,7 @@ const PlaceBid = () => {
           <span>Back to Markets</span>
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <div className="grid grid-cols-1  gap-5">
           <div className="lg:col-span-3 space-y-4">
             {/* MARKET HEADER CARD */}
             <div className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] overflow-hidden">

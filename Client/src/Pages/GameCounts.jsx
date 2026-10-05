@@ -1442,7 +1442,7 @@ const GameSelection = () => {
                               </div>
 
                               {/* ✅ CHANGED: grid-cols-6 (mobile) instead of grid-cols-7 */}
-                              <div className="grid grid-cols-6 gap-1.5 md:grid-cols-10 md:gap-2">
+                              <div className="grid grid-cols-6 gap-1.5  md:gap-2">
                                 {Array.from(
                                   { length: 35 },
                                   (_, i) => i + 1,
@@ -1493,7 +1493,7 @@ const GameSelection = () => {
                               </div>
 
                               {/* ✅ CHANGED: grid-cols-6 (mobile) instead of grid-cols-7 */}
-                              <div className="grid grid-cols-6 gap-1.5 md:grid-cols-10 md:gap-2">
+                              <div className="grid grid-cols-6 gap-1.5  md:gap-2">
                                 {Array.from(
                                   { length: 20 },
                                   (_, i) => i + 1,
@@ -1666,7 +1666,7 @@ const GameSelection = () => {
 
                 {/* Scrollable games grid - Compact */}
                 <div className="max-h-[200px] overflow-y-auto pr-0.5 scrollbar-thin scrollbar-thumb-[#7418F5] scrollbar-track-[#1C0F2B] sm:max-h-[300px]">
-                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2 ">
                     {games.map((game, idx) => {
                       const nums =
                         selectionMode === "quickpick"

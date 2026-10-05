@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 // ACTIVITY BANNERS + REFERRAL SHARE IMAGE
 // - banners      -> /activity page ke reward cards (admin managed)
 // - referralShareImage -> image shared with the /promo referral link
-//   jani wali image (admin managed)
+//   image (admin managed)
 // ============================================================
 
 const activityBannerItemSchema = new mongoose.Schema(

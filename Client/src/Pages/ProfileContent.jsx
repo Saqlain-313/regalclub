@@ -592,7 +592,7 @@ export default function ProfileContent({
             STATS
         ================================================ */}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 mt-3 sm:mt-4">
+        <div className="grid grid-cols-2  gap-2 sm:gap-3 mt-3 sm:mt-4">
           {stats.map((item, index) => {
             const Icon = item.icon;
 

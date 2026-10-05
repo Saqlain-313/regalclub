@@ -1,278 +1,77 @@
+// pages/Deposit.jsx
+//
+// Image-style deposit page (purple theme):
+//   balance card -> method tiles -> selected channel -> amount
+//   -> recharge instructions -> sticky Deposit bar -> deposit history
+
 import {
   AlertCircle,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  Landmark,
-  QrCode,
+  Banknote,
+  ChevronLeft,
+  RefreshCw,
   Wallet,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { getDepositMethods } from "../redux/slices/depositSlice";
+import {
+  getDepositMethods,
+  getMyDeposits,
+} from "../redux/slices/depositSlice";
 
-const normalizeCountryCode = (country) => {
-  const value = String(country || "")
-    .trim()
-    .toLowerCase();
+// Fallback chips — used until the admin saves preset amounts
+const FALLBACK_PRESETS = [100, 200, 300, 400, 500, 1000, 2000, 3000, 5000];
 
-  const countryAliases = {
-    in: "IN",
-    india: "IN",
-    au: "AU",
-    australia: "AU",
-    pk: "PK",
-    pakistan: "PK",
-    bd: "BD",
-    bangladesh: "BD",
-    np: "NP",
-    nepal: "NP",
-    ae: "AE",
-    uae: "AE",
-    dubai: "AE",
-    "united arab emirates": "AE",
-    ca: "CA",
-    canada: "CA",
-    us: "US",
-    usa: "US",
-    "united states": "US",
-    gb: "GB",
-    uk: "GB",
-    "united kingdom": "GB",
-    nz: "NZ",
-    "new zealand": "NZ",
-    sg: "SG",
-    singapore: "SG",
-    my: "MY",
-    malaysia: "MY",
-    ph: "PH",
-    philippines: "PH",
-    jp: "JP",
-    japan: "JP",
-    cn: "CN",
-    china: "CN",
-    th: "TH",
-    thailand: "TH",
-    id: "ID",
-    indonesia: "ID",
-    vn: "VN",
-    vietnam: "VN",
-    tr: "TR",
-    turkey: "TR",
-    sa: "SA",
-    "saudi arabia": "SA",
-    za: "ZA",
-    "south africa": "ZA",
-    ng: "NG",
-    nigeria: "NG",
-    ke: "KE",
-    kenya: "KE",
-    br: "BR",
-    brazil: "BR",
-    mx: "MX",
-    mexico: "MX",
-    de: "DE",
-    germany: "DE",
-    fr: "FR",
-    france: "FR",
-    it: "IT",
-    italy: "IT",
-    es: "ES",
-    spain: "ES",
-  };
+const shortMoney = (n) =>
+  n >= 1000 ? `${n / 1000}K` : String(n);
 
-  return countryAliases[value] || value.toUpperCase() || "IN";
+const statusInfo = (status) => {
+  const value = String(status).toLowerCase();
+  if (["success", "approved", "completed"].includes(value))
+    return { label: "Success", cls: "text-[#00E676]" };
+  if (value === "pending") return { label: "Pending", cls: "text-[#F1C40F]" };
+  if (["failed", "rejected"].includes(value))
+    return { label: "Failed", cls: "text-red-400" };
+  return { label: status || "Pending", cls: "text-gray-400" };
 };
-
-const getPresetAmounts = (countryCode) => {
-  const presets = {
-    IN: [200, 500, 1000, 2000, 5000, 10000],
-    NP: [200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000],
-    PK: [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000],
-    BD: [200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000],
-    AU: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    CA: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    US: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    GB: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    NZ: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    SG: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    MY: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    PH: [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000],
-    JP: [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000],
-    CN: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    TH: [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000],
-    ID: [
-      20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000,
-    ],
-    VN: [
-      50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000,
-      20000000,
-    ],
-    TR: [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000],
-    AE: [10, 20, 50, 100, 200, 500, 1000, 2000, 5000],
-    SA: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    ZA: [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000],
-    NG: [5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000],
-    KE: [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000],
-    BR: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    MX: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    DE: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    FR: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    IT: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    ES: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
-  };
-
-  return presets[countryCode] || presets.IN;
-};
-
-// ======================================================
-// CURRENCY SYMBOL CONFIGURATION
-// ======================================================
-
-const getCurrencyConfig = (countryCode) => {
-  const normalizedCountryCode = normalizeCountryCode(countryCode);
-  const config = {
-    IN: { symbol: "₹", code: "INR", locale: "en-IN", name: "Indian Rupee" },
-    NP: { symbol: "रू", code: "NPR", locale: "ne-NP", name: "Nepali Rupee" },
-    AU: {
-      symbol: "A$",
-      code: "AUD",
-      locale: "en-AU",
-      name: "Australian Dollar",
-    },
-    PK: { symbol: "₨", code: "PKR", locale: "en-PK", name: "Pakistani Rupee" },
-    BD: { symbol: "৳", code: "BDT", locale: "en-BD", name: "Bangladeshi Taka" },
-    AE: { symbol: "د.إ", code: "AED", locale: "ar-AE", name: "UAE Dirham" },
-    CA: { symbol: "C$", code: "CAD", locale: "en-CA", name: "Canadian Dollar" },
-    US: { symbol: "$", code: "USD", locale: "en-US", name: "US Dollar" },
-    GB: { symbol: "£", code: "GBP", locale: "en-GB", name: "British Pound" },
-    NZ: {
-      symbol: "NZ$",
-      code: "NZD",
-      locale: "en-NZ",
-      name: "New Zealand Dollar",
-    },
-    SG: {
-      symbol: "S$",
-      code: "SGD",
-      locale: "en-SG",
-      name: "Singapore Dollar",
-    },
-    MY: {
-      symbol: "RM",
-      code: "MYR",
-      locale: "ms-MY",
-      name: "Malaysian Ringgit",
-    },
-    PH: { symbol: "₱", code: "PHP", locale: "en-PH", name: "Philippine Peso" },
-    JP: { symbol: "¥", code: "JPY", locale: "ja-JP", name: "Japanese Yen" },
-    CN: { symbol: "¥", code: "CNY", locale: "zh-CN", name: "Chinese Yuan" },
-    TH: { symbol: "฿", code: "THB", locale: "th-TH", name: "Thai Baht" },
-    ID: {
-      symbol: "Rp",
-      code: "IDR",
-      locale: "id-ID",
-      name: "Indonesian Rupiah",
-    },
-    VN: { symbol: "₫", code: "VND", locale: "vi-VN", name: "Vietnamese Dong" },
-    TR: { symbol: "₺", code: "TRY", locale: "tr-TR", name: "Turkish Lira" },
-    SA: { symbol: "﷼", code: "SAR", locale: "ar-SA", name: "Saudi Riyal" },
-    ZA: {
-      symbol: "R",
-      code: "ZAR",
-      locale: "en-ZA",
-      name: "South African Rand",
-    },
-    NG: { symbol: "₦", code: "NGN", locale: "en-NG", name: "Nigerian Naira" },
-    KE: {
-      symbol: "KSh",
-      code: "KES",
-      locale: "en-KE",
-      name: "Kenyan Shilling",
-    },
-    BR: { symbol: "R$", code: "BRL", locale: "pt-BR", name: "Brazilian Real" },
-    MX: { symbol: "MX$", code: "MXN", locale: "es-MX", name: "Mexican Peso" },
-    DE: { symbol: "€", code: "EUR", locale: "de-DE", name: "Euro" },
-    FR: { symbol: "€", code: "EUR", locale: "fr-FR", name: "Euro" },
-    IT: { symbol: "€", code: "EUR", locale: "it-IT", name: "Euro" },
-    ES: { symbol: "€", code: "EUR", locale: "es-ES", name: "Euro" },
-    default: {
-      symbol: "₹",
-      code: "INR",
-      locale: "en-IN",
-      name: "Indian Rupee",
-    },
-  };
-
-  return config[normalizedCountryCode] || config.default;
-};
-
-// ======================================================
-// COMPONENT
-// ======================================================
 
 const Deposit = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { methods, loading } = useSelector((state) => state.deposit);
+  const { methods, loading, deposits, presetAmounts } = useSelector(
+    (state) => state.deposit,
+  );
   const { user } = useSelector((state) => state.auth);
-
-  // ======================================================
-  // CURRENCY CONFIG
-  // ======================================================
-
-  const countryCode = normalizeCountryCode(user?.country || "IN");
-  const currencyConfig = getCurrencyConfig(countryCode);
-  const currencySymbol = currencyConfig.symbol;
-  const locale = currencyConfig.locale;
-  const presetAmounts = getPresetAmounts(countryCode);
-
-  // ======================================================
-  // STATE
-  // ======================================================
 
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [amount, setAmount] = useState("");
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
-  // ======================================================
-  // FORMAT CURRENCY
-  // ======================================================
+  const currencySymbol = "₹";
 
   const formatCurrency = (value) => {
     if (!value) return `${currencySymbol}0`;
     const num = parseFloat(value);
     if (isNaN(num)) return `${currencySymbol}0`;
-    return `${currencySymbol}${num.toLocaleString(locale)}`;
+    return `${currencySymbol}${num.toLocaleString("en-IN")}`;
   };
-
-  // ======================================================
-  // EFFECTS
-  // ======================================================
 
   useEffect(() => {
     dispatch(getDepositMethods());
+    dispatch(getMyDeposits());
   }, [dispatch]);
 
-  // ======================================================
-  // DEFAULT METHOD — pehla gateway default selected
-  // ======================================================
-
+  // First gateway selected by default
   useEffect(() => {
     if (methods?.length && !selectedMethod) {
       setSelectedMethod(methods[0]);
     }
   }, [methods, selectedMethod]);
-
-  // ======================================================
-  // VALIDATION
-  // ======================================================
 
   const validateAmount = (value, method) => {
     const num = parseFloat(value);
@@ -286,10 +85,6 @@ const Deposit = () => {
     }
     return "";
   };
-
-  // ======================================================
-  // HANDLERS
-  // ======================================================
 
   const handleMethodSelect = (method) => {
     setSelectedMethod(method);
@@ -313,26 +108,18 @@ const Deposit = () => {
     setError(validateAmount(amount, selectedMethod));
   };
 
-  // ======================================================
-  // ICON
-  // ======================================================
-
-  const getMethodIcon = (type) => {
-    switch (type?.toLowerCase()) {
-      case "bank":
-        return <Landmark className="w-4 h-4" />;
-      case "upi":
-        return <QrCode className="w-4 h-4" />;
-      case "card":
-        return <CreditCard className="w-4 h-4" />;
-      default:
-        return <Wallet className="w-4 h-4" />;
-    }
+  // Bonus percent — shown as the red badge on tiles / channel card
+  const bonusOf = (method) => {
+    const bonus = method?.details?.bonusPercent ?? method?.details?.bonus;
+    const num = Number(bonus);
+    return Number.isFinite(num) && num > 0 ? num : null;
   };
 
-  // ======================================================
-  // PROCEED
-  // ======================================================
+  const handleRefreshBalance = async () => {
+    setRefreshing(true);
+    await dispatch(getMyDeposits());
+    setTimeout(() => setRefreshing(false), 600);
+  };
 
   const proceedHandler = () => {
     const amountError = validateAmount(amount, selectedMethod);
@@ -355,267 +142,416 @@ const Deposit = () => {
 
   const canProceed = selectedMethod && amount && !error;
 
-  // ======================================================
-  // UI
-  // ======================================================
+  const channelMin = selectedMethod
+    ? parseFloat(selectedMethod.minimumDeposit) || 100
+    : 100;
+  const channelMax = selectedMethod
+    ? parseFloat(selectedMethod.maximumDeposit) || 50000
+    : 50000;
+  const channelBonus = selectedMethod ? bonusOf(selectedMethod) : null;
 
   return (
-    <div className="relative min-h-screen bg-[#0B0410] overflow-hidden">
-      {/* Decorative background orbs (Purple) */}
-      <div className="pointer-events-none absolute -top-24 -right-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -left-24 w-64 h-64 bg-[#8E44AD]/15 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 right-0 w-80 h-80 bg-[#9B59B6]/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-[#0B0410] pb-44 md:pb-28">
+      <div className="mx-auto max-w-md px-4 pt-4">
 
-      <div className="relative px-4 sm:px-6 py-6">
-        <div className="max-w-md w-full mx-auto">
-          {/* ============================================= */}
-          {/* HEADER — title + wallet balance               */}
-          {/* ============================================= */}
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white leading-tight">
-                  Deposit
-                </h1>
-                <p className="text-[11px] text-gray-400">
-                  Add money to your wallet
-                </p>
-              </div>
-            </div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#9B59B6]/10 border border-[#9B59B6]/40 rounded-full flex-shrink-0">
-              <span className="text-[10px] font-medium text-[#B45CFF]">
-                {currencySymbol} {currencyConfig.code}
-              </span>
-            </div>
+        {/* ============================================= */}
+        {/* HEADER — back / title / history link          */}
+        {/* ============================================= */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#2a1b3d] bg-[#1C0F2B] text-white transition-all active:scale-95"
+            aria-label="Back"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <h1 className="text-base font-bold text-white">Deposit</h1>
+
+          <button
+            type="button"
+            onClick={() => navigate("/deposit-history")}
+            className="text-[11px] font-semibold text-[#B45CFF] transition-all active:scale-95"
+          >
+            Deposit history
+          </button>
+        </div>
+
+        {/* ============================================= */}
+        {/* BALANCE CARD                                  */}
+        {/* ============================================= */}
+        <div className="relative mb-5 overflow-hidden rounded-2xl border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] p-4 shadow-[0_8px_28px_rgba(116,24,245,0.45)]">
+          {/* decorative circles */}
+          <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -bottom-14 -left-8 h-40 w-40 rounded-full bg-white/5" />
+
+          <div className="relative flex items-center gap-2">
+            <Wallet size={14} className="text-white/80" />
+            <span className="text-[11px] font-semibold text-white/80">
+              Balance
+            </span>
           </div>
 
-          {/* ============================================= */}
-          {/* BALANCE STRIP                                 */}
-          {/* ============================================= */}
-          <div className="mb-5 flex items-center justify-between bg-[#12061C] border border-[#2a1b3d] rounded-xl px-4 py-3">
-            <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
-              Current Balance
-            </span>
-            <span className="text-base font-bold text-[#00E676]">
+          <div className="relative mt-1 flex items-center gap-2.5">
+            <p className="text-3xl font-extrabold tracking-tight text-white">
               {formatCurrency(user?.credit)}
-            </span>
-          </div>
-
-          {/* ============================================= */}
-          {/* STEP 1 — AMOUNT                               */}
-          {/* ============================================= */}
-          <div className="bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300 uppercase tracking-wide">
-                <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white text-[10px] font-bold flex items-center justify-center">
-                  1
-                </span>
-                Select Amount
-              </h3>
-              <span className="text-[10px] text-gray-500">
-                in {currencyConfig.code}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2.5 mb-5">
-              {presetAmounts.map((val) => {
-                const isSelected = String(amount) === String(val);
-
-                return (
-                  <button
-                    type="button"
-                    key={val}
-                    onClick={() => handlePresetClick(val)}
-                    className={`relative py-3.5 rounded-xl text-sm font-bold transition-all duration-150 ${
-                      isSelected
-                        ? "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] text-white scale-[1.02]"
-                        : "bg-[#12061C] text-gray-200 border border-[#2a1b3d] hover:border-[#9B59B6]/50 hover:bg-[#2a1b3d]/50 active:scale-[0.97]"
-                    }`}
-                  >
-                    {formatCurrency(val)}
-                    {isSelected && (
-                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#00E676] flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-[#0B0410]" strokeWidth={3.5} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <label className="flex items-center justify-between text-xs font-medium text-gray-400 mb-1.5">
-              <span>Or enter custom amount</span>
-              {amount && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAmount("");
-                    setError("");
-                  }}
-                  className="text-[10px] font-semibold text-[#B45CFF] hover:text-[#C77AFF]"
-                >
-                  Clear
-                </button>
-              )}
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">
-                {currencySymbol}
-              </span>
-              <input
-                type="number"
-                inputMode="decimal"
-                className={`w-full rounded-xl border p-3 pl-8 pr-10 text-base font-semibold text-white bg-[#12061C] transition focus:outline-none focus:ring-2 ${
-                  touched && error
-                    ? "border-red-500/50 focus:ring-red-500/20 bg-red-500/5"
-                    : touched && !error && amount
-                      ? "border-[#00E676]/50 focus:ring-[#00E676]/20 bg-[#00E676]/5"
-                      : "border-[#2a1b3d] focus:ring-[#9B59B6]/20 focus:border-[#9B59B6]/50"
-                }`}
-                value={amount}
-                onChange={handleAmountChange}
-                onBlur={handleBlur}
-                placeholder={`Enter amount in ${currencyConfig.code}`}
-                step="0.01"
-                min="0"
-              />
-              {touched && !error && amount && (
-                <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00E676]" />
-              )}
-            </div>
-            {touched && error && (
-              <p className="mt-1.5 text-[11px] text-red-400 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {error}
-              </p>
-            )}
-          </div>
-
-          {/* ============================================= */}
-          {/* STEP 2 — PAYMENT METHOD                       */}
-          {/* ============================================= */}
-          <div className="mt-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300 uppercase tracking-wide">
-                <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5] text-white text-[10px] font-bold flex items-center justify-center">
-                  2
-                </span>
-                Payment Method
-              </h3>
-              {!selectedMethod && (
-                <span className="text-[10px] font-semibold text-red-400 bg-red-500/15 border border-red-500/30 px-2 py-0.5 rounded-full">
-                  Required
-                </span>
-              )}
-            </div>
-
-            {loading ? (
-              <div className="space-y-2.5">
-                {[1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-[62px] rounded-xl bg-[#12061C] border border-[#2a1b3d] animate-pulse"
-                  />
-                ))}
-              </div>
-            ) : methods?.length ? (
-              <div className="flex flex-col gap-2.5">
-                {methods.map((item) => {
-                  const isSelected = selectedMethod?.title === item.title;
-
-                  return (
-                    <button
-                      type="button"
-                      key={item.title}
-                      onClick={() => handleMethodSelect(item)}
-                      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all duration-150 ${
-                        isSelected
-                          ? "bg-gradient-to-br from-[#B45CFF]/10 via-[#7418F5]/10 to-[#3A00C9]/10 border-[#B45CFF] shadow-[0_0_12px_rgba(180,92,255,0.35)]"
-                          : "border-[#2a1b3d] bg-[#12061C] hover:border-[#9B59B6]/50 hover:bg-[#2a1b3d]/50"
-                      }`}
-                    >
-                      {/* Radio */}
-                      <span
-                        className={`flex items-center justify-center w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
-                          isSelected
-                            ? "border-[#B45CFF] bg-[#0B0410]"
-                            : "border-[#3a2a4d] bg-[#0B0410]"
-                        }`}
-                      >
-                        {isSelected && (
-                          <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9]" />
-                        )}
-                      </span>
-
-                      {/* Icon + label (right side) */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] text-white"
-                              : "bg-[#1C0F2B] text-gray-400 border border-[#2a1b3d]"
-                          }`}
-                        >
-                          {getMethodIcon(item.type)}
-                        </div>
-                        <p
-                          className={`text-xs font-bold uppercase tracking-wide ${
-                            isSelected ? "text-[#C77AFF]" : "text-gray-400"
-                          }`}
-                        >
-                          {item.title}
-                        </p>
-                      </div>
-
-                      {/* Processing time — right end */}
-                      <div className="ml-auto flex-shrink-0">
-                        <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" />
-                          {item.processingTime}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2 py-6 text-center">
-                <AlertCircle className="w-6 h-6 text-gray-500" />
-                <p className="text-xs text-gray-400">
-                  No payment methods available right now. Please try again
-                  later.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* ============================================= */}
-          {/* STEP 3 — SUMMARY + PROCEED                    */}
-          {/* ============================================= */}
-          <div className="mt-5 bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] shadow-[0_4px_16px_rgba(0,0,0,0.5)] p-5">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">
-                You'll deposit
-              </span>
-              <span className="text-lg font-bold text-white">
-                {amount ? formatCurrency(amount) : `${currencySymbol}0`}
-              </span>
-            </div>
+            </p>
             <button
               type="button"
-              disabled={loading || !canProceed}
+              onClick={handleRefreshBalance}
+              className="text-white/70 transition-all hover:text-white active:rotate-180"
+              aria-label="Refresh balance"
+            >
+              <RefreshCw
+                size={15}
+                className={refreshing ? "animate-spin" : ""}
+              />
+            </button>
+          </div>
+
+          <div className="relative mt-3 flex justify-end gap-3 text-white/60">
+            <span className="text-[10px] tracking-[0.3em]">••••</span>
+            <span className="text-[10px] tracking-[0.3em]">••••</span>
+          </div>
+        </div>
+
+        {/* ============================================= */}
+        {/* PAYMENT METHOD TILES                          */}
+        {/* ============================================= */}
+        {loading ? (
+          <div className="mb-5 grid grid-cols-3 gap-2.5">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="h-[84px] animate-pulse rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B]"
+              />
+            ))}
+          </div>
+        ) : methods?.length ? (
+          <div className="mb-5 grid grid-cols-3 gap-2.5">
+            {methods.map((item) => {
+              const isSelected = selectedMethod?.title === item.title;
+              const bonus = bonusOf(item);
+
+              return (
+                <button
+                  type="button"
+                  key={item.title}
+                  onClick={() => handleMethodSelect(item)}
+                  className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl border py-4 transition-all active:scale-95 ${
+                    isSelected
+                      ? "border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] shadow-[0_0_10px_rgba(180,92,255,0.5)]"
+                      : "border-[#2a1b3d] bg-[#1C0F2B] hover:border-[#9B59B6]/50"
+                  }`}
+                >
+                  {/* bonus badge */}
+                  {bonus !== null && (
+                    <span className="absolute right-1.5 top-1.5 rounded-md bg-gradient-to-br from-[#B45CFF] to-[#7418F5] px-1 py-0.5 text-[8px] font-black text-white">
+                      +{bonus}%
+                    </span>
+                  )}
+
+                  {item.icon &&
+                  /^(https?:\/\/|\/|data:)/i.test(item.icon) ? (
+                    <img
+                      src={item.icon}
+                      alt={item.title}
+                      className="h-7 w-7 rounded-lg object-contain"
+                    />
+                  ) : (
+                    <span
+                      className={`flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-black ${
+                        isSelected
+                          ? "bg-white/20 text-white"
+                          : "bg-[#B45CFF]/15 text-[#B45CFF]"
+                      }`}
+                    >
+                      {String(item.title || "?").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+
+                  <span
+                    className={`max-w-full truncate px-1 text-[9px] font-bold ${
+                      isSelected ? "text-white" : "text-gray-400"
+                    }`}
+                  >
+                    {item.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mb-5 rounded-2xl border border-dashed border-[#2a1b3d] bg-[#1C0F2B] py-8 text-center">
+            <AlertCircle className="mx-auto mb-2 w-6 w-6 text-gray-500" />
+            <p className="text-xs text-gray-400">
+              No payment methods available right now. Please try again later.
+            </p>
+          </div>
+        )}
+
+        {/* ============================================= */}
+        {/* SELECT CHANNEL (selected method details)      */}
+        {/* ============================================= */}
+        {selectedMethod && (
+          <div className="mb-5 rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
+              <Banknote size={15} className="text-[#B45CFF]" />
+              Select channel
+            </h2>
+
+            <div className="rounded-xl border border-[#B45CFF]/60 bg-gradient-to-br from-[#B45CFF]/15 to-[#7418F5]/10 p-3.5">
+              <p className="text-xs font-bold text-white">
+                {selectedMethod.title}
+              </p>
+              <p className="mt-1 text-[10px] text-gray-400">
+                Balance:{" "}
+                <span className="font-semibold text-gray-300">
+                  {currencySymbol}
+                  {shortMoney(channelMin)} - {currencySymbol}
+                  {shortMoney(channelMax)}
+                </span>
+                {channelBonus !== null && (
+                  <>
+                    {"  •  "}Bonus:{" "}
+                    <span className="font-semibold text-[#00E676]">
+                      {channelBonus}%
+                    </span>
+                  </>
+                )}
+              </p>
+              {selectedMethod.processingTime && (
+                <p className="mt-0.5 text-[10px] text-gray-500">
+                  Processing time: {selectedMethod.processingTime}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================= */}
+        {/* DEPOSIT AMOUNT                                */}
+        {/* ============================================= */}
+        <div className="mb-5 rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
+            <Wallet size={15} className="text-[#B45CFF]" />
+            Deposit amount
+          </h2>
+
+          <div className="grid grid-cols-3 gap-2">
+            {(presetAmounts.length > 0
+              ? presetAmounts
+              : FALLBACK_PRESETS
+            ).map((value) => {
+              const isSelected = String(amount) === String(value);
+              return (
+                <button
+                  type="button"
+                  key={value}
+                  onClick={() => handlePresetClick(value)}
+                  className={`flex items-center justify-center gap-1 rounded-xl border py-2.5 text-xs font-bold transition-all active:scale-95 ${
+                    isSelected
+                      ? "border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] text-white"
+                      : "border-[#2a1b3d] bg-[#12061C] text-gray-300 hover:border-[#9B59B6]/50"
+                  }`}
+                >
+                  {/* ₹ stays white in both states */}
+                  <span className="text-white/90">{currencySymbol}</span>
+                  {shortMoney(value)}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* custom amount input */}
+          <div
+            className={`mt-3 flex items-center gap-2 rounded-xl border bg-[#12061C] px-3 py-3 transition-all focus-within:border-[#B45CFF]/60 ${
+              touched && error ? "border-red-500/50" : "border-[#2a1b3d]"
+            }`}
+          >
+            <span className="text-sm font-bold text-[#B45CFF]">
+              {currencySymbol}
+            </span>
+            <input
+              type="number"
+              inputMode="decimal"
+              value={amount}
+              onChange={handleAmountChange}
+              onBlur={handleBlur}
+              placeholder={`${currencySymbol}100.00 - ${currencySymbol}50,000.00`}
+              className="w-full bg-transparent text-sm font-semibold text-white placeholder-gray-500 outline-none"
+              step="0.01"
+              min="0"
+            />
+            {amount && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAmount("");
+                  setError("");
+                }}
+                className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-gray-600 text-gray-500 transition-all hover:text-white active:scale-90"
+                aria-label="Clear amount"
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
+          {touched && error && (
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400">
+              <AlertCircle size={11} />
+              {error}
+            </p>
+          )}
+        </div>
+
+        {/* ============================================= */}
+        {/* RECHARGE INSTRUCTIONS                         */}
+        {/* ============================================= */}
+        <div className="mb-5 rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
+            <Banknote size={15} className="text-[#B45CFF]" />
+            Recharge instructions
+          </h2>
+
+          <ul className="space-y-2">
+            {[
+              "If the transfer time is up, please fill out the deposit form again.",
+              "The transfer amount must match the order you created, otherwise the money cannot be credited successfully.",
+              "If you transfer the wrong amount, our company will not be responsible for the lost amount!",
+              "Minimum deposit: " +
+                formatCurrency(channelMin) +
+                ", Maximum deposit: " +
+                formatCurrency(channelMax) +
+                ".",
+            ].map((note, index) => (
+              <li
+                key={index}
+                className="flex items-start gap-2 text-[11px] leading-relaxed text-gray-400"
+              >
+                <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gradient-to-br from-[#B45CFF] to-[#7418F5]" />
+                {note}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ============================================= */}
+        {/* DEPOSIT HISTORY                               */}
+        {/* ============================================= */}
+        <div className="mb-3 flex items-center gap-2">
+          <span className="h-4 w-1 rounded-full bg-gradient-to-b from-[#B45CFF] to-[#7418F5]" />
+          <h2 className="text-sm font-bold text-white">Deposit history</h2>
+        </div>
+
+        <div className="space-y-2.5">
+          {!deposits || deposits.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[#2a1b3d] bg-[#1C0F2B] py-8 text-center">
+              <p className="text-xs text-gray-500">No deposits yet</p>
+            </div>
+          ) : (
+            <>
+              {deposits.slice(0, 5).map((item) => {
+                const status = statusInfo(item.status);
+                return (
+                  <div
+                    key={item._id}
+                    className="rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-3.5 transition-all hover:border-[#9B59B6]/50"
+                  >
+                    {/* top row — tag + status */}
+                    <div className="mb-2.5 flex items-center justify-between gap-2">
+                      <span className="rounded-md bg-gradient-to-r from-[#B45CFF] to-[#7418F5] px-2.5 py-1 text-[10px] font-bold text-white">
+                        Deposit
+                      </span>
+                      <span className={`text-[11px] font-bold ${status.cls}`}>
+                        {status.label}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-[11px]">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-gray-500">Order amount</span>
+                        <span className="font-bold text-white">
+                          {formatCurrency(item.amount)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-gray-500">Type</span>
+                        <span className="font-semibold text-gray-300">
+                          {item.methodTitle || item.method || "Deposit"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-gray-500">Time</span>
+                        <span className="text-gray-300">
+                          {new Date(item.createdAt || item.requestedAt).toLocaleString(
+                            "en-IN",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            },
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-gray-500">UTR number</span>
+                        <span className="max-w-[150px] truncate font-mono text-[10px] text-gray-400">
+                          {item.transactionId || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={() => navigate("/deposit-history")}
+                className="w-full rounded-full border border-[#C77AFF]/60 bg-[#1C0F2B] py-3 text-xs font-bold text-[#B45CFF] transition-all hover:bg-[#2a1b3d] active:scale-[0.98]"
+              >
+                All history
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ============================================= */}
+      {/* STICKY BOTTOM BAR — above the app bottom nav  */}
+      {/* ============================================= */}
+      <div className="fixed inset-x-0 bottom-[72px] z-40 border-t border-[#2a1b3d] bg-[#0B0410]/95 px-4 py-3 backdrop-blur md:bottom-0">
+        <div className="mx-auto flex max-w-md items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] text-gray-500">Recharge Method:</p>
+            <p className="truncate text-xs font-bold text-white">
+              {selectedMethod?.title || "—"}
+            </p>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-3">
+            {amount && (
+              <div className="text-right">
+                <p className="text-[10px] text-gray-500">Amount</p>
+                <p className="text-sm font-bold text-[#B45CFF]">
+                  {formatCurrency(amount)}
+                </p>
+              </div>
+            )}
+            <button
+              type="button"
+              disabled={loading}
               onClick={proceedHandler}
-              className={`w-full font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-1.5 ${
-                loading || !canProceed
-                  ? "bg-[#2a1b3d] text-gray-500 cursor-not-allowed"
-                  : "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] text-white active:scale-[0.98]"
+              className={`rounded-xl px-6 py-3 text-sm font-bold text-white transition-all active:scale-[0.98] ${
+                loading
+                  ? "cursor-not-allowed bg-[#2a1b3d] text-gray-500"
+                  : "border border-[#C77AFF] bg-gradient-to-r from-[#B45CFF] via-[#7418F5] to-[#3A00C9] shadow-[0_0_12px_rgba(180,92,255,0.5)]"
               }`}
             >
-              Proceed to Payment
-              <ArrowRight className="w-4 h-4" />
+              {loading ? "..." : "Deposit"}
             </button>
           </div>
         </div>

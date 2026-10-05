@@ -60,8 +60,8 @@ const CreateWithdrawalSettings = () => {
   const { loading } = useSelector((state) => state.withdrawalSettings);
 
   const [form, setForm] = useState({
-    country: "",
-    countryName: "",
+    country: "IN",
+    countryName: "India",
     currency: "INR",
     currencySymbol: "₹",
     minWithdrawal: 100,
@@ -80,6 +80,11 @@ const CreateWithdrawalSettings = () => {
     maxWithdrawalsPerDay: 3,
     maxWithdrawalsPerWeek: 10,
     suspiciousAmountThreshold: 10000,
+    methodSettings: {
+      upi: { minWithdrawal: "", maxWithdrawal: "" },
+      bank: { minWithdrawal: "", maxWithdrawal: "" },
+      crypto: { minWithdrawal: "", maxWithdrawal: "" },
+    },
   });
 
   // ✅ Reset redux state on mount so `loading` isn't stuck from a previous action
@@ -90,20 +95,6 @@ const CreateWithdrawalSettings = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    // Country dropdown → auto-fill countryName + currency
-    if (name === "country") {
-      const selectedCountry = countries.find((c) => c.code === value);
-      const defaults = countryCurrencyDefaults[value] || {};
-      setForm((prev) => ({
-        ...prev,
-        country: value,
-        countryName: selectedCountry ? selectedCountry.name : "",
-        currency: defaults.currency || prev.currency,
-        currencySymbol: defaults.symbol || prev.currencySymbol,
-      }));
-      return;
-    }
 
     setForm((prev) => ({
       ...prev,
@@ -118,8 +109,20 @@ const CreateWithdrawalSettings = () => {
     }));
   };
 
-  const handlePaymentMethodToggle = (method) => {
-    setForm((prev) => ({
+  // Per-method limits — "upiBank" sets both UPI and Bank keys,
+  // "crypto" sets the USDT key. Empty string = use global limit.
+  const handleMethodSettingChange = (keys, field, value) => {
+    const parsed = value === "" ? "" : Number(value);
+    setForm((prev) => {
+      const next = { ...prev.methodSettings };
+      keys.forEach((k) => {
+        next[k] = { ...next[k], [field]: parsed };
+      });
+      return { ...prev, methodSettings: next };
+    });
+  };
+
+  const handlePaymentMethodToggle = (method) => {    setForm((prev) => ({
       ...prev,
       paymentMethods: prev.paymentMethods.includes(method)
         ? prev.paymentMethods.filter((m) => m !== method)
@@ -131,24 +134,39 @@ const CreateWithdrawalSettings = () => {
     e.preventDefault();
     console.log("🚀 Submit started", form);
 
-    // ✅ Manual validation (in case browser `required` is bypassed)
-    if (!form.country) {
-      toast.error("Please select a country");
-      return;
-    }
-    if (!form.countryName) {
-      toast.error("Country name is required");
-      return;
-    }
+    // ✅ Manual validation — country is fixed to India
     if (Number(form.minWithdrawal) > Number(form.maxWithdrawal)) {
       toast.error("Min withdrawal cannot be greater than max withdrawal");
       return;
     }
 
+    // Per-method validation + sanitize: "" -> null (use global)
+    const ms = form.methodSettings;
+    for (const key of Object.keys(ms)) {
+      const min = Number(ms[key].minWithdrawal) || 0;
+      const max = Number(ms[key].maxWithdrawal) || 0;
+      if (min && max && min > max) {
+        toast.error(
+          `${key === "crypto" ? "USDT" : "UPI/Bank"}: min cannot be greater than max`,
+        );
+        return;
+      }
+    }
+    const payload = {
+      ...form,
+      methodSettings: Object.fromEntries(
+        Object.entries(ms).map(([key, v]) => [
+          key,
+          {
+            minWithdrawal: v.minWithdrawal === "" ? null : Number(v.minWithdrawal),
+            maxWithdrawal: v.maxWithdrawal === "" ? null : Number(v.maxWithdrawal),
+          },
+        ]),
+      ),
+    };
+
     try {
-      console.log("📡 Sending payload:", form);
-      const res = await dispatch(createWithdrawalSettings(form)).unwrap();
-      console.log("✅ API response:", res);
+      const res = await dispatch(createWithdrawalSettings(payload)).unwrap();
       toast.success("✅ Withdrawal settings created successfully!");
       navigate("/admin/withdrawal-settings");
     } catch (err) {
@@ -226,57 +244,140 @@ const CreateWithdrawalSettings = () => {
               </h3>
             </div>
             <div className="p-6">
+              {/* India-only platform — country/currency are fixed */}
+              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl">
+                <span className="text-3xl">₹</span>
+                <div>
+                  <p className="font-semibold text-gray-800">
+                    India (IN)
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Currency: INR (₹) — fixed for the whole platform
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ========== UPI / Bank Card Withdrawals ========== */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 px-6 flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-xl">
+                <Banknote className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">
+                UPI / Bank Card Withdrawals
+              </h3>
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-gray-400 mb-4">
+                Leave empty to use the global Amount Limits above.
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className={labelClass}>
-                    Country Code <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    className={inputClass}
-                    name="country"
-                    value={form.country}
-                    onChange={handleChange}
-                  >
-                    <option value="">-- Select Country --</option>
-                    {countries.map((country) => (
-                      <option key={country.code} value={country.code}>
-                        {country.code} - {country.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelClass}>
-                    Country Name <span className="text-red-500">*</span>
+                    Minimum Withdrawal (₹)
                   </label>
                   <input
-                    className={`${inputClass} bg-gray-50 cursor-not-allowed`}
-                    name="countryName"
-                    value={form.countryName}
-                    readOnly
-                    placeholder="Auto-filled from country code"
+                    type="number"
+                    className={inputClass}
+                    min="0"
+                    value={form.methodSettings.upi.minWithdrawal}
+                    onChange={(e) =>
+                      handleMethodSettingChange(
+                        ["upi", "bank"],
+                        "minWithdrawal",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="e.g. 100"
                   />
                 </div>
                 <div>
                   <label className={labelClass}>
-                    Currency <span className="text-red-500">*</span>
+                    Maximum Withdrawal (₹)
                   </label>
                   <input
+                    type="number"
                     className={inputClass}
-                    name="currency"
-                    value={form.currency}
-                    onChange={handleChange}
-                    placeholder="e.g., INR, USD"
+                    min="0"
+                    value={form.methodSettings.upi.maxWithdrawal}
+                    onChange={(e) =>
+                      handleMethodSettingChange(
+                        ["upi", "bank"],
+                        "maxWithdrawal",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="e.g. 50000"
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ========== USDT Withdrawals ========== */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.14 }}
+            className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-green-600 to-emerald-700 p-4 px-6 flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-xl">
+                <Wallet className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">
+                USDT Withdrawals
+              </h3>
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-gray-400 mb-4">
+                Separate limits for USDT (crypto) withdrawals — leave empty
+                to use the global Amount Limits above.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className={labelClass}>
+                    Minimum Withdrawal (₹)
+                  </label>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    min="0"
+                    value={form.methodSettings.crypto.minWithdrawal}
+                    onChange={(e) =>
+                      handleMethodSettingChange(
+                        ["crypto"],
+                        "minWithdrawal",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="e.g. 1000"
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Currency Symbol</label>
+                  <label className={labelClass}>
+                    Maximum Withdrawal (₹)
+                  </label>
                   <input
+                    type="number"
                     className={inputClass}
-                    name="currencySymbol"
-                    value={form.currencySymbol}
-                    onChange={handleChange}
-                    placeholder="e.g., ₹, $"
+                    min="0"
+                    value={form.methodSettings.crypto.maxWithdrawal}
+                    onChange={(e) =>
+                      handleMethodSettingChange(
+                        ["crypto"],
+                        "maxWithdrawal",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="e.g. 100000"
                   />
                 </div>
               </div>

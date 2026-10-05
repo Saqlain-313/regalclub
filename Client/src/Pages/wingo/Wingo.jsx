@@ -1,4 +1,5 @@
 import debounce from "lodash/debounce";
+import { toast } from "react-toastify";
 import { AlertCircle, Crown, Shuffle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCircle, FaMinus, FaPlus } from "react-icons/fa";
@@ -204,7 +205,14 @@ const Wingo = () => {
   const [refershPopup, setRefeshPopup] = useState(false);
   const [pageno, setPage] = useState(1);
   const [pageto, setPageto] = useState(10);
-  const [typeid1, setTypeid1] = useState(10);
+  // ---- Router (Game param typeid1 ke niche use hota hai, isliye
+  // yahan PEHLE declare karna zaroori hai — warna TDZ crash) ----
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const Game = queryParams.get("Game");
+
+  const [typeid1, setTypeid1] = useState(Number(Game) || 10);
   const [minutetime1, setMinutetime1] = useState(0);
   const [minutetime2, setMinutetime2] = useState(0);
   const [secondtime1, setSecondtime1] = useState(0);
@@ -245,10 +253,6 @@ const Wingo = () => {
   const lastPlayedCountdownRef = useRef(null);
 
   // ---- Router ----
-  const navigate = useNavigate();
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const Game = queryParams.get("Game");
 
   // ---- Derived ----
   const totalAmount = credit * multiplier;
@@ -680,8 +684,9 @@ const Wingo = () => {
     setMinutetime2(0);
     setSecondtime1(0);
     setSecondtime2(0);
+    setOpenTime(false);
 
-    resultProcessedRef.current = {};
+    resultProcessedRef.current.clear();
     setHasUserBet(false);
     setResultPopup(false);
     setWinResult(null);
@@ -907,7 +912,20 @@ const Wingo = () => {
       setCountdownNumber(0);
       if (totalRemainingSeconds === 0) lastPlayedCountdownRef.current = null;
     }
-  }, [minutetime2, secondtime1, secondtime2, activeTime, activeVoice]);
+
+    // ============================================================
+    // AUTO-CLOSE BET POPUP — last 5 seconds of EVERY period.
+    // The bet window must never stay open past the betting cutoff,
+    // otherwise bets fail (round already closed). Selection bhi reset.
+    // ============================================================
+    if (totalRemainingSeconds <= 5 && totalRemainingSeconds > 0 && openPopup) {
+      setOpenPopup(false);
+      setSelectBet("");
+      setMultiplier(1);
+      setActiveX(0);
+      toast.info("Betting closed for this period — new period started");
+    }
+  }, [minutetime2, secondtime1, secondtime2, activeTime, activeVoice, openPopup]);
 
   // ============================================================
   // RENDER HELPERS (RegalClub Purple Theme)
@@ -2139,6 +2157,55 @@ const Wingo = () => {
                     ? "Congratulations! Your bet won."
                     : "Better luck next time!"}
                 </p>
+
+                {(() => {
+                  const gl = wingoHistoryData?.data?.gameslist?.[0] ||
+                    wingoHistoryData?.gameslist?.[0] || null;
+                  const stake = Number(gl?.money ?? gl?.amount ?? 0) || 0;
+                  const payout = Number(gl?.get ?? 0) || 0;
+                  const profit = Number((payout - stake).toFixed(2));
+                  const pickMap = {
+                    x: "Green", t: "Violet", d: "Red",
+                    l: "Big", n: "Small",
+                  };
+                  const pickLabel = gl
+                    ? pickMap[gl.bet] ||
+                      (gl.bet !== undefined && /^[0-9]$/.test(String(gl.bet))
+                        ? `Number ${gl.bet}`
+                        : "--")
+                    : "--";
+                  const green = winResult;
+
+                  return (
+                    <div
+                      className={`mt-4 rounded-2xl border px-4 py-3 ${
+                        green
+                          ? "border-[#00E676]/40 bg-[#00E676]/10"
+                          : "border-[#FF5252]/40 bg-[#FF5252]/10"
+                      }`}
+                    >
+                      <p className="text-[9px] font-black uppercase tracking-[.2em] text-gray-400">
+                        {green ? "You Won" : "You Lost"}
+                      </p>
+                      <p
+                        className={`mt-0.5 text-3xl font-black tracking-tight ${
+                          green ? "text-[#00E676]" : "text-[#FF5252]"
+                        }`}
+                        style={{ textShadow: green ? "0 0 18px rgba(0,230,118,.45)" : "0 0 18px rgba(255,82,82,.35)" }}
+                      >
+                        {green ? `+₹${profit.toFixed(2)}` : `-₹${stake.toFixed(2)}`}
+                      </p>
+                      <div className="mt-2 flex items-center justify-center gap-2 text-[10px] font-bold">
+                        <span className="rounded-full border border-[#2a1b3d] bg-[#12061C] px-2.5 py-1 text-gray-300">
+                          Your pick: <span className="text-[#C77AFF]">{pickLabel}</span>
+                        </span>
+                        <span className="rounded-full border border-[#2a1b3d] bg-[#12061C] px-2.5 py-1 text-gray-300">
+                          Stake ₹{stake.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Result details */}

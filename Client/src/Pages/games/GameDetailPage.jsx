@@ -200,7 +200,7 @@ export default function GameDetailPage() {
               </div>
               
               {/* Game Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2  gap-4 mb-6">
                 {/* Jackpot/Min Bet */}
                 {game.jackpot ? (
                   <div className="bg-gray-800/50 rounded-lg p-4">
@@ -376,7 +376,7 @@ export default function GameDetailPage() {
             {activeTab === 'features' && game.features && (
               <div className="space-y-3">
                 <h3 className="text-xl font-bold text-white mb-2">Game Features</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1  gap-3">
                   {game.features.map((feature, index) => (
                     <div key={index} className="bg-gray-800/50 rounded-lg p-3">
                       <div className="flex items-center gap-2">
@@ -418,7 +418,7 @@ export default function GameDetailPage() {
         {/* Similar Games */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-4">Similar Games</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3   gap-3">
             {allGames
               .filter(g => g.category === game.category && g.id !== game.id)
               .slice(0, 6)

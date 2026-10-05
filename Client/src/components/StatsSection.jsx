@@ -74,7 +74,7 @@ const StatsSection = () => {
       </div>
 
       {/* Stats Cards - WINZOX Glass Style */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2  gap-3 md:gap-4">
         {stats.map((item, index) => {
           const Icon = item.icon;
 

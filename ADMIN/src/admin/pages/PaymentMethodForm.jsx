@@ -249,6 +249,47 @@ const PaymentMethodForm = ({ method, onSave, onClose }) => {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Bonus Percent (%)
+              </label>
+              <input
+                type="number"
+                value={formData.details.bonusPercent || ''}
+                onChange={(e) =>
+                  handleDynamicFieldChange('bonusPercent', e.target.value)
+                }
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="e.g. 3 — shows a +3% badge (leave empty for none)"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <small className="text-xs text-gray-400">
+                Shown as a bonus badge on the /deposit method tiles
+              </small>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="status"
+                  checked={formData.status}
+                  onChange={handleInputChange}
+                  className="w-4 h-4 accent-purple-600"
+                />
+                <span className="text-sm text-gray-700">
+                  {formData.status ? 'Active (visible to users)' : 'Inactive (hidden)'}
+                </span>
+              </label>
+            </div>
+          </div>
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Description

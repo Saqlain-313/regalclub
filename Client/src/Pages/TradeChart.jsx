@@ -447,7 +447,7 @@ const TradeChart = () => {
 
           <div>
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-3 mb-3 md:mb-4">
+            <div className="grid grid-cols-2  gap-2 md:gap-3 mb-3 md:mb-4">
               <button
                 disabled={isDisabled}
                 onClick={handleUp} // Show the popup when clicked

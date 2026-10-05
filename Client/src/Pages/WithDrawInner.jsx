@@ -55,7 +55,7 @@ const WithdrawInner = () => {
   return (
     <div className="w-full mx-auto md:p-4 h-[80vh] overflow-auto">
       {/* Account Summary Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1  gap-6 mb-8">
         {/* Account credit Card */}
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
           <h2 className="text-xl font-semibold mb-6 text-white flex items-center">

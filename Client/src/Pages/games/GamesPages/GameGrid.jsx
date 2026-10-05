@@ -96,7 +96,7 @@ export default function GameGrid({
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3   gap-3 md:gap-4">
         {games.map((game, index) => {
           const gameKey = game.game_uid || game.id || index;
           const isLaunchingThis =

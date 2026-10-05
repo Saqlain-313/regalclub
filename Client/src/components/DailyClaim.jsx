@@ -210,7 +210,7 @@ const DailyClaim = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+          <div className="grid grid-cols-2  gap-3 mt-2">
             {totalCredit && Number(totalCredit) > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-yellow-200/50 shadow-sm">
                 <p className="text-xs text-gray-500 font-medium">Total Credits</p>

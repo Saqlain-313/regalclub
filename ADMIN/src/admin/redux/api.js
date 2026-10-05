@@ -26,6 +26,22 @@ const api = axios.create({
 // REQUEST INTERCEPTOR
 // =====================================================
 
+// =====================================================
+// ADMIN AUTH HEADER
+// Send the admin token as an Authorization header. Cookies are
+// shared across localhost ports, so the admin panel must
+// authenticate via the header - otherwise a stale adminToken
+// cookie could hijack client-site requests (and vice versa).
+// =====================================================
+
+api.interceptors.request.use((config) => {
+  const adminToken = localStorage.getItem('adminToken');
+  if (adminToken) {
+    config.headers.Authorization = 'Bearer ' + adminToken;
+  }
+  return config;
+});
+
 api.interceptors.request.use(
   (config) => {
     // =================================================

@@ -1,78 +1,116 @@
-import {
-  ArrowDownLeft,
-  Calendar,
-  Clock,
-  Copy,
-  CreditCard,
-  FileText,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
-import { useEffect } from "react";
+// pages/DepositHistory.jsx
+//
+// /deposit-history — same design as /withdrawal-history:
+// type tabs + status/date filters, then cards with a Deposit
+// tag + status and Order amount / Type / Time / UTR number
+// (copyable) / Remarks rows.
+
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronDown, Copy } from "lucide-react";
+import { toast } from "react-toastify";
 import { getMyDeposits } from "../redux/slices/depositSlice";
 
-// ======================================================
-// THEME TOKENS — VIP purple gradient system
-// ======================================================
-
 const accentGradient =
-  "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9]";
-const accentGlow =
-  "shadow-[0_0_10px_rgba(180,92,255,0.35),0_4px_20px_rgba(58,0,201,0.35)]";
-const cardBase =
-  "bg-[#150D22]/90 border border-[#2a1b3d] shadow-[0_4px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.04)]";
-const statBox = "bg-[#12061C] rounded-xl border border-[#2a1b3d] px-3 py-2";
+  "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_10px_rgba(180,92,255,0.5)]";
 
-// ======================================================
-// STATUS CONFIG — user-facing labels
-// "approved" is shown to users as "Success"
-// ======================================================
+const STATUS_OPTIONS = [
+  { id: "all", label: "All" },
+  { id: "approved", label: "Success" },
+  { id: "pending", label: "Pending" },
+  { id: "rejected", label: "Failed" },
+];
 
-const statusConfig = (status) => {
-  const map = {
-    approved: {
-      label: "Success",
-      badge:
-        "text-[#00E676] bg-[#00E676]/10 border border-[#00E676]/30",
-      bar: "bg-gradient-to-b from-[#00E676] to-transparent",
-    },
-    pending: {
-      label: "Pending",
-      badge: "text-[#F1C40F] bg-[#F1C40F]/10 border border-[#F1C40F]/30",
-      bar: "bg-gradient-to-b from-[#F1C40F] to-transparent",
-    },
-    rejected: {
-      label: "Failed",
-      badge: "text-red-400 bg-red-500/10 border border-red-500/30",
-      bar: "bg-gradient-to-b from-red-500 to-transparent",
-    },
-  };
+const DATE_OPTIONS = [
+  { id: "all", label: "All time" },
+  { id: "today", label: "Today" },
+  { id: "7days", label: "Last 7 days" },
+  { id: "30days", label: "Last 30 days" },
+];
 
-  return map[String(status).toLowerCase()] || map.pending;
+const statusInfo = (status) => {
+  const value = String(status).toLowerCase();
+  if (["success", "approved", "completed"].includes(value))
+    return { label: "Success", cls: "text-[#00E676]" };
+  if (value === "pending") return { label: "Pending", cls: "text-[#F1C40F]" };
+  if (["failed", "rejected"].includes(value))
+    return { label: "Failed", cls: "text-red-400" };
+  if (value === "cancelled") return { label: "Cancelled", cls: "text-gray-400" };
+  return { label: status || "Pending", cls: "text-gray-400" };
 };
 
 const DepositHistory = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { deposits, loading } = useSelector((state) => state.deposit);
-  const { user } = useSelector((state) => state.auth);
+
+  const [typeTab, setTypeTab] = useState("all");
+  const [statusTab, setStatusTab] = useState("all");
+  const [dateTab, setDateTab] = useState("all");
 
   useEffect(() => {
     dispatch(getMyDeposits());
   }, [dispatch]);
 
-  const currencySymbol = "₹";
+  // Type tabs — All + every method the user actually deposited with
+  const typeTabs = useMemo(() => {
+    const titles = [];
+    (deposits || []).forEach((d) => {
+      const title = d.methodTitle || d.method || "Deposit";
+      if (!titles.includes(title)) titles.push(title);
+    });
+    return [
+      { id: "all", label: "All" },
+      ...titles.map((t) => ({ id: t, label: t })),
+    ];
+  }, [deposits]);
+
+  const filtered = useMemo(() => {
+    let list = deposits || [];
+
+    if (typeTab !== "all") {
+      list = list.filter(
+        (d) => (d.methodTitle || d.method || "Deposit") === typeTab,
+      );
+    }
+
+    if (statusTab !== "all") {
+      list = list.filter((d) => {
+        const value = String(d.status).toLowerCase();
+        if (statusTab === "approved")
+          return ["success", "approved", "completed"].includes(value);
+        return value === statusTab;
+      });
+    }
+
+    if (dateTab !== "all") {
+      const now = new Date();
+      let startDate = null;
+      if (dateTab === "today") {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (dateTab === "7days") {
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (dateTab === "30days") {
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+      if (startDate) {
+        list = list.filter((d) => new Date(d.createdAt) >= startDate);
+      }
+    }
+
+    return list;
+  }, [deposits, typeTab, statusTab, dateTab]);
 
   const formatAmount = (amount) => {
-    const num = parseFloat(amount);
-    if (isNaN(num)) return `${currencySymbol}0`;
-    return `${currencySymbol}${num.toLocaleString("en-IN")}`;
+    const num = Number(amount);
+    if (!Number.isFinite(num)) return "₹0.00";
+    return `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
   };
 
-  const formatDate = (value) => {
-    const date = new Date(value);
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return "—";
     return date.toLocaleString("en-IN", {
       day: "2-digit",
@@ -84,171 +122,223 @@ const DepositHistory = () => {
     });
   };
 
-  // Summary stats
-  const totalDeposits = deposits.length;
-  const totalAmount = deposits.reduce(
-    (sum, item) => sum + (Number(item.amount) || 0),
-    0,
-  );
-  const successCount = deposits.filter(
-    (item) => String(item.status).toLowerCase() === "approved",
-  ).length;
+  const copyOrderNumber = async (order) => {
+    try {
+      await navigator.clipboard.writeText(order);
+      toast.success("UTR number copied");
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#0B0410] overflow-hidden relative pb-10">
-      {/* Ambient glows */}
-      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#8E44AD]/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-[#0B0410] pb-10">
+      <div className="mx-auto max-w-md px-4 pt-4">
+        {/* HEADER */}
+        <div className="mb-5 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#2a1b3d] bg-[#1C0F2B] text-white transition-all active:scale-95"
+            aria-label="Back"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <h1 className="flex-1 text-center text-base font-bold text-white">
+            Deposit history
+          </h1>
+          <span className="w-9 flex-shrink-0" />
+        </div>
 
-      <div className="relative px-4 sm:px-6 py-6">
-        <div className="max-w-md w-full mx-auto">
-          {/* ===== Header ===== */}
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-11 h-11 rounded-2xl ${accentGradient} ${accentGlow} border border-[#C77AFF] flex items-center justify-center flex-shrink-0`}
+        {/* TYPE TABS */}
+        <div
+          className={`mb-3 grid gap-2 ${
+            typeTabs.length === 1
+              ? "grid-cols-1"
+              : typeTabs.length === 2
+                ? "grid-cols-2"
+                : "grid-cols-3"
+          }`}
+        >
+          {typeTabs.slice(0, 3).map(({ id, label }) => {
+            const isActive = typeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTypeTab(id)}
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 border text-[11px] font-bold transition-all active:scale-95 ${
+                  isActive
+                    ? `${accentGradient} text-white`
+                    : "border-[#2a1b3d] bg-[#1C0F2B] text-gray-400 hover:border-[#9B59B6]/50"
+                }`}
               >
-                <ArrowDownLeft className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black text-white leading-tight tracking-wide">
-                  Deposit History
-                </h1>
-                <p className="text-[11px] text-gray-400">
-                  Your deposit transactions
-                </p>
-              </div>
-            </div>
+                {id === "all" && (
+                  <span className="grid grid-cols-2 gap-0.5">
+                    {[0, 1, 2, 3].map((i) => (
+                      <span
+                        key={i}
+                        className={`h-1 w-1 rounded-sm ${
+                          isActive ? "bg-white" : "bg-[#B45CFF]"
+                        }`}
+                      />
+                    ))}
+                  </span>
+                )}
+                <span className="truncate">{label.toUpperCase()}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* STATUS + DATE FILTERS */}
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <div className="relative">
+            <select
+              value={statusTab}
+              onChange={(e) => setStatusTab(e.target.value)}
+              className="w-full appearance-none rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] px-3 py-2.5 text-xs font-semibold text-gray-300 outline-none transition-all focus:border-[#B45CFF]/60"
+            >
+              {STATUS_OPTIONS.map(({ id, label }) => (
+                <option key={id} value={id}>
+                  {label === "All" ? "All" : `Status: ${label}`}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={14}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
           </div>
 
-          {/* ===== Stats strip ===== */}
-          {deposits.length > 0 && (
-            <div className="grid grid-cols-3 gap-2.5 mb-5">
-              <div className={`${cardBase} rounded-2xl p-3`}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <FileText size={11} className="text-[#B45CFF]" />
-                  <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
-                    Total
-                  </span>
-                </div>
-                <p className="text-sm font-black text-white">{totalDeposits}</p>
-              </div>
-              <div className={`${cardBase} rounded-2xl p-3`}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Wallet size={11} className="text-[#F1C40F]" />
-                  <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
-                    Amount
-                  </span>
-                </div>
-                <p className="text-sm font-black text-white">
-                  ₹{totalAmount.toLocaleString("en-IN")}
-                </p>
-              </div>
-              <div className={`${cardBase} rounded-2xl p-3`}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp size={11} className="text-[#00E676]" />
-                  <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
-                    Success
-                  </span>
-                </div>
-                <p className="text-sm font-black text-[#00E676]">
-                  {successCount}
-                </p>
-              </div>
-            </div>
-          )}
+          <div className="relative">
+            <select
+              value={dateTab}
+              onChange={(e) => setDateTab(e.target.value)}
+              className="w-full appearance-none rounded-xl border border-[#2a1b3d] bg-[#1C0F2B] px-3 py-2.5 text-xs font-semibold text-gray-300 outline-none transition-all focus:border-[#B45CFF]/60"
+            >
+              {DATE_OPTIONS.map(({ id, label }) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={14}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+          </div>
+        </div>
 
-          {/* ===== List ===== */}
-          {loading ? (
-            <div className="flex items-center justify-center gap-2.5 bg-[#150D22]/90 border border-[#2a1b3d] rounded-2xl p-10">
-              <span className="w-5 h-5 border-2 border-[#2a1b3d] border-t-[#B45CFF] rounded-full animate-spin" />
-              <span className="text-sm text-gray-400 font-medium">
-                Loading deposits...
-              </span>
-            </div>
-          ) : deposits.length === 0 ? (
-            <div className="relative bg-[#150D22]/90 border border-[#2a1b3d] rounded-3xl p-10 text-center overflow-hidden">
-              <div className="pointer-events-none absolute -top-14 left-1/2 -translate-x-1/2 w-40 h-32 bg-[#7418F5]/20 rounded-full blur-2xl" />
-              <div className="relative">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl border border-[#B45CFF]/30 bg-[#B45CFF]/10 flex items-center justify-center">
-                  <ArrowDownLeft className="w-8 h-8 text-[#B45CFF]/70" />
-                </div>
-                <p className="text-sm font-black text-white tracking-wide">
-                  No deposits yet
-                </p>
-                <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
-                  Make your first deposit and it will
-                  <br />
-                  appear here.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {deposits.map((item) => {
-                const status = statusConfig(item.status);
+        {/* LIST */}
+        {loading ? (
+          <div className="flex items-center justify-center rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] py-10">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#2a1b3d] border-t-[#B45CFF]" />
+            <span className="ml-2.5 text-xs font-medium text-gray-400">
+              Loading...
+            </span>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[#2a1b3d] bg-[#1C0F2B] py-12 text-center">
+            <p className="text-sm font-bold text-white">No deposits found</p>
+            <p className="mt-1 text-[11px] text-gray-500">
+              Try changing the filters above.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((item) => {
+              const status = statusInfo(item.status);
+              const order = item.depositRef || item._id;
+              const utr = String(item.transactionId || "").trim();
 
-                return (
-                  <div
-                    key={item._id}
-                    className={`relative rounded-2xl ${cardBase} p-4 overflow-hidden transition-all duration-200 hover:border-[#B45CFF]/40`}
-                  >
-                    {/* Left accent bar */}
-                    <span
-                      className={`absolute left-0 top-0 bottom-0 w-[3px] ${status.bar}`}
-                    />
+              return (
+                <div
+                  key={item._id}
+                  className="rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-3.5 transition-all hover:border-[#9B59B6]/50"
+                >
+                  {/* top row — tag + status */}
+                  <div className="mb-2.5 flex items-center justify-between gap-2">
+                    <span className="rounded-md bg-gradient-to-r from-[#B45CFF] to-[#7418F5] px-2.5 py-1 text-[10px] font-bold text-white">
+                      Deposit
+                    </span>
+                    <span className={`text-[11px] font-bold ${status.cls}`}>
+                      {status.label}
+                    </span>
+                  </div>
 
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-lg font-black text-white leading-none">
-                          {formatAmount(item.amount)}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-500">
-                          <CreditCard size={10} />
-                          {item.methodTitle || item.methodType || "Deposit"}
-                        </div>
-                      </div>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black tracking-widest uppercase flex-shrink-0 ${status.badge}`}
-                      >
-                        {status.label}
+                  {/* detail rows */}
+                  <div className="space-y-1 text-[11px]">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">Order amount</span>
+                      <span className="font-bold text-white">
+                        {formatAmount(item.amount)}
                       </span>
                     </div>
-
-                    {/* Txn ID — system reference REG{digits} */}
-                    <div className="mt-3 flex items-center justify-between gap-2 bg-[#12061C] rounded-xl border border-[#2a1b3d] px-3 py-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <FileText size={11} className="text-[#B45CFF] flex-shrink-0" />
-                        <span className="text-[10px] font-mono text-gray-300 truncate">
-                          {item.depositRef || item.transactionId || "—"}
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">Type</span>
+                      <span className="font-semibold text-gray-300">
+                        {(item.methodTitle || item.method || "DEPOSIT").toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">Time</span>
+                      <span className="text-gray-300">
+                        {formatDate(item.createdAt)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">Order number</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="max-w-[150px] truncate font-mono text-[10px] text-gray-400">
+                          {order}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => copyOrderNumber(order)}
+                          className="text-gray-500 transition-all hover:text-[#B45CFF] active:scale-90"
+                          aria-label="Copy order number"
+                        >
+                          <Copy size={11} />
+                        </button>
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">UTR number</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="max-w-[150px] truncate font-mono text-[10px] text-gray-400">
+                          {utr || "—"}
+                        </span>
+                        {utr && (
+                          <button
+                            type="button"
+                            onClick={() => copyOrderNumber(utr)}
+                            className="text-gray-500 transition-all hover:text-[#B45CFF] active:scale-90"
+                            aria-label="Copy UTR number"
+                          >
+                            <Copy size={11} />
+                          </button>
+                        )}
+                      </span>
+                    </div>
+                    {item.remark && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-gray-500">Remarks</span>
+                        <span className="max-w-[170px] truncate text-gray-400">
+                          {item.remark}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        className="p-1 rounded-md hover:bg-[#B45CFF]/15 transition-colors flex-shrink-0"
-                        onClick={() =>
-                          navigator.clipboard.writeText(
-                            item.depositRef || item.transactionId || "",
-                          )
-                        }
-                        title="Copy Transaction ID"
-                      >
-                        <Copy size={11} className="text-gray-400 hover:text-[#B45CFF]" />
-                      </button>
-                    </div>
-
-                    {/* Date time */}
-                    <div className="mt-2.5 flex items-center gap-1.5 text-[10px] text-gray-500">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(item.createdAt)}
-                    </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                </div>
+              );
+            })}
+
+            <p className="py-3 text-center text-xs font-semibold text-gray-500">
+              No more
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

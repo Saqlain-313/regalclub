@@ -37,6 +37,9 @@ const Slotgame = ({ isHome = false }) => {
   // Prevent duplicate auto launch
   const autoLaunchStarted = useRef(false);
 
+  // Double-click guard — no new dispatch while a launch is in progress
+  const launchingRef = useRef(false);
+
   /*
    * ============================================================
    * RESET GAME STATE
@@ -185,38 +188,22 @@ const Slotgame = ({ isHome = false }) => {
    * ============================================================
    */
   useEffect(() => {
-    if (!isHome && gameUrl && selectedGame) {
+    if (gameUrl && selectedGame) {
       setIsGameModalOpen(true);
     }
-  }, [gameUrl, isHome, selectedGame]);
+  }, [gameUrl, selectedGame]);
 
   /*
    * ============================================================
    * PLAY GAME
    * ============================================================
+   * Platform recommendation style — launch directly on home,
+   * no navigation needed.
    */
   const handlePlay = async (game) => {
-    /*
-     * HOME
-     * ↓
-     * Navigate to slots
-     * ↓
-     * Auto launch there
-     */
-    if (isHome) {
-      navigate("/slots", {
-        state: {
-          autoLaunch: true,
-          gameUid: game.game_uid,
-        },
-      });
+    if (launchingRef.current) return;
+    launchingRef.current = true;
 
-      return;
-    }
-
-    /*
-     * NORMAL SLOT PAGE
-     */
     try {
       setSelectedGame(game);
 
@@ -225,8 +212,11 @@ const Slotgame = ({ isHome = false }) => {
           gameId: game.game_uid,
         }),
       ).unwrap();
-    } catch (err) {
-      alert(err || "Failed to launch game");
+    } catch {
+      // No alert/error popup on launch failure —
+      // the modal stays in its loading state and the user can go back
+    } finally {
+      launchingRef.current = false;
     }
   };
 
@@ -261,7 +251,7 @@ const Slotgame = ({ isHome = false }) => {
    * + autoLaunch
    * + gameUrl not received
    *
-   * Direct /slots open par ye loader nahi chalega.
+   * Opening /slots directly will never show this loader.
    */
   const isAutoLaunching =
     !isHome &&
@@ -380,7 +370,7 @@ const Slotgame = ({ isHome = false }) => {
           ) : (
             <>
               {/* GAME GRID */}
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3  ">
                 {displayGames.map((game, index) => {
                   // Home preview hides games 7+ on mobile;
                   // the /slots view-all page shows everything (Casino style)
@@ -412,7 +402,14 @@ const Slotgame = ({ isHome = false }) => {
                       />
 
                       {/* PLAY OVERLAY */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-[#0B0410] via-[#0B0410]/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <div
+                        className={`absolute inset-0 flex items-center justify-center bg-gradient-to-t from-[#0B0410] via-[#0B0410]/60 to-transparent transition-opacity duration-300 ${
+                          launchLoading &&
+                          selectedGame?.game_uid === game.game_uid
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-100"
+                        }`}
+                      >
                         {launchLoading &&
                         selectedGame?.game_uid === game.game_uid ? (
                           <FaSpinner className="animate-spin text-3xl text-white" />
@@ -529,16 +526,14 @@ const Slotgame = ({ isHome = false }) => {
       {/* ========================================================
           GAME MODAL
           ======================================================== */}
-      {!isHome && (
-        <GamePlayModal
-          isOpen={isGameModalOpen}
-          onClose={closeGameModal}
-          gameData={selectedGame}
-          gameUrl={gameUrl}
-          loading={launchLoading}
-          launchError={launchError}
-        />
-      )}
+      <GamePlayModal
+        isOpen={isGameModalOpen}
+        onClose={closeGameModal}
+        gameData={selectedGame}
+        gameUrl={gameUrl}
+        loading={launchLoading}
+        launchError={launchError}
+      />
     </>
   );
 };

@@ -13,7 +13,8 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
-} from "react";
+  lazy,
+  Suspense } from "react";
 
 // ========================================
 // Common Components
@@ -38,6 +39,7 @@ import PromoPage from "./Pages/Promo/PromoPage.jsx";
 import Register from "./Pages/Register.jsx";
 import WalletDashboard from "./Pages/WalletDashboard.jsx";
 import Withdrawal from "./Pages/Withdrawal.jsx";
+import AddPaymentMethod from "./Pages/Withdrawal/AddPaymentMethod.jsx";
 
 // ========================================
 // Powerhit Pages
@@ -120,6 +122,9 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import GameAutoSync from "./components/GameAutoSync";
+
+// TRADING APP — merged from the trading subdomain, mounted at /trading
+const TradeApp = lazy(() => import("./trading/TradeApp"));
 
 import "./styles/premium-toast.css";
 
@@ -900,6 +905,33 @@ function App() {
             />
 
             <Route
+              path="/withdrawal/add/bankcard"
+              element={
+                <ProtectedRoute>
+                  <AddPaymentMethod />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/withdrawal/add/upiaddress"
+              element={
+                <ProtectedRoute>
+                  <AddPaymentMethod />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/withdrawal/add/usdt"
+              element={
+                <ProtectedRoute>
+                  <AddPaymentMethod />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/change-password"
               element={
                 <ProtectedRoute>
@@ -1042,6 +1074,25 @@ function App() {
               }
             />
 
+
+            {/* ========================================
+            {/* ========================================
+                TRADING (merged subdomain app)
+            ======================================== */}
+            <Route
+              path="/trading/*"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen bg-[#0B0410] flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#B45CFF] border-t-transparent" />
+                    </div>
+                  }
+                >
+                  <TradeApp />
+                </Suspense>
+              }
+            />
 
             {/* ========================================
                 MINES GAME

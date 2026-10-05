@@ -468,7 +468,7 @@ const GameEntryResultDetail = () => {
           )}
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2  gap-3 mb-4">
             <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
               <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide flex items-center gap-1">
                 <DollarSign className="w-3 h-3" /> Amount
@@ -595,7 +595,7 @@ const GameEntryResultDetail = () => {
                 No games found for this entry
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1  gap-4">
                 {games.map((game, index) => {
                   const matchResult = resultDeclared
                     ? checkNumberMatch(game, winningNumbers)
