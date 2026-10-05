@@ -136,7 +136,7 @@ const TradePair = () => {
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider hidden md:table-cell"
+                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider hidden "
               >
                 24h changing
               </th>
@@ -185,7 +185,7 @@ const TradePair = () => {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                <td className="px-6 py-4 whitespace-nowrap hidden ">
                   <div
                     className={`flex items-center ${
                       asset.change >= 0 ? "text-green-600" : "text-red-600"

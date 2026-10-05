@@ -74,7 +74,7 @@ export default function SupportModal() {
   const [topPopupOpen, setTopPopupOpen] = useState(false);
   return (
     <div className="flex item-center">
-    <div className="relative w-[80px] hidden md:block">
+    <div className="relative w-[80px] hidden ">
     <Sidebar topPopupOpen={topPopupOpen} setTopPopupOpen={setTopPopupOpen} />
     </div>
 
@@ -87,7 +87,7 @@ export default function SupportModal() {
       >
       </div>
 
-    <div className="flex items-center justify-center mb-[50px] lg:mb-0 w-full">
+    <div className="flex items-center justify-center mb-[50px]  w-full">
       <div className="w-full max-w-3xl bg-[#1e2230] rounded-lg shadow-lg p-6 m-4">
         <div className="flex justify-center items-center mb-6">
           <h2 className="text-xl font-bold text-white">Submit issue here</h2>

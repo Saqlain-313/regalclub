@@ -9,7 +9,7 @@ const SideNavbar = () => {
   const [isPopup, SetIsPopup] = useState("");
   return (
     <div className="w-full bg-white p-2 ">
-      <div className="w-[5%] h-screen bg-white hidden md:block">
+      <div className="w-[5%] h-screen bg-white hidden ">
         <nav className="flex flex-col items-center space-y-2 p-4">
           {/* Trade Button */}
           <div>

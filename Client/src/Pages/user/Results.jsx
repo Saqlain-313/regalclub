@@ -270,7 +270,7 @@ const MatkaResults = () => {
 
         {/* Stats Cards */}
         {stats && stats.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2  gap-4">
             {[
               {
                 icon: Trophy,
@@ -345,7 +345,7 @@ const MatkaResults = () => {
                 Filter Results
               </h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2  gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1.5">
                   Market

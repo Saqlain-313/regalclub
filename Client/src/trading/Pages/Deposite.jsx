@@ -42,8 +42,8 @@ const Deposite = () => {
 
     const [topPopupOpen, setTopPopupOpen] = useState(false);
   return (
-    <div className="p-2  md:gap-2 rounded-lg flex h-[88vh] mb-4">
-    <div className="lg:w-[80px]">
+    <div className="p-2   rounded-lg flex h-[88vh] mb-4">
+    <div className="">
     <Sidebar topPopupOpen={topPopupOpen} setTopPopupOpen={setTopPopupOpen} />
     </div>
       <div
@@ -54,8 +54,8 @@ const Deposite = () => {
       `}
           >
           </div>
-      <div className="w-full lg:w-[95%] h-[88vh] overflow-hidden">
-        <div className="lg:w-[40%] overflow-auto hidden lg:flex sm:flex-wrap items-center px-5 justify-between text-white font-medium text-sm rounded-lg bg-[#2b3040]">
+      <div className="w-full  h-[88vh] overflow-hidden">
+        <div className=" overflow-auto hidden  sm:flex-wrap items-center px-5 justify-between text-white font-medium text-sm rounded-lg bg-[#2b3040]">
           {links.slice(0,5).map(({ path, label }) => {
             const isActive = activeSection === path;
 

@@ -49,7 +49,9 @@ const TradeChart = () => {
 
   const [activeTab, setActiveTab] = useState("trades");
   const [isExpanded, setIsExpanded] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  // The app renders in a fixed phone-width column on every screen —
+  // always use the mobile chart layout
+  const [isMobile, setIsMobile] = useState(true);
   const [isDisabled, setIsDisabled] = useState(false);
   const [history, setHistory] = useState(false);
   const [showButton, SetShowButton] = useState(false);
@@ -160,7 +162,7 @@ const TradeChart = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
+      setIsMobile(true); // always mobile layout — fixed phone-width column
     };
 
     handleResize();
@@ -400,19 +402,19 @@ const TradeChart = () => {
     <div
       className={`flex ${
         isMobile ? "flex-col " : "h-screen"
-      } text-white bg-[#0B0410] lg:h-[89.5vh] overflow-auto lg:overflow-hidden`}
+      } text-white bg-[#0B0410]  overflow-auto `}
     >
       <div
         className={`
           transition-all duration-500 ease-in-out
           overflow-hidden
-          lg:block hidden
+           hidden
           ${topPopupOpen ? "w-[550px] opacity-100" : "w-0 opacity-0"}
         `}
       ></div>
 
       {/* Chart Section */}
-      <div className={`${isMobile ? "w-full" : "w-4/5"} px-2 md:p-4`}>
+      <div className={`${isMobile ? "w-full" : "w-4/5"} px-2 `}>
         <div className="rounded-xl h-full relative">
           <ChartSection investment={numericInvestment} />
 
@@ -475,14 +477,14 @@ const TradeChart = () => {
       <div
         className={`${
           isMobile ? "w-full h-[25vh] justify-center mt-5 " : "w-1/5"
-        } flex flex-col space-y-2 md:space-y-4 p-2 md:p-2`}
+        } flex flex-col space-y-2  p-2 `}
       >
         {/* Trading Panel */}
-        <div className="md:bg-[#1C0F2B] rounded-[14px] border border-[#2a1b3d] shadow-[0_4px_18px_rgba(0,0,0,0.4)] p-2 md:p-4 h-full flex flex-col justify-around">
+        <div className=" rounded-[14px] border border-[#2a1b3d] shadow-[0_4px_18px_rgba(0,0,0,0.4)] p-2  h-full flex flex-col justify-around">
           {/* Pair Header */}
-          <div className="justify-between items-center mb-3 md:mb-4 hidden lg:flex">
+          <div className="justify-between items-center mb-3  hidden ">
             <div className="flex items-center justify-between w-full space-x-2">
-              <span className="text-base md:text-lg font-bold text-white leading-tight">
+              <span className="text-base  font-bold text-white leading-tight">
                 USD/JPY <span className="block">(OTC)</span>
               </span>
 
@@ -498,7 +500,7 @@ const TradeChart = () => {
           <span>
             <span
               onClick={() => SetShowButton((prev) => !prev)}
-              className="flex items-center gap-1 cursor-pointer lg:hidden bg-[#12061C] border border-[#2a1b3d] p-1 rounded-lg w-fit h-[4vh]"
+              className="flex items-center gap-1 cursor-pointer  bg-[#12061C] border border-[#2a1b3d] p-1 rounded-lg w-fit h-[4vh]"
             >
               <div className="flex items-center relative w-8">
                 <img
@@ -529,28 +531,28 @@ const TradeChart = () => {
           </span>
 
           {/* Time + Investment */}
-          <div className="flex md:flex-col gap-1">
+          <div className="flex  gap-1">
             {/* Time Selection */}
-            <div className="mb-3 md:mb-2 w-full">
-              <label className="block text-xs md:text-sm font-bold mb-1 md:mb-2 text-gray-300">
+            <div className="mb-3  w-full">
+              <label className="block text-xs  font-bold mb-1  text-gray-300">
                 Time
               </label>
 
-              <div className="text-sm font-bold w-full bg-[#12061C] border border-[#2a1b3d] rounded-[10px] p-1 md:p-2 text-center h-[4vh] md:h-[6vh] flex items-center justify-center text-[#C77AFF]">
+              <div className="text-sm font-bold w-full bg-[#12061C] border border-[#2a1b3d] rounded-[10px] p-1  text-center h-[4vh]  flex items-center justify-center text-[#C77AFF]">
                 0{times.minute}: {times.secondtime1}
                 {times.secondtime2}s
               </div>
             </div>
 
             {/* Investment Selection */}
-            <div className="mb-4 md:mb-4 w-full">
-              <label className="block text-xs md:text-sm font-bold mb-1 md:mb-2 text-gray-300">
+            <div className="mb-4  w-full">
+              <label className="block text-xs  font-bold mb-1  text-gray-300">
                 Investment
               </label>
 
-              <div className="flex items-center bg-[#12061C] border border-[#2a1b3d] rounded-[10px] px-3 h-[4vh] md:h-[6vh] focus-within:border-[#B45CFF]/60 focus-within:ring-2 focus-within:ring-[#B45CFF]/10 transition-all">
+              <div className="flex items-center bg-[#12061C] border border-[#2a1b3d] rounded-[10px] px-3 h-[4vh]  focus-within:border-[#B45CFF]/60 focus-within:ring-2 focus-within:ring-[#B45CFF]/10 transition-all">
                 {/* Rupee Icon */}
-                <span className="text-[#C77AFF] text-base md:text-lg font-bold mr-2">
+                <span className="text-[#C77AFF] text-base  font-bold mr-2">
                   ₹
                 </span>
 
@@ -589,20 +591,20 @@ const TradeChart = () => {
 
           <div>
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-3 mb-3 md:mb-4">
+            <div className="grid grid-cols-2  gap-2  mb-3 ">
               {/* UP */}
               <button
                 disabled={isDisabled || numericInvestment <= 0 || placing}
                 onClick={handleUp}
-                className={`${purpleGradient} text-white px-5 py-2 md:px-10 md:py-3 rounded-[11px] h-[5vh] md:h-[6vh] flex items-center justify-between font-bold space-x-1 md:space-x-2 transition-all text-xs md:text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`${purpleGradient} text-white px-5 py-2   rounded-[11px] h-[5vh]  flex items-center justify-between font-bold space-x-1  transition-all text-xs  disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <span>{placing ? "..." : "Up"}</span>
 
-                <FaArrowUp className="text-xs md:text-sm bg-white/20 size-6 p-1 rounded-full" />
+                <FaArrowUp className="text-xs  bg-white/20 size-6 p-1 rounded-full" />
               </button>
 
               {/* Payout */}
-              <p className="text-center text-sm hidden md:flex items-center justify-center text-gray-300">
+              <p className="text-center text-sm hidden  items-center justify-center text-gray-300">
                 Your payout:{" "}
                 <span className="font-bold flex items-center text-white">
                   <span className="mt-1 text-[#C77AFF]">₹</span>
@@ -615,11 +617,11 @@ const TradeChart = () => {
               <button
                 disabled={isDisabled || numericInvestment <= 0 || placing}
                 onClick={handleDown}
-                className="bg-[#1C0F2B] border-2 border-[#9B59B6]/50 hover:bg-[#2a1b3d] text-[#E74C3C] px-5 py-2 md:px-10 md:py-3 rounded-[11px] h-[5vh] md:h-[6vh] flex items-center justify-between font-bold space-x-1 md:space-x-2 transition-all text-xs md:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#1C0F2B] border-2 border-[#9B59B6]/50 hover:bg-[#2a1b3d] text-[#E74C3C] px-5 py-2   rounded-[11px] h-[5vh]  flex items-center justify-between font-bold space-x-1  transition-all text-xs  disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Down</span>
 
-                <FaArrowDown className="text-xs md:text-sm bg-red-500/20 text-[#E74C3C] size-6 p-1 rounded-full" />
+                <FaArrowDown className="text-xs  bg-red-500/20 text-[#E74C3C] size-6 p-1 rounded-full" />
               </button>
             </div>
 
@@ -629,7 +631,7 @@ const TradeChart = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-40 z-30 transition-opacity duration-500"></div>
 
                 <div
-                  className="sm:w-[350px] lg:w-[400px] md:w-[500px] h-[250px] bg-[#1C0F2B] z-50 fixed rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] border border-[#2a1b3d] transition-transform duration-500 transform"
+                  className="sm:w-[350px]   h-[250px] bg-[#1C0F2B] z-50 fixed rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] border border-[#2a1b3d] transition-transform duration-500 transform"
                   style={{
                     top: "50%",
                     left: "50%",
@@ -652,7 +654,7 @@ const TradeChart = () => {
           </div>
 
           {/* Tooltip */}
-          <div className="text-xxs md:text-xs text-gray-400 text-center p-2 md:p-3 hidden md:flex items-center justify-center gap-2 bg-[#12061C] border border-[#2a1b3d] rounded-[10px] leading-relaxed">
+          <div className="text-xxs  text-gray-400 text-center p-2  hidden  items-center justify-center gap-2 bg-[#12061C] border border-[#2a1b3d] rounded-[10px] leading-relaxed">
             <span className="text-[#C77AFF] text-base">◷</span>
 
             <span>
@@ -662,35 +664,35 @@ const TradeChart = () => {
         </div>
 
         {/* Trades/Orders Panel */}
-        <div className="bg-[#1C0F2B] border border-[#2a1b3d] rounded flex-grow hidden md:flex flex-col">
+        <div className="bg-[#1C0F2B] border border-[#2a1b3d] rounded flex-grow hidden  flex-col">
           {/* Tabs */}
           <div className="flex border-b gap-2 border-[#2a1b3d]">
             <button
-              className={`flex-1 py-2 md:py-3 flex items-center justify-center rounded text-xs md:text-sm ${
+              className={`flex-1 py-2  flex items-center justify-center rounded text-xs  ${
                 activeTab === "trades"
                   ? `${purpleGradient} text-white`
                   : "text-gray-400 hover:bg-[#2a1b3d]"
               } transition-colors`}
               onClick={() => setActiveTab("trades")}
             >
-              <span className="mr-1 md:mr-2">Trades</span>
+              <span className="mr-1 ">Trades</span>
 
-              <span className="bg-[#9B59B6]/30 text-white px-1 md:px-2 py-0.5 rounded text-xxs md:text-xs">
+              <span className="bg-[#9B59B6]/30 text-white px-1  py-0.5 rounded text-xxs ">
                 {traderhistory?.length}
               </span>
             </button>
 
             <button
-              className={`flex-1 py-2 md:py-3 flex items-center justify-center text-xs md:text-sm rounded ${
+              className={`flex-1 py-2  flex items-center justify-center text-xs  rounded ${
                 activeTab === "orders"
                   ? `${purpleGradient} text-white`
                   : "text-gray-400 hover:bg-[#2a1b3d]"
               } transition-colors`}
               onClick={() => setActiveTab("orders")}
             >
-              <FaList className="mr-1 md:mr-2 text-xs md:text-sm" />
+              <FaList className="mr-1  text-xs " />
 
-              <span className="bg-[#9B59B6]/30 text-white px-1 md:px-2 py-0.5 rounded text-xxs md:text-xs">
+              <span className="bg-[#9B59B6]/30 text-white px-1  py-0.5 rounded text-xxs ">
                 {pendingResult?.length || "0"}
               </span>
             </button>
@@ -698,7 +700,7 @@ const TradeChart = () => {
 
           {/* Content */}
           <div
-            className={`flex-grow p-2 md:p-2 ${
+            className={`flex-grow p-2  ${
               isExpanded ? "block" : "hidden"
             }`}
           >
@@ -833,11 +835,11 @@ const TradeChart = () => {
 
           {/* Toggle Button */}
           <button
-            className="w-full py-1 md:py-2 bg-[#12061C] hover:bg-[#2a1b3d] transition-colors flex items-center justify-center text-[#C77AFF]"
+            className="w-full py-1  bg-[#12061C] hover:bg-[#2a1b3d] transition-colors flex items-center justify-center text-[#C77AFF]"
             onClick={toggleExpand}
           >
             <FaCaretUp
-              className={`transition-transform text-xs md:text-sm ${
+              className={`transition-transform text-xs  ${
                 isExpanded ? "rotate-0" : "rotate-180"
               }`}
             />
@@ -846,7 +848,7 @@ const TradeChart = () => {
       </div>
 
       {/* Mobile History Button */}
-      <div className="absolute top-20 left-2 block md:hidden">
+      <div className="absolute top-20 left-2 block ">
         <div
           onClick={() => setHistory(!history)}
           className="text-white bg-[#1C0F2B] border border-[#2a1b3d] rounded p-1"
@@ -857,41 +859,41 @@ const TradeChart = () => {
 
       {/* Mobile History */}
       {history && (
-        <div className="bg-[#1C0F2B] border border-[#2a1b3d] rounded flex-grow md:flex flex-col w-full absolute bottom-10 z-20">
+        <div className="bg-[#1C0F2B] border border-[#2a1b3d] rounded flex-grow  flex-col w-full absolute bottom-10 z-20">
           <div className="flex border-b gap-2 border-[#2a1b3d]">
             <button
-              className={`flex-1 py-2 md:py-3 flex items-center justify-center rounded text-xs md:text-sm ${
+              className={`flex-1 py-2  flex items-center justify-center rounded text-xs  ${
                 activeTab === "trades"
                   ? `${purpleGradient} text-white`
                   : "text-gray-400 hover:bg-[#2a1b3d]"
               } transition-colors`}
               onClick={() => setActiveTab("trades")}
             >
-              <span className="mr-1 md:mr-2">Trades</span>
+              <span className="mr-1 ">Trades</span>
 
-              <span className="bg-[#9B59B6]/30 text-white px-1 md:px-2 py-0.5 rounded text-xxs md:text-xs">
+              <span className="bg-[#9B59B6]/30 text-white px-1  py-0.5 rounded text-xxs ">
                 {traderhistory?.length}
               </span>
             </button>
 
             <button
-              className={`flex-1 py-2 md:py-3 flex items-center justify-center text-xs md:text-sm rounded ${
+              className={`flex-1 py-2  flex items-center justify-center text-xs  rounded ${
                 activeTab === "orders"
                   ? `${purpleGradient} text-white`
                   : "text-gray-400 hover:bg-[#2a1b3d]"
               } transition-colors`}
               onClick={() => setActiveTab("orders")}
             >
-              <FaList className="mr-1 md:mr-2 text-xs md:text-sm" />
+              <FaList className="mr-1  text-xs " />
 
-              <span className="bg-[#9B59B6]/30 text-white px-1 md:px-2 py-0.5 rounded text-xxs md:text-xs">
+              <span className="bg-[#9B59B6]/30 text-white px-1  py-0.5 rounded text-xxs ">
                 {pendingResult?.length || "0"}
               </span>
             </button>
           </div>
 
           <div
-            className={`flex-grow p-2 md:p-2 ${
+            className={`flex-grow p-2  ${
               isExpanded ? "block" : "hidden"
             }`}
           >
@@ -1025,11 +1027,11 @@ const TradeChart = () => {
           </div>
 
           <button
-            className="w-full py-1 md:py-2 bg-[#12061C] hover:bg-[#2a1b3d] transition-colors flex items-center justify-center text-[#C77AFF]"
+            className="w-full py-1  bg-[#12061C] hover:bg-[#2a1b3d] transition-colors flex items-center justify-center text-[#C77AFF]"
             onClick={toggleExpand}
           >
             <FaCaretUp
-              className={`transition-transform text-xs md:text-sm ${
+              className={`transition-transform text-xs  ${
                 isExpanded ? "rotate-0" : "rotate-180"
               }`}
             />
@@ -1039,14 +1041,14 @@ const TradeChart = () => {
 
       {/* Trade Pair Selector */}
       {showButton && (
-        <div className="fixed inset-0 z-[999] bg-black/70 flex items-start md:items-center justify-center">
-          <div className="relative w-full h-full md:w-[750px] md:h-[600px] md:rounded-2xl bg-[#1C0F2B] border border-[#2a1b3d] shadow-[0_15px_50px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-[999] bg-black/70 flex items-start  justify-center">
+          <div className="relative w-full h-full    bg-[#1C0F2B] border border-[#2a1b3d] shadow-[0_15px_50px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col">
             {/* HEADER */}
-            <div className="flex items-center justify-between px-4 md:px-5 py-3.5 md:py-4 border-b border-[#2a1b3d] bg-[#12061C] shrink-0">
+            <div className="flex items-center justify-between px-4  py-3.5  border-b border-[#2a1b3d] bg-[#12061C] shrink-0">
               <div className="flex items-center gap-2">
                 <div className={`w-1 h-6 rounded-full ${purpleGradient}`} />
 
-                <h3 className="font-bold text-base md:text-lg text-white">
+                <h3 className="font-bold text-base  text-white">
                   Select trade pair
                 </h3>
               </div>
@@ -1060,12 +1062,12 @@ const TradeChart = () => {
             </div>
 
             {/* FILTER */}
-            <div className="px-4 md:px-5 py-2.5 border-b border-[#2a1b3d] bg-[#12061C] shrink-0">
+            <div className="px-4  py-2.5 border-b border-[#2a1b3d] bg-[#12061C] shrink-0">
               {filters.map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
-                  className={`relative px-2 py-2 text-[11px] md:text-xs font-bold tracking-wide transition-all ${
+                  className={`relative px-2 py-2 text-[11px]  font-bold tracking-wide transition-all ${
                     activeFilter === filter
                       ? "text-[#C77AFF]"
                       : "text-gray-500 hover:text-[#9B59B6]"
@@ -1083,7 +1085,7 @@ const TradeChart = () => {
             </div>
 
             {/* SEARCH */}
-            <div className="px-4 md:px-5 py-3 border-b border-[#2a1b3d] bg-[#12061C] shrink-0">
+            <div className="px-4  py-3 border-b border-[#2a1b3d] bg-[#12061C] shrink-0">
               <div className="relative w-full">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaSearch className="text-[#9B59B6]" />
@@ -1100,7 +1102,7 @@ const TradeChart = () => {
             </div>
 
             {/* MOBILE LIST */}
-            <div className="md:hidden flex-1 overflow-y-auto bg-[#12061C] p-3 space-y-2">
+            <div className=" flex-1 overflow-y-auto bg-[#12061C] p-3 space-y-2">
               {filteredAssets.map((asset, index) => (
                 <div
                   key={asset.id}
@@ -1191,7 +1193,7 @@ const TradeChart = () => {
             </div>
 
             {/* DESKTOP TABLE */}
-            <div className="hidden md:block flex-1 overflow-y-auto">
+            <div className="hidden  flex-1 overflow-y-auto">
               <table className="min-w-full divide-y divide-[#2a1b3d]">
                 <thead className="bg-[#12061C] sticky top-0 z-10">
                   <tr>

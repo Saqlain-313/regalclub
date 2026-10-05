@@ -47,7 +47,7 @@ const Trade = () => {
   };
 
   return (
-    <div className="text-white md:p-4 w-full mx-auto h-[80vh] overflow-auto">
+    <div className="text-white  w-full mx-auto h-[80vh] overflow-auto">
 
       {/* Content Area */}
       <div className="p-4">

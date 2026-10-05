@@ -488,7 +488,7 @@ export default function Deposit() {
                         <span>Select Amount for ZilPay QR</span>
                       </div>
                     </label>
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-3  gap-4">
                       {QUICK_AMOUNTS.map((amt) => (
                         <div
                           key={amt}
@@ -550,7 +550,7 @@ export default function Deposit() {
                         <span>Select Amount for UPI QR</span>
                       </div>
                     </label>
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-3  gap-4">
                       {QUICK_AMOUNTS.map((amt) => (
                         <div
                           key={amt}
@@ -713,7 +713,7 @@ export default function Deposit() {
                             <span>Select USDT Amount</span>
                           </div>
                         </label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2  gap-4">
                           {USDT_QUICK_AMOUNTS.map((amt) => (
                             <div
                               key={amt}

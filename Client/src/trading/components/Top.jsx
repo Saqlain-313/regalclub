@@ -80,7 +80,7 @@ const Top = ({topPopupOpen, setTopPopupOpen}) => {
   }, [dispatch]);
 
   return (
-    <aside className="w-full lg:w-80 bg-gray-900 text-white shadow-lg h-[100vh] lg:h-[90vh] z-[]">
+    <aside className="w-full  bg-gray-900 text-white shadow-lg h-[100vh]  z-[]">
       {/* Leaderboard Panel */}
       <div className="p-4 h-full flex flex-col">
         {/* Header */}
@@ -90,7 +90,7 @@ const Top = ({topPopupOpen, setTopPopupOpen}) => {
               <h2 className="text-xl font-bold">Leader Board</h2>
               <p className="text-gray-400 font-semibold text-sm">of the Day</p>
             </div>
-            <div onClick={() => setTopPopupOpen(false)} className="cursor-pointer hidden lg:block"><RxCross1 /></div>
+            <div onClick={() => setTopPopupOpen(false)} className="cursor-pointer hidden "><RxCross1 /></div>
           </div>
         </div>
 

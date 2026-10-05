@@ -981,7 +981,7 @@ function ChartSection({ investment }) {
     <div className="app bg-[#0B0410]">
       <div className="chart-container relative">
         {/* Top bar */}
-        <div className="items-center gap-2 p-4 z-[10] absolute -top-6 left-0 hidden lg:flex">
+        <div className="items-center gap-2 p-4 z-[10] absolute -top-6 left-0 hidden ">
           <div>
             <button
               onClick={() => SetShowButton((prev) => !prev)}
@@ -1077,7 +1077,7 @@ function ChartSection({ investment }) {
                           </th>
                           <th
                             scope="col"
-                            className="px-6 py-3.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-[0.08em] hidden md:table-cell"
+                            className="px-6 py-3.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-[0.08em] hidden "
                           >
                             24h change
                           </th>
@@ -1148,7 +1148,7 @@ function ChartSection({ investment }) {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                            <td className="px-6 py-4 whitespace-nowrap hidden ">
                               <div
                                 className={`flex items-center font-semibold ${
                                   asset.change >= 0
@@ -1279,7 +1279,7 @@ function ChartSection({ investment }) {
             className={`${purpleGradient} text-white rounded-full p-1 transition-all`}
             title="View older candles"
           >
-            <ChevronLeft className="md:h-5 md:w-5 w-4 h-4" />
+            <ChevronLeft className="  w-4 h-4" />
           </button>
 
           <button
@@ -1287,14 +1287,14 @@ function ChartSection({ investment }) {
             className={`${purpleGradient} text-white rounded-full p-1 transition-all`}
             title="View newer candles"
           >
-            <ChevronRight className="md:h-5 md:w-5 w-4 h-4" />
+            <ChevronRight className="  w-4 h-4" />
           </button>
         </div>
 
         {/* Main chart */}
         <div
           ref={chartWrapperRef}
-          className="chart-wrapper md:pt-1 h-[50vh] lg:h-[88vh]"
+          className="chart-wrapper  h-[50vh] "
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
         >

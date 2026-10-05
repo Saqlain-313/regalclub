@@ -269,11 +269,14 @@ const Navbar = ({ children }) => {
 
   return (
     <>
-      {/* ================= DESKTOP SIDEBAR (Collapsible) ================= */}
+      {/* ================= DESKTOP SIDEBAR ================= */}
+      {/* Mobile-like layout everywhere — the sidebar stays hidden
+          on desktop and the bottom navigation is used instead */}
       <div
         className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 md:bg-[#0B0410] md:backdrop-blur-xl md:z-50 shadow-2xl shadow-black/50 border-r border-[#2a1b3d] perspective-1000 transition-all duration-300 ${
           isCollapsed ? "md:w-20" : "md:w-72"
         }`}
+        style={{ display: "none" }}
       >
         <div className="flex flex-col h-full relative">
           {/* Collapse Toggle Button — exact center */}
@@ -454,16 +457,14 @@ const Navbar = ({ children }) => {
       </div>
 
       {/* ================= MAIN CONTENT ================= */}
+      {/* Mobile-like layout on every screen — content stays in a
+          centered phone-width column on desktop too */}
       <div
-        className={`${
-          isCollapsed ? "md:ml-20" : "md:ml-72"
-        } flex flex-col min-h-screen bg-[#0B0410] transition-all duration-300`}
+        className={`flex flex-col min-h-screen bg-[#0B0410] transition-all duration-300 mx-auto w-full max-w-[480px] shadow-2xl shadow-black/60`}
       >
-        {/* ================= TOP NAVBAR (Fixed & Full Width) ================= */}
+        {/* ================= TOP NAVBAR (Fixed, phone-width) ================= */}
         <div
-          className={`h-16 border-b border-[#2a1b3d] bg-[#0B0410]/95 backdrop-blur-xl fixed top-0 right-0 z-40 shadow-lg shadow-black/30 transition-all duration-300 ${
-            isCollapsed ? "left-0 md:left-20" : "left-0 md:left-72"
-          }`}
+          className={`h-16 border-b border-[#2a1b3d] bg-[#0B0410]/95 backdrop-blur-xl fixed top-0 right-0 left-0 z-40 mx-auto max-w-[480px] shadow-lg shadow-black/30 transition-all duration-300`}
         >
           <div className="h-full flex items-center justify-between px-4 sm:px-6">
             {/* ================= LEFT - LOGO ================= */}
@@ -547,7 +548,7 @@ const Navbar = ({ children }) => {
       </div>
 
       {/* ================= MOBILE BOTTOM NAV ================= */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden perspective-1000">
+      <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-[480px] perspective-1000">
         <div className="relative mx-auto max-w-full">
           <div className="relative h-[72px] bg-[#1C0F2B]/95 backdrop-blur-xl rounded-t-3xl border-t border-[#2a1b3d] shadow-[0_-8px_40px_rgba(0,0,0,0.6)] transform-gpu translate-y-0 transition-all duration-700 [transform-style:preserve-3d]">
             {/* Grid Layout - 5 columns */}

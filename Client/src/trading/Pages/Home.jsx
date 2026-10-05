@@ -126,7 +126,7 @@ const Home = () => {
     <div className="flex flex-col justify-center items-center login-bg min-h-[90vh] p-4">
       <div className="w-full max-w-md">
         {/* <div className="text-center mb-8 text-white">
-          <h2 className=" text-xl md:text-3xl font-bold">
+          <h2 className=" text-xl  font-bold">
             {isLogin ? "Welcome Back" : "Create Account"}
           </h2>
           <p className="text-gray-300 mt-2">

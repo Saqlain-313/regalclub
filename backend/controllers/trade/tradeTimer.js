@@ -21,6 +21,7 @@ const ROUND_SECONDS = 30;
 
 let lastCreateCycle = null;
 let lastWinnerCycle = null;
+let lastRecoveryRun = 0;
 let timer = null;
 
 const getTradingClock = () => {
@@ -70,7 +71,39 @@ const recoverStaleRounds = async () => {
   // BEFORE fetching stale rounds so they are completed in this pass.
   const pendingBets = await Bet.find({ status: 0 });
   for (const b of pendingBets) {
-    const exists = await Trade.findOne({ period: b.period });
+    const exists = await Trade.findOne({ period: b.period }).lean();
+
+    // Bet placed on a round that is ALREADY settled — the settle
+    // snapshot ran before this bet was committed. Settle it now
+    // using that round's result, otherwise it stays orphaned forever.
+    if (exists && exists.status === 1) {
+      try {
+        const won = b.bet === exists.result;
+        if (won) {
+          const getAmount = Number((b.amount + b.amount * 0.93).toFixed(2));
+          await Bet.updateOne(
+            { _id: b._id, status: 0 },
+            { $set: { getAmount, result: b.bet, status: 1 } },
+          );
+          await User.updateOne(
+            { userId: b.userId },
+            { $inc: { credit: getAmount } },
+          );
+        } else {
+          await Bet.updateOne(
+            { _id: b._id, status: 0 },
+            { $set: { result: b.bet, status: 2 } },
+          );
+        }
+        console.log(
+          `♻️ Settled late bet ${b._id} on already-closed round ${b.period}`,
+        );
+      } catch (e) {
+        console.error("♻️ Late-bet settle error:", e.message);
+      }
+      continue;
+    }
+
     if (!exists) {
       try {
         await Trade.create({
@@ -134,6 +167,16 @@ const start = () => {
   timer = setInterval(async () => {
     try {
       const clock = broadcastTradingClock();
+
+      // Safety net every 60s — settle bets orphaned mid-run
+      // (backend restart races, late commits) without waiting for
+      // the next restart
+      if (Date.now() - lastRecoveryRun > 60 * 1000) {
+        lastRecoveryRun = Date.now();
+        await recoverStaleRounds().catch((e) =>
+          console.error("recovery error:", e.message),
+        );
+      }
 
       // At 5 seconds remaining, open/create the next trade round.
       if (clock.countdown === 5) {

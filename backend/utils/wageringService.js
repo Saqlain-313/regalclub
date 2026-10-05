@@ -1,20 +1,20 @@
 // utils/wageringService.js
 //
 // =====================================================
-// WAGERING-BASED WITHDRAWAL ELIGIBILITY (v2)
+// WAGERING-BASED WITHDRAWAL ELIGIBILITY (v3)
 //
-// Rules:
-// - Required wagering target = max(total COMPLETED recharge
-//   amount, admin-set requirement). Admin can force a target
-//   per user via `adminWageringRequired` (0 = off).
-// - Wagered = user's total game-play stakes across all games:
-//   wingo/TRX bets + matka bids + trade bets + API provider
-//   games. New games can be plugged in below.
-// - Winnings also complete wagering (a big win clears the
-//   requirement — e.g. 500 recharge + 100 bet + 9000 win =>
-//   wagering 0, full withdrawal allowed).
-// - Wagering pending -> user can withdraw only up to the
-//   completed (stake + win) amount, capped by wallet credit.
+// RULE — Deposit × 1:
+// - Required wagering = total COMPLETED recharge amount × 1
+//   (admin can force a higher fixed target per user via
+//   `adminWageringRequired`; effective target = max of both).
+// - Wagering reduces ONLY through valid bet stakes across ALL
+//   games: wingo/TRX + matka + trading + mines + powerball +
+//   API provider games.
+// - Winnings NEVER complete wagering (a ₹10,000 win does not
+//   reduce the remaining requirement).
+// - Wagering pending -> user can withdraw only up to the valid
+//   wagered volume minus what has already been withdrawn,
+//   capped by wallet credit.
 // - Wagering complete -> full wallet balance withdrawable.
 // =====================================================
 
@@ -22,6 +22,8 @@ const Deposit = require("../models/Deposit");
 const Bet = require("../models/Bet");
 const Bid = require("../models/Bid");
 const TradeBet = require("../models/TradeBet");
+const MinesGame = require("../models/MinesGame");
+const GameEntry = require("../models/GameEntry");
 const Withdrawal = require("../models/Withdrawal");
 const { getApiGameWagered } = require("../controllers/allgamecontroller/allGameController");
 
@@ -93,69 +95,62 @@ const getWageringSummary = async (user) => {
   //    winnings. Bet.money is the stake net of the 2% fee, so the
   //    gross stake = money + fee (otherwise a 500 stake only
   //    counted 490 towards wagering).
-  const [betAgg, betWinAgg, bidAgg, bidWinAgg, tradeBetAgg, tradeWinAgg] =
-    await Promise.all([
-      // Wingo / TRX bets — linked via mobile (stake)
-      mobile
-        ? Bet.aggregate([
-            { $match: { mobile } },
-            {
-              $group: {
-                _id: null,
-                total: {
-                  $sum: { $add: ["$money", { $ifNull: ["$fee", 0] }] },
-                },
+  // Winnings are NOT counted — wagering reduces only through valid
+  // bet stakes (Deposit × 1 rule).
+  const [
+    betAgg,
+    bidAgg,
+    tradeBetAgg,
+    minesAgg,
+    powerballAgg,
+  ] = await Promise.all([
+    // Wingo / TRX bets — linked via mobile (stake)
+    mobile
+      ? Bet.aggregate([
+          { $match: { mobile } },
+          {
+            $group: {
+              _id: null,
+              total: {
+                $sum: { $add: ["$money", { $ifNull: ["$fee", 0] }] },
               },
             },
-          ])
-        : Promise.resolve([]),
-      // Wingo / TRX winnings (payout stored in "get")
-      mobile
-        ? Bet.aggregate([
-            { $match: { mobile } },
-            {
-              $group: {
-                _id: null,
-                total: { $sum: { $ifNull: ["$get", 0] } },
-              },
-            },
-          ])
-        : Promise.resolve([]),
-      // Matka bids (stake)
-      Bid.aggregate([
-        { $match: { userId } },
-        { $group: { _id: null, total: { $sum: "$bidAmount" } } },
-      ]),
-      // Matka winnings
-      Bid.aggregate([
-        { $match: { userId, status: "won" } },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: { $ifNull: ["$winAmount", 0] } },
           },
+        ])
+      : Promise.resolve([]),
+    // Matka bids (stake)
+    Bid.aggregate([
+      { $match: { userId } },
+      { $group: { _id: null, total: { $sum: "$bidAmount" } } },
+    ]),
+    // Trade bets (stake)
+    TradeBet.aggregate([
+      { $match: { userId } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
+    // Mines games (stake per game)
+    MinesGame.aggregate([
+      { $match: { user: userId } },
+      { $group: { _id: null, total: { $sum: { $ifNull: ["$virtualStake", 0] } } } },
+    ]),
+    // Powerball entries (player bids inside each entry pool)
+    GameEntry.aggregate([
+      { $unwind: "$players" },
+      { $match: { "players.user": userId } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $ifNull: ["$players.bidAmount", 0] } },
         },
-      ]),
-      // Trade bets (stake)
-      TradeBet.aggregate([
-        { $match: { userId } },
-        { $group: { _id: null, total: { $sum: "$amount" } } },
-      ]),
-      // Trade winnings
-      TradeBet.aggregate([
-        { $match: { userId, status: 1 } },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: { $ifNull: ["$getAmount", 0] } },
-          },
-        },
-      ]),
-    ]);
+      },
+    ]),
+  ]);
 
   const wingoWagered = round2(betAgg[0]?.total || 0);
   const matkaWagered = round2(bidAgg[0]?.total || 0);
   const tradeWagered = round2(tradeBetAgg[0]?.total || 0);
+  const minesWagered = round2(minesAgg[0]?.total || 0);
+  const powerballWagered = round2(powerballAgg[0]?.total || 0);
 
   // 3) API provider games (zapcore games on the home page)
   //    Wagered comes from the provider's history. If the API
@@ -165,21 +160,19 @@ const getWageringSummary = async (user) => {
     ? round2(await getCachedApiWagered(mobile))
     : 0;
 
+  // Valid betting volume = stakes only. Winnings never complete
+  // wagering (Deposit × 1 rule).
   const totalWagered = round2(
-    wingoWagered + matkaWagered + tradeWagered + apiGameWagered,
+    wingoWagered +
+      matkaWagered +
+      tradeWagered +
+      minesWagered +
+      powerballWagered +
+      apiGameWagered,
   );
 
-  // Winnings (matka + wingo + trade) also complete wagering
-  const wingoWinnings = round2(betWinAgg[0]?.total || 0);
-  const matkaWinnings = round2(bidWinAgg[0]?.total || 0);
-  const tradeWinnings = round2(tradeWinAgg[0]?.total || 0);
-  const totalWinnings = round2(
-    wingoWinnings + matkaWinnings + tradeWinnings,
-  );
-
-  // Wagering completion = stakes + winnings. A big win clears
-  // the requirement instantly.
-  const wageringCompleted = round2(totalWagered + totalWinnings);
+  // Wagering completion = valid bet stakes only
+  const wageringCompleted = totalWagered;
 
   const remainingWagering = round2(
     Math.max(0, requiredWagering - wageringCompleted),
@@ -201,17 +194,22 @@ const getWageringSummary = async (user) => {
   const totalWithdrawn = round2(withdrawnAgg?.total || 0);
 
   // 5) Withdrawal cap:
-  //    - Wagering pending -> (completed stake+win) minus what has
-  //      already been withdrawn, capped by wallet credit
+  //    - Wagering pending -> winnings + the already-wagered part of
+  //      the deposit are withdrawable; the UN-WAGERED part of the
+  //      deposit stays locked until the wagering volume covers it.
+  //      Already-withdrawn amounts count against this cap.
   //    - Wagering complete -> full wallet balance
   const credit = round2(user.credit || 0);
+  const lockedDeposit = round2(
+    Math.max(0, rechargeWagering - wageringCompleted),
+  );
   const maxAllowedWithdrawal = round2(
     remainingWagering > 0
-      ? Math.max(0, Math.min(wageringCompleted, credit) - totalWithdrawn)
+      ? Math.max(0, credit - lockedDeposit - totalWithdrawn)
       : credit,
   );
 
-  // 5) Progress + status helpers for the UI
+  // 6) Progress + status helpers for the UI
   const progressPercent =
     requiredWagering > 0
       ? Math.min(100, round2((wageringCompleted / requiredWagering) * 100))
@@ -223,16 +221,18 @@ const getWageringSummary = async (user) => {
     rechargeWagering,
     adminWageringRequired,
     totalWagered,
-    totalWinnings,
     wageringCompleted,
     remainingWagering,
     totalWithdrawn,
+    lockedDeposit,
     maxAllowedWithdrawal,
     // Per-source breakdown (advanced view / future UI)
     breakdown: {
-      wingo: { wagered: wingoWagered, won: wingoWinnings },
-      matka: { wagered: matkaWagered, won: matkaWinnings },
-      trade: { wagered: tradeWagered, won: tradeWinnings },
+      wingo: { wagered: wingoWagered, won: 0 },
+      matka: { wagered: matkaWagered, won: 0 },
+      trade: { wagered: tradeWagered, won: 0 },
+      mines: { wagered: minesWagered, won: 0 },
+      powerball: { wagered: powerballWagered, won: 0 },
       apiGames: { wagered: apiGameWagered, won: 0 },
     },
     progressPercent,

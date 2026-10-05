@@ -64,7 +64,7 @@ const PopularGamesCards = () => {
           <NoticeBar />
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 ">
           {popularCards.map((game) => {
             const isTrading = game.id === 2;
             const needsLogin = isTrading && !user;

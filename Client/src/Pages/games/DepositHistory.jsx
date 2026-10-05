@@ -375,7 +375,7 @@ export default function DepositHistory() {
 
       <div className=" mx-auto md:px-4 pt-10 pb-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1  gap-4 mb-8">
           <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl border border-orange-500/20 p-6">
             <div className="text-gray-400 text-sm mb-2">Total Deposited</div>
             <div className="text-3xl font-bold text-white flex items-center">

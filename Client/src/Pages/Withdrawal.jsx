@@ -118,6 +118,35 @@ const Withdrawal = () => {
   // Saved payment methods (bank / upi / usdt) from the backend
   const savedMethods = useSelector(selectPaymentMethods);
 
+  // Last known withdrawable amount — shown instantly on refresh so
+  // the card never flashes the total wallet while eligibility loads
+  const [cachedWithdrawable, setCachedWithdrawable] = useState(() => {
+    try {
+      return Number(localStorage.getItem("rg_last_withdrawable")) || 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  useEffect(() => {
+    if (!eligibilityLoading && eligibility) {
+      setCachedWithdrawable(eligibility.maxAllowedWithdrawal || 0);
+      try {
+        localStorage.setItem(
+          "rg_last_withdrawable",
+          String(eligibility.maxAllowedWithdrawal || 0),
+        );
+      } catch {
+        /* storage unavailable */
+      }
+    }
+  }, [eligibility, eligibilityLoading]);
+
+  const displayedWithdrawable =
+    eligibilityLoading || !eligibility
+      ? cachedWithdrawable
+      : eligibility.maxAllowedWithdrawal || 0;
+
   // Frontend type -> saved-method type mapping
   const savedTypeOf = (method) =>
     method === "bank_transfer" ? "bank" : method === "crypto" ? "usdt" : "upi";
@@ -150,8 +179,7 @@ const Withdrawal = () => {
   useEffect(() => {
     if (!selectedPaymentMethod && savedMethods.length > 0) {
       const first = savedMethods[0];
-      const methodTile =
-        first.type === "bank"
+      const methodTile =        first.type === "bank"
           ? "bank_transfer"
           : first.type === "usdt"
             ? "crypto"
@@ -505,12 +533,15 @@ const Withdrawal = () => {
           <div className="relative flex items-center gap-2">
             <Wallet size={14} className="text-white/80" />
             <span className="text-[11px] font-semibold text-white/80">
-              Available balance
+              Withdrawable balance
             </span>
           </div>
 
+          {/* Show what the user can actually withdraw right now:
+              winnings + the wagering-completed amount (wagering
+              cap applied) — not the total wallet */}
           <p className="relative mt-1.5 text-3xl font-extrabold text-white tracking-tight">
-            {formatCurrency(user?.credit || 0)}
+            {formatCurrency(displayedWithdrawable)}
           </p>
 
           <div className="relative mt-3 flex justify-end gap-3 text-white/60">
@@ -762,9 +793,9 @@ const Withdrawal = () => {
           {/* Balance + net amount rows */}
           <div className="mt-3 space-y-1.5 text-[11px]">
             <div className="flex items-center justify-between">
-              <span className="text-gray-500">Withdrawal balance</span>
+              <span className="text-gray-500">Withdrawable balance</span>
               <span className="font-semibold text-gray-300">
-                {formatCurrency(user?.credit || 0)}
+                {formatCurrency(displayedWithdrawable)}
               </span>
             </div>
             <div className="flex items-center justify-between">

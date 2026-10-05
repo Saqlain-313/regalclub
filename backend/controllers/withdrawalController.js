@@ -340,7 +340,7 @@ const requestWithdrawal = async (req, res) => {
     const orderNow = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const orderNumber =
-      'WD' +
+      'REG' +
       orderNow.getFullYear() +
       pad(orderNow.getMonth() + 1) +
       pad(orderNow.getDate()) +

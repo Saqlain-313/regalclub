@@ -346,12 +346,12 @@ const Header = ({ children }) => {
         <div className="h-16 border-b border-[#2a1b3d] bg-[#0B0410]/95 backdrop-blur-xl sticky top-0 z-40 shadow-lg shadow-black/30 transform-gpu">
           <div className="h-full flex items-center px-4 sm:px-6">
             {/* Left - Menu & Logo */}
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 ">
               <Link
                 to="/"
                 className="flex items-center transform-gpu hover:scale-105 transition-all duration-500"
               >
-                <WinzoxLogo className="h-12 md:h-10" />
+                <WinzoxLogo className="h-12 " />
               </Link>
             </div>
 
@@ -390,7 +390,7 @@ const Header = ({ children }) => {
                   {/* Desktop */}
                   <Link
                     to="https://regalclub.live/account"
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl text-white hover:bg-[#1C0F2B] transition-all duration-500"
+                    className="hidden  items-center gap-2 px-3 py-1.5 rounded-xl text-white hover:bg-[#1C0F2B] transition-all duration-500"
                   >
                     <img
                       src={getAvatar()}
@@ -406,7 +406,7 @@ const Header = ({ children }) => {
                   </Link>
 
                   {/* Mobile */}
-                  <Link to="/account" className="md:hidden flex items-center">
+                  <Link to="/account" className=" flex items-center">
                     <img
                       src={getAvatar()}
                       alt={getUserDisplayName()}
@@ -424,7 +424,7 @@ const Header = ({ children }) => {
       </div>
 
       {/* ================= MOBILE BOTTOM NAV ================= */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden perspective-1000">
+      <div className="fixed bottom-0 left-0 right-0 z-50  perspective-1000">
         <div className="relative mx-auto max-w-full">
           <div className="relative h-[72px] bg-[#1C0F2B]/95 backdrop-blur-xl rounded-t-3xl border-t border-[#2a1b3d] shadow-[0_-8px_40px_rgba(0,0,0,0.6)] transform-gpu translate-y-0 transition-all duration-700 [transform-style:preserve-3d]">
             <div className="grid grid-cols-5 h-full w-full">
@@ -525,7 +525,7 @@ const Header = ({ children }) => {
 
       {/* ================= MOBILE SIDEBAR ================= */}
       <div
-        className={`fixed inset-0 z-50 md:hidden transition-all duration-500 ${
+        className={`fixed inset-0 z-50  transition-all duration-500 ${
           isSidebarOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
         onClick={(e) => {

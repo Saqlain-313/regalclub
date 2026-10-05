@@ -130,10 +130,10 @@ const DepositPayment = () => {
 
   return (
     <div className="h-[80vh] overflow-auto">
-      <div className="w-full mx-auto bg-[#212634] flex flex-col lg:flex-row items-start md:p-5">
-        <div className="flex flex-col lg:flex-row text-white min-h-[400px]">
+      <div className="w-full mx-auto bg-[#212634] flex flex-col  items-start ">
+        <div className="flex flex-col  text-white min-h-[400px]">
           {/* Left column */}
-          <div className="w-full lg:w-[40%] p-6 border-r border-gray-800">
+          <div className="w-full  p-6 border-r border-gray-800">
             <h2 className="text-xl font-medium mb-4">Chosen payment method</h2>
 
             <div className="bg-[#1c1f2d] rounded p-4 mb-4">
@@ -159,7 +159,7 @@ const DepositPayment = () => {
           </div>
 
           {/* Right column */}
-          <div className="lg:w-[60%] p-6">
+          <div className=" p-6">
             <h2 className="text-xl font-medium mb-4">
               Deposit ${amount} via {method}
             </h2>
@@ -186,7 +186,7 @@ const DepositPayment = () => {
             </div>
 
             {/* Payment details */}
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col  gap-6">
               {/* QR Code */}
               {console.log("admininfo", admininfo)}
               <div className="bg-[#1c1f2d] p-2 w-[200px] h-[200px] flex items-center justify-center">
@@ -258,7 +258,7 @@ const DepositPayment = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-full lg:w-[25%] border border-gray-200 dark:border-gray-700 p-4 rounded-lg mb-4 shadow-sm bg-[#1c1f2d] dark:bg-gray-800">
+        <div className="w-full  border border-gray-200 dark:border-gray-700 p-4 rounded-lg mb-4 shadow-sm bg-[#1c1f2d] dark:bg-gray-800">
           <div className="w-full flex flex-col justify-center items-center">
             {/* QR Code Section */}
             <div className="w-full">
@@ -357,9 +357,9 @@ const DepositPayment = () => {
           </div>
         </div>
       </div>
-      <div className="flex flex-col md:flex-row w-full bg-gray-900 text-white rounded-lg overflow-hidden">
+      <div className="flex flex-col  w-full bg-gray-900 text-white rounded-lg overflow-hidden">
         {/* Left section - Payment info */}
-        <div className="p-3 border-r border-gray-800 flex flex-col space-y-2 md:w-1/3 text-sm">
+        <div className="p-3 border-r border-gray-800 flex flex-col space-y-2  text-sm">
           <div className="flex items-center gap-3">
             <DollarSign className="h-5 w-5 text-green-500" />
             <span>

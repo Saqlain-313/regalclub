@@ -42,7 +42,7 @@ const Sidebar = ({ topPopupOpen, setTopPopupOpen }) => {
   };
 
   return (
-    <div className="hidden lg:flex flex-col justify-between h-[88vh]">
+    <div className="hidden  flex-col justify-between h-[88vh]">
       <nav className="flex flex-col items-center space-y-2 p-4 pt-0">
         {/* Trade Button */}
         <div>

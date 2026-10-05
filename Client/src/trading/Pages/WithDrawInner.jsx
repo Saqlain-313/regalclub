@@ -53,9 +53,9 @@ const WithdrawInner = () => {
   };
 
   return (
-    <div className="w-full mx-auto md:p-4 h-[80vh] overflow-auto">
+    <div className="w-full mx-auto  h-[80vh] overflow-auto">
       {/* Account Summary Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1  gap-6 mb-8">
         {/* Account Balance Card */}
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
           <h2 className="text-xl font-semibold mb-6 text-white flex items-center">
@@ -69,7 +69,7 @@ const WithdrawInner = () => {
                 <p className="text-gray-400 font-medium">Current Balance</p>
                 <p className="text-sm text-gray-500">Total funds in your account</p>
               </div>
-              <p className=" md:text-2xl font-bold text-white">₹{userInfo?.money}</p>
+              <p className="  font-bold text-white">₹{userInfo?.money}</p>
             </div>
             
             <div className="flex justify-between items-center pb-4 border-b border-gray-700">
@@ -77,7 +77,7 @@ const WithdrawInner = () => {
                 <p className="text-gray-400 font-medium">Available for Withdrawal</p>
                 <p className="text-sm text-gray-500">After trade commitments</p>
               </div>
-              <p className="md:text-2xl font-bold text-green-400">₹{userInfo?.money}</p>
+              <p className=" font-bold text-green-400">₹{userInfo?.money}</p>
             </div>
             
             {/* <div className="flex justify-between items-center">
@@ -91,7 +91,7 @@ const WithdrawInner = () => {
         </div>
 
         {/* Withdrawal Form */}
-        <div className="bg-gray-800 p-2 md:p-6 rounded-xl shadow-lg">
+        <div className="bg-gray-800 p-2  rounded-xl shadow-lg">
           <h2 className="text-xl font-semibold mb-6 text-white flex items-center">
             <FiCreditCard className="mr-2 text-green-500" />
             Withdraw Funds
@@ -108,7 +108,7 @@ const WithdrawInner = () => {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleWithdrawal} className="mb-[100px] lg:mb-0">
+            <form onSubmit={handleWithdrawal} className="mb-[100px] ">
               <div className="mb-4">
                 <label className="block text-gray-400 mb-2">Amount {selectedMethod === "upi" ? "(₹)" : "($)"} </label>
                 <div className="relative">

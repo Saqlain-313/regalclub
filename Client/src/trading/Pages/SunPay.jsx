@@ -82,10 +82,10 @@ const SunPay = () => {
 
   return (
     <div className="h-[80vh] overflow-auto">
-      <div className=" mx-auto bg-[#212634] flex flex-col lg:flex-row items-center lg:items-start gap-4 p-5">
+      <div className=" mx-auto bg-[#212634] flex flex-col  items-center  gap-4 p-5">
         {/* Payment method section */}
-        <div className="lg:w-[30%]">
-          <div className="flex-1 p-2 md:p-6 bg-[#1c1f2d] rounded shadow-sm">
+        <div className="">
+          <div className="flex-1 p-2  bg-[#1c1f2d] rounded shadow-sm">
             <div className="text-lg font-semibold text-gray-700 mb-4">
               Chosen payment method:
             </div>
@@ -129,7 +129,7 @@ const SunPay = () => {
         </div>
 
         {/* Payment data section */}
-        <div className="lg:w-[35%]">
+        <div className="">
           <div className=" rounded">
             {/* Section Header */}
             <div className="text-lg font-semibold text-white mb-4">
@@ -248,7 +248,7 @@ const SunPay = () => {
             <div>
               <div
                 onClick={handleDeposit}
-                className="deposit-page__submit-button active flex items-center space-x-2 px-2 md:px-3 py-2 bg-green-500 hover:bg-green-700 text-white rounded focus:outline-none mt-5"
+                className="deposit-page__submit-button active flex items-center space-x-2 px-2  py-2 bg-green-500 hover:bg-green-700 text-white rounded focus:outline-none mt-5"
               >
                 <span>Deposit</span>
                 <FaArrowCircleRight className="text-white w-34 h-4" />{" "}
@@ -257,8 +257,8 @@ const SunPay = () => {
             </div>
           </div>
         </div>
-        <div className="lg:w-[35%]">
-          <div className=" text-white p-2 md:p-6 max-w-2xl mx-auto text-sm">
+        <div className="">
+          <div className=" text-white p-2  max-w-2xl mx-auto text-sm">
             <div className="flex justify-start items-center mb-4">
               <h2 className="text-lg font-bold">FAQ:</h2>
             </div>
@@ -432,9 +432,9 @@ const SunPay = () => {
           </div>
         </div>
       </div>
-      <div className="flex flex-col md:flex-row w-full bg-gray-900 text-white rounded-lg overflow-hidden">
+      <div className="flex flex-col  w-full bg-gray-900 text-white rounded-lg overflow-hidden">
         {/* Left section - Payment info */}
-        <div className="p-3 border-r border-gray-800 flex flex-col space-y-2 md:w-1/3 text-sm">
+        <div className="p-3 border-r border-gray-800 flex flex-col space-y-2  text-sm">
           <div className="flex items-center gap-3">
             <DollarSign className="h-5 w-5 text-green-500" />
             <span>

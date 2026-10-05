@@ -54,9 +54,9 @@ const DepositInner = () => {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 p-3 md:p-5">
+      <div className="flex flex-wrap gap-2 p-3 ">
         {/* Cryptocurrencies */}
-        <div className="flex flex-col w-full lg:w-[48%]">
+        <div className="flex flex-col w-full ">
           <div>
             <div className="pt-5 flex items-center space-x-2 text-lg font-semibold">
               <FaBitcoin className="w-5 h-5 text-white" />
@@ -70,7 +70,7 @@ const DepositInner = () => {
                 >
                   <Link
                     to={`/Deposite?trading=bounce-page`}
-                    className="bg-[#1c1f2d] flex items-center space-x-4 p-3 md:p-5 rounded-md"
+                    className="bg-[#1c1f2d] flex items-center space-x-4 p-3  rounded-md"
                   >
                     <img
                       src={provider.logo}
@@ -86,7 +86,7 @@ const DepositInner = () => {
         </div>
 
         {/* E-payments */}
-        <div className="flex flex-col w-full lg:w-[48%]">
+        <div className="flex flex-col w-full ">
           <div className="pt-5 flex items-center space-x-2 text-lg font-semibold">
             <FaPaypal className="w-5 h-5 text-white" />
             <span className="text-white">E-payments</span>
@@ -96,7 +96,7 @@ const DepositInner = () => {
               <Link
                 key={index}
                 to={`/Deposite?trading=${provider.link}`}
-                className="bg-[#1c1f2d]  flex items-center space-x-4 p-3 md:p-5 rounded-md"
+                className="bg-[#1c1f2d]  flex items-center space-x-4 p-3  rounded-md"
               >
                 <img
                   src={provider.logo}

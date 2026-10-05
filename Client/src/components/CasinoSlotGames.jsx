@@ -107,7 +107,7 @@ function GameGrid({ games = [], mobileLimit = 6, desktopLimit = 12 }) {
 
   return (
     <>
-      <div className="grid md:grid-cols-6 grid-cols-3 gap-3 md:gap-4">
+      <div className="grid  grid-cols-3 gap-3 md:gap-4">
         {displayGames.map((game, index) => {
           const hideOnMobile = index >= mobileLimit;
           const gameKey = game.game_uid || game.id || index;

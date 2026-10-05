@@ -47,7 +47,7 @@ const PromoPage = () => {
         <PromoTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {activeTab === "link" && (
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="mt-6 grid grid-cols-1  gap-6">
             <div className="lg:col-span-2 space-y-6">
               <PromoBanner />
               <ReferralCard />
@@ -65,7 +65,7 @@ const PromoPage = () => {
         )}
 
         {activeTab === "recharge" && (
-          <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="mt-6 grid grid-cols-1  gap-6">
             <div className="xl:col-span-2">
               <RechargeBonus />
             </div>
@@ -76,7 +76,7 @@ const PromoPage = () => {
         )}
 
         {activeTab === "bet" && (
-          <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="mt-6 grid grid-cols-1  gap-6">
             <div className="xl:col-span-2">
               <BetBonus />
             </div>

@@ -88,13 +88,13 @@ const Account = () => {
   }
 
   return (
-    <div className="flex flex-wrap gap-2 md:gap-6 md:p-4 max-w-full mx-auto mb-4 h-[80vh] overflow-auto">
+    <div className="flex flex-wrap gap-2   max-w-full mx-auto mb-4 h-[80vh] overflow-auto">
       {/* Left Column */}
       <div className="flex-1 min-w-[300px]">
         {/* Personal Data Form */}
         <form
           onSubmit={handleSubmit}
-          className="bg-[#1f2937] rounded-lg shadow-lg p-2 md:p-6 mb-6"
+          className="bg-[#1f2937] rounded-lg shadow-lg p-2  mb-6"
         >
           <h2 className="text-xl font-bold mb-4 text-white">Personal data:</h2>
 

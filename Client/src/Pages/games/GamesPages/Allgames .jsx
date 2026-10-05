@@ -417,7 +417,7 @@ const AllGames = ({ isHome = false }) => {
         </div>
 
         {/* GRID */}
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3  ">
           {visibleGames.map((game) => (
             <div
               key={game.id}

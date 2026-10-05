@@ -370,7 +370,7 @@ const Slotgame = ({ isHome = false }) => {
           ) : (
             <>
               {/* GAME GRID */}
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3  ">
                 {displayGames.map((game, index) => {
                   // Home preview hides games 7+ on mobile;
                   // the /slots view-all page shows everything (Casino style)

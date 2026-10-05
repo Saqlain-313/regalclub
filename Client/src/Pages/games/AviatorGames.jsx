@@ -239,7 +239,7 @@ const AviatorGames = ({ isHome = false }) => {
         </div>
 
         {/* GRID */}
-        <div className="max-w-6xl grid grid-cols-1 gap-3 sm:grid-cols-2 sm:-mt-4 sm:gap-5 lg:grid-cols-3">
+        <div className="max-w-6xl grid grid-cols-1 gap-3 sm:grid-cols-2 sm:-mt-4 sm:gap-5 ">
           <div
             onClick={handlePlay}
             onMouseEnter={() => setHovered(true)}

@@ -1024,7 +1024,7 @@ const GameSelection = () => {
               No ticket types available
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3   gap-3 sm:gap-4">
               {ticketTypes.map((ticket) => {
                 const isActive = activeTicket === ticket._id;
                 const TicketIcon = getTicketIcon(ticket.title || ticket.name);
@@ -1748,7 +1748,7 @@ const GameSelection = () => {
                 </div>
 
                 {/* Full Details Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                <div className="grid grid-cols-2  gap-2 mt-4">
                   {/* Ticket Details */}
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3">
                     <p className="text-[10px] text-white/70">Ticket</p>

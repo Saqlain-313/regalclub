@@ -64,3 +64,10 @@ html::-webkit-scrollbar {
 .dark-bg {
   background-color: #1c0f2b !important;
 }
+
+/* Mobile-like layout — the area outside the centered phone-width
+   column stays the app's dark color */
+html,
+body {
+  background-color: #0b0410;
+}
