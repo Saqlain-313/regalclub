@@ -186,33 +186,44 @@ const Deposit = () => {
           <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10" />
           <div className="pointer-events-none absolute -bottom-14 -left-8 h-40 w-40 rounded-full bg-white/5" />
 
-          <div className="relative flex items-center gap-2">
-            <Wallet size={14} className="text-white/80" />
-            <span className="text-[11px] font-semibold text-white/80">
-              Balance
-            </span>
-          </div>
+          <div className="relative flex items-start justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <Wallet size={14} className="text-white/80" />
+                <span className="text-[11px] font-semibold text-white/80">
+                  Balance
+                </span>
+              </div>
 
-          <div className="relative mt-1 flex items-center gap-2.5">
-            <p className="text-3xl font-extrabold tracking-tight text-white">
-              {formatCurrency(user?.credit)}
-            </p>
-            <button
-              type="button"
-              onClick={handleRefreshBalance}
-              className="text-white/70 transition-all hover:text-white active:rotate-180"
-              aria-label="Refresh balance"
-            >
-              <RefreshCw
-                size={15}
-                className={refreshing ? "animate-spin" : ""}
-              />
-            </button>
-          </div>
+              <div className="relative mt-1 flex items-center gap-2.5">
+                <p className="text-3xl font-extrabold tracking-tight text-white">
+                  {formatCurrency(user?.credit)}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRefreshBalance}
+                  className="text-white/70 transition-all hover:text-white active:rotate-180"
+                  aria-label="Refresh balance"
+                >
+                  <RefreshCw
+                    size={15}
+                    className={refreshing ? "animate-spin" : ""}
+                  />
+                </button>
+              </div>
 
-          <div className="relative mt-3 flex justify-end gap-3 text-white/60">
-            <span className="text-[10px] tracking-[0.3em]">••••</span>
-            <span className="text-[10px] tracking-[0.3em]">••••</span>
+              <div className="relative mt-3 flex gap-3 text-white/60">
+                <span className="text-[10px] tracking-[0.3em]">••••</span>
+                <span className="text-[10px] tracking-[0.3em]">••••</span>
+              </div>
+            </div>
+
+            {/* Wallet illustration — /wallet jaisi */}
+            <img
+              src="https://i.ibb.co/8gXCwzjp/wallet.png"
+              alt="Wallet illustration"
+              className="-mr-4 h-[110px] w-[170px] flex-shrink-0 object-contain opacity-90"
+            />
           </div>
         </div>
 

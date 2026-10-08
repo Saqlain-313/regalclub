@@ -17,6 +17,7 @@ import WithdrawalSettings from "./admin/pages/WithdrawalSettings";
 import CreateWithdrawalSettings from "./admin/pages/createWithdrawalSettings";
 import Banners from "./admin/pages/Banners";
 import ActivityBanners from "./admin/pages/ActivityBanners";
+import GameImages from "./admin/pages/GameImages";
 import AdminPlatformGames from "./admin/pages/AdminPlatformGames";
 
 import PrivateRoute from "./admin/routes/PrivateRoute";
@@ -213,6 +214,11 @@ function App() {
           <Route
             path="/admin/activity-banners"
             element={<ActivityBanners />}
+          />
+
+          <Route
+            path="/admin/game-images"
+            element={<GameImages />}
           />
 
           <Route

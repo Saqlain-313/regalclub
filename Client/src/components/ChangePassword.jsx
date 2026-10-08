@@ -1,5 +1,13 @@
+// components/ChangePassword.jsx
+//
+// /change-password — same design language as /wallet, /deposit and the
+// history pages:
+//   back-button header -> security tip card -> form section cards
+//   -> gradient submit + pill clear button. All logic unchanged.
+
 import {
   CheckCircle2,
+  ChevronLeft,
   Eye,
   EyeOff,
   Loader2,
@@ -17,6 +25,9 @@ import {
   clearMessage,
   logout,
 } from "../redux/slices/authSlice";
+
+const accentGradient =
+  "bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_10px_rgba(180,92,255,0.5)]";
 
 export default function ChangePassword() {
   const dispatch = useDispatch();
@@ -155,241 +166,205 @@ export default function ChangePassword() {
     }
   };
 
-  return (
-    <div className="relative min-h-screen bg-[#0B0410] overflow-hidden">
-      {/* Ambient glows */}
-      <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 bg-[#9B59B6]/20 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -right-24 w-64 h-64 bg-[#B45CFF]/15 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-0 w-80 h-80 bg-[#8E44AD]/10 rounded-full blur-3xl" />
+  // =============================================
+  // PASSWORD FIELD — /deposit input style
+  // =============================================
 
-      <div className="relative h-full w-full flex items-center justify-center p-4 sm:p-6 md:p-8">
-      <div className="w-full max-w-3xl mx-auto space-y-4 sm:space-y-5">
-        {/* Header Section */}
-        <div className="flex items-center gap-3">
-          <div
-            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] flex items-center justify-center text-white flex-shrink-0"
+  const PasswordField = ({
+    label,
+    name,
+    value,
+    placeholder,
+    show,
+    onToggle,
+    error,
+  }) => (
+    <div>
+      <label className="mb-1.5 flex items-center gap-2 text-sm font-bold text-white">
+        <Lock size={13} className="text-[#B45CFF]" />
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type={show ? "text" : "password"}
+          name={name}
+          value={value}
+          onChange={handleChange}
+          placeholder={placeholder}
+          className={`h-11 w-full rounded-xl border bg-[#12061C] px-3.5 pr-10 text-sm font-semibold text-white placeholder-gray-500 outline-none transition-all focus:border-[#B45CFF]/60 ${
+            error ? "border-red-500/50" : "border-[#2a1b3d]"
+          }`}
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition-all hover:text-gray-300"
+          aria-label={`Toggle ${label} visibility`}
+        >
+          {show ? <EyeOff size={15} /> : <Eye size={15} />}
+        </button>
+      </div>
+      {error && (
+        <p className="mt-1 text-[11px] text-red-400">{error}</p>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#0B0410] pb-10">
+      <div className="mx-auto max-w-md px-4 pt-4">
+        {/* ============================================= */}
+        {/* HEADER — back / title / (spacer)              */}
+        {/* ============================================= */}
+        <div className="mb-5 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#2a1b3d] bg-[#1C0F2B] text-white transition-all active:scale-95"
+            aria-label="Back"
           >
-            <Lock size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide">
-              Change Password
-            </h2>
-            <p className="text-[11px] text-gray-400">
-              Keep your account secure
+            <ChevronLeft size={18} />
+          </button>
+          <h1 className="flex-1 text-center text-base font-bold text-white">
+            Change Password
+          </h1>
+          <span className="w-9 flex-shrink-0" />
+        </div>
+
+        {/* ============================================= */}
+        {/* SECURITY TIP                                  */}
+        {/* ============================================= */}
+        <div className="mb-5 flex items-start gap-2.5 rounded-2xl border border-[#9B59B6]/30 bg-[#9B59B6]/10 p-3.5">
+          <ShieldCheck
+            size={16}
+            className="mt-0.5 flex-shrink-0 text-[#9B59B6]"
+          />
+          <div>
+            <p className="text-xs font-bold text-white">Security Tip</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-gray-400">
+              8+ characters with uppercase, number &amp; special character
             </p>
           </div>
         </div>
 
-        {/* Main Card */}
-        <div className="bg-[#150D22]/90 border border-[#2a1b3d] rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.04)] p-4 sm:p-6 md:p-8">
-          {/* Security Recommendation */}
-          <div className="mb-5 sm:mb-6 flex items-start gap-3 rounded-xl bg-[#9B59B6]/10 border border-[#9B59B6]/30 p-3 sm:p-4">
-            <ShieldCheck
-              className="text-[#9B59B6] flex-shrink-0 mt-0.5"
-              size={18}
-            />
-            <div>
-              <h3 className="font-semibold text-white text-sm sm:text-base">
-                Security Tip
-              </h3>
-              <p className="text-sm text-gray-400">
-                8+ characters with uppercase, number & special character
-              </p>
+        {/* ============================================= */}
+        {/* FORM                                          */}
+        {/* ============================================= */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Current Password */}
+          <PasswordField
+            label="Current Password"
+            name="currentPassword"
+            value={form.currentPassword}
+            placeholder="Enter current password"
+            show={showCurrent}
+            onToggle={() => setShowCurrent(!showCurrent)}
+            error={formErrors.currentPassword}
+          />
+
+          {/* New Password */}
+          <PasswordField
+            label="New Password"
+            name="newPassword"
+            value={form.newPassword}
+            placeholder="Enter new password"
+            show={showNew}
+            onToggle={() => setShowNew(!showNew)}
+            error={formErrors.newPassword}
+          />
+
+          {/* Confirm Password */}
+          <PasswordField
+            label="Confirm Password"
+            name="confirmPassword"
+            value={form.confirmPassword}
+            placeholder="Confirm new password"
+            show={showConfirm}
+            onToggle={() => setShowConfirm(!showConfirm)}
+            error={formErrors.confirmPassword}
+          />
+
+          {/* ============================================= */}
+          {/* PASSWORD STRENGTH — accent-bar checklist      */}
+          {/* ============================================= */}
+          <div className="rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="h-4 w-1 rounded-full bg-gradient-to-b from-[#B45CFF] to-[#7418F5]" />
+              <h2 className="text-sm font-bold text-white">
+                Password requirements
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: "minLength", label: "8+ characters" },
+                { key: "hasUpperCase", label: "Uppercase" },
+                { key: "hasNumber", label: "Number" },
+                { key: "hasSpecialChar", label: "Special char" },
+              ].map(({ key, label }) => {
+                const ok = passwordStrength[key];
+                return (
+                  <div
+                    key={key}
+                    className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-[10px] font-bold transition-all ${
+                      ok
+                        ? "border-[#00E676]/30 bg-[#00E676]/10 text-[#00E676]"
+                        : "border-[#2a1b3d] bg-[#12061C] text-gray-500"
+                    }`}
+                  >
+                    <CheckCircle2 size={12} className="flex-shrink-0" />
+                    {label}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-            {/* Current Password */}
-            <div>
-              <label className="block mb-1.5 font-medium text-gray-300 text-sm sm:text-base">
-                Current Password <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showCurrent ? "text" : "password"}
-                  name="currentPassword"
-                  value={form.currentPassword}
-                  onChange={handleChange}
-                  placeholder="Enter current password"
-                  className={`w-full h-11 sm:h-12 rounded-xl border ${
-                    formErrors.currentPassword
-                      ? "border-red-500/50"
-                      : "border-[#2a1b3d]"
-                  } bg-[#12061C] text-white px-4 pr-11 text-sm sm:text-base focus:border-[#B45CFF]/60 focus:ring-2 focus:ring-[#B45CFF]/20 outline-none transition`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrent(!showCurrent)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                >
-                  {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {formErrors.currentPassword && (
-                <p className="text-red-400 text-sm mt-1">
-                  {formErrors.currentPassword}
-                </p>
-              )}
-            </div>
-
-            {/* New Password */}
-            <div>
-              <label className="block mb-1.5 font-medium text-gray-300 text-sm sm:text-base">
-                New Password <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showNew ? "text" : "password"}
-                  name="newPassword"
-                  value={form.newPassword}
-                  onChange={handleChange}
-                  placeholder="Enter new password"
-                  className={`w-full h-11 sm:h-12 rounded-xl border ${
-                    formErrors.newPassword
-                      ? "border-red-500/50"
-                      : "border-[#2a1b3d]"
-                  } bg-[#12061C] text-white px-4 pr-11 text-sm sm:text-base focus:border-[#B45CFF]/60 focus:ring-2 focus:ring-[#B45CFF]/20 outline-none transition`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNew(!showNew)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                >
-                  {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {formErrors.newPassword && (
-                <p className="text-red-400 text-sm mt-1">
-                  {formErrors.newPassword}
-                </p>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block mb-1.5 font-medium text-gray-300 text-sm sm:text-base">
-                Confirm Password <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirm new password"
-                  className={`w-full h-11 sm:h-12 rounded-xl border ${
-                    formErrors.confirmPassword
-                      ? "border-red-500/50"
-                      : "border-[#2a1b3d]"
-                  } bg-[#12061C] text-white px-4 pr-11 text-sm sm:text-base focus:border-[#B45CFF]/60 focus:ring-2 focus:ring-[#B45CFF]/20 outline-none transition`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                >
-                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {formErrors.confirmPassword && (
-                <p className="text-red-400 text-sm mt-1">
-                  {formErrors.confirmPassword}
-                </p>
-              )}
-            </div>
-
-            {/* Password Strength Indicators */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div
-                className={`flex items-center gap-2 p-2 rounded-lg border ${
-                  passwordStrength.minLength
-                    ? "bg-[#00E676]/10 text-[#00E676] border-[#00E676]/30"
-                    : "bg-[#12061C] text-gray-500 border-[#2a1b3d]"
-                }`}
-              >
-                <CheckCircle2 size={14} className="flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-medium">8+ chars</span>
-              </div>
-              <div
-                className={`flex items-center gap-2 p-2 rounded-lg border ${
-                  passwordStrength.hasUpperCase
-                    ? "bg-[#00E676]/10 text-[#00E676] border-[#00E676]/30"
-                    : "bg-[#12061C] text-gray-500 border-[#2a1b3d]"
-                }`}
-              >
-                <CheckCircle2 size={14} className="flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-medium">
-                  Uppercase
+          {/* ============================================= */}
+          {/* ACTION BUTTONS — wallet/deposit style         */}
+          {/* ============================================= */}
+          <div className="flex gap-2.5">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full rounded-full border border-[#C77AFF]/60 bg-[#1C0F2B] py-3 text-xs font-bold text-[#B45CFF] transition-all hover:bg-[#2a1b3d] active:scale-[0.98]"
+            >
+              Clear
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full rounded-xl py-3 text-sm font-bold text-white transition-all active:scale-[0.98] ${accentGradient} ${
+                loading ? "cursor-not-allowed opacity-70" : ""
+              }`}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="animate-spin" size={16} />
+                  Updating...
                 </span>
-              </div>
-              <div
-                className={`flex items-center gap-2 p-2 rounded-lg border ${
-                  passwordStrength.hasNumber
-                    ? "bg-[#00E676]/10 text-[#00E676] border-[#00E676]/30"
-                    : "bg-[#12061C] text-gray-500 border-[#2a1b3d]"
-                }`}
-              >
-                <CheckCircle2 size={14} className="flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-medium">Number</span>
-              </div>
-              <div
-                className={`flex items-center gap-2 p-2 rounded-lg border ${
-                  passwordStrength.hasSpecialChar
-                    ? "bg-[#00E676]/10 text-[#00E676] border-[#00E676]/30"
-                    : "bg-[#12061C] text-gray-500 border-[#2a1b3d]"
-                }`}
-              >
-                <CheckCircle2 size={14} className="flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-medium">Special</span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-1">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="flex-1 h-11 sm:h-12 rounded-xl border border-[#2a1b3d] bg-[#12061C] text-gray-300 font-semibold hover:bg-[#2a1b3d] hover:text-white transition text-sm sm:text-base px-4"
-              >
-                Clear
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`flex-1 h-11 sm:h-12 rounded-xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] text-white font-bold transition text-sm sm:text-base px-4 ${
-                  loading
-                    ? "opacity-70 cursor-not-allowed"
-                    : "hover:scale-[1.02] active:scale-[0.98]"
-                }`}
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="animate-spin" size={18} />
-                    <span>Updating...</span>
-                  </span>
-                ) : (
-                  "Update Password"
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
+              ) : (
+                "Update Password"
+              )}
+            </button>
+          </div>
+        </form>
       </div>
 
-      {/* Relogin Notice Modal */}
+      {/* ============================================= */}
+      {/* RELOGIN NOTICE MODAL                          */}
+      {/* ============================================= */}
       {showReloginNotice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
-          <div className="relative bg-[#1C0F2B] rounded-2xl border border-[#2a1b3d] w-full max-w-xs p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.7)]">
-            <div className="w-14 h-14 rounded-full border border-[#9B59B6]/40 bg-[#9B59B6]/15 flex items-center justify-center mx-auto mb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-xs rounded-2xl border border-[#2a1b3d] bg-[#1C0F2B] p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.7)]">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-[#9B59B6]/40 bg-[#9B59B6]/15">
               <LogOut size={22} className="text-[#9B59B6]" />
             </div>
 
-            <h3 className="text-base font-bold text-white mb-1">
+            <h3 className="mb-1 text-base font-bold text-white">
               Please Login Again
             </h3>
-            <p className="text-xs text-gray-400 mb-5 leading-relaxed">
+            <p className="mb-5 text-[11px] leading-relaxed text-gray-400">
               Your password has been updated. For the changes to take effect,
               you need to log in again.
             </p>
@@ -397,13 +372,13 @@ export default function ChangePassword() {
             <button
               onClick={handleReloginConfirm}
               disabled={isLoggingOut}
-              className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] border border-[#C77AFF] shadow-[0_0_8px_#B45CFF,0_0_18px_rgba(139,43,255,0.75),inset_0_2px_4px_rgba(255,255,255,0.45),inset_0_-5px_8px_rgba(30,0,100,0.45)] text-white font-bold text-sm transition disabled:opacity-70 disabled:cursor-not-allowed"
+              className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 ${accentGradient}`}
             >
               {isLoggingOut ? (
-                <>
+                <span className="flex items-center justify-center gap-1.5">
                   <Loader2 className="animate-spin" size={16} />
                   Logging out...
-                </>
+                </span>
               ) : (
                 "OK"
               )}
@@ -411,7 +386,6 @@ export default function ChangePassword() {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

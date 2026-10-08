@@ -122,6 +122,11 @@ function ChartSection({ investment }) {
 
   const transformedData = useMemo(() => {
     if (!allTrade) return [];
+
+    // Dedupe by timestamp — a repeated period from the API renders as an
+    // overlapping/broken candle (looks like a gap in the chart).
+    const seen = new Set();
+
     return allTrade
       .map((trade) => ({
         y: [
@@ -132,6 +137,13 @@ function ChartSection({ investment }) {
         ],
         x: new Date(trade.x),
       }))
+      .filter((candle) => {
+        const key = candle.x.getTime();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .filter((candle) => !candle.y.some((v) => !Number.isFinite(v)))
       .sort((a, b) => a.x - b.x);
   }, [allTrade]);
 
@@ -140,7 +152,10 @@ function ChartSection({ investment }) {
   const MAX_ZOOM_RANGE = 200 * 1000;
   const DEFAULT_WINDOW_SIZE = 30;
   const MAX_CANDLE_HISTORY = 350;
-  const RIGHT_PADDING = 130000;
+  // Breathing room to the RIGHT of the newest candle. 130s (13 empty
+  // candle slots) used to leave a huge blank strip after the last
+  // candle — 20s keeps the chart tight against the live price.
+  const RIGHT_PADDING = 20 * 1000;
   const SHIFT_AMOUNT = 5 * 10000;
 
   const generatePriceMovement = (basePrice) => {
@@ -285,7 +300,10 @@ function ChartSection({ investment }) {
           },
 
           beforeZoom: (chartContext, { xaxis, yaxis }) => {
-            const minRange = 30 * 60 * 1000;
+            // Minimum zoom = MIN_ZOOM_RANGE (100s = 10 candles of 10s each).
+            // The old 30-minute minimum fought the ~5-minute visible window:
+            // every drag-select zoom-IN snapped back out, so zoom felt dead.
+            const minRange = 100 * 1000;
             if (xaxis.max - xaxis.min < minRange) {
               return {
                 xaxis: {
@@ -598,14 +616,10 @@ function ChartSection({ investment }) {
           const newestCandle = transformedData[transformedData.length - 1];
           const newCandleTime = newestCandle.x.getTime() + RIGHT_PADDING;
 
-          const maxZoomRange = 1744393458000 - 1744393888000;
-
-          if (xAxisRange.min - xAxisRange.max > maxZoomRange) {
-            setXAxisRange({
-              min: xAxisRange.min + maxZoomRange,
-              max: xAxisRange.max,
-            });
-          }
+          // Only auto-slide the view to follow the newest candle while
+          // the user has not panned manually. (A legacy "maxZoomRange"
+          // block here used to shove the axis 430s to the left on every
+          // refetch — that was the random gap between candles.)
           if (!isManualPan && newCandleTime !== newestCandleTimeRef.current) {
             const visibleRange = xAxisRange.max - xAxisRange.min;
 
@@ -856,7 +870,14 @@ function ChartSection({ investment }) {
         const span = currentRange.max - currentRange.min;
         let newSpan = span * zoomFactor;
 
-        newSpan = Math.min(Math.max(newSpan, MIN_ZOOM_RANGE), MAX_ZOOM_RANGE);
+        // Zoom-out cap = the WHOLE dataset (not a fixed 200s). The old
+        // fixed cap was smaller than the default view, so once candles
+        // looked big there was no way to zoom back out.
+        const fullDataSpan = newestCandleTime - oldestCandleTime;
+        newSpan = Math.min(
+          Math.max(newSpan, MIN_ZOOM_RANGE),
+          Math.max(fullDataSpan, MAX_ZOOM_RANGE),
+        );
 
         const center = (currentRange.min + currentRange.max) / 2;
         let newMin = center - newSpan / 2;

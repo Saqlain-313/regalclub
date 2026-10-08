@@ -52,6 +52,7 @@ const withdrawalRoutes = require("./routes/withdrawalRoutes");
 const paymentMethodRoutes = require("./routes/paymentMethodRoutes");
 const depositRoutes = require("./routes/depositRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
+const gameImageRoutes = require("./routes/gameImageRoutes");
 const activityBannerRoutes = require("./routes/activityBannerRoutes");
 const tradeRoutes = require("./routes/tradeRoutes");
 const tradeWebsocket = require("./config/tradeWebsocket");
@@ -361,6 +362,7 @@ app.use("/api/payment-methods", paymentMethodRoutes);
 app.use("/api/deposit", depositRoutes);
 app.use("/api/banner", bannerRoutes);
 app.use("/api/activity-banners", activityBannerRoutes);
+app.use("/api/game-images", gameImageRoutes);
 
 // =====================================================
 // TRADING (merged subdomain app)

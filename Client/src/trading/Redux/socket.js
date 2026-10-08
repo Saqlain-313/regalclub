@@ -2,25 +2,43 @@
 // One physical connection is used by the whole React app.
 // Components only subscribe/unsubscribe, so opening/closing pages does not
 // create duplicate sockets.
+//
+// FALLBACK: some hosting proxies block raw WebSocket upgrades on /ws.
+// The backend also emits the trading clock ("timeUpdate_30") over
+// Socket.IO, which survives such proxies. We listen on both channels and
+// forward Socket.IO events only while the raw /ws channel is down, so a
+// connected raw socket never produces double ticks.
 
-const getSocketUrl = () => {
-  // Optional Vite override:
-  // VITE_WS_URL=ws://localhost:9099/ws
-  if (import.meta.env.VITE_WS_URL) {
-    return import.meta.env.VITE_WS_URL;
-  }
-
-  // Same-origin — the vite dev server proxies /ws to the main backend.
-  // In production the site is served behind the same host as the API.
-  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${wsProtocol}//${window.location.host}/ws`;
-};
+import { io } from "socket.io-client";
 
 let socket = null;
+let sio = null;
 let reconnectTimer = null;
 let reconnectAttempt = 0;
 let shouldReconnect = true;
 const listeners = new Set();
+
+const isRawOpen = () =>
+  !!socket && socket.readyState === WebSocket.OPEN;
+
+const ensureSocketIoFallback = () => {
+  if (sio) return;
+
+  try {
+    sio = io("/", {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    sio.on("timeUpdate_30", (data) => {
+      if (!isRawOpen()) {
+        notify(data);
+      }
+    });
+  } catch (error) {
+    console.error("❌ Socket.IO fallback error:", error.message);
+  }
+};
 
 const notify = (data) => {
   listeners.forEach((listener) => {
@@ -44,8 +62,25 @@ const scheduleReconnect = () => {
   }, delay);
 };
 
+const getSocketUrl = () => {
+  // Optional Vite override:
+  // VITE_WS_URL=ws://localhost:9099/ws
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+
+  // Same-origin — the vite dev server proxies /ws to the main backend.
+  // In production the site is served behind the same host as the API.
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${wsProtocol}//${window.location.host}/ws`;
+};
+
 const connect = () => {
   if (!shouldReconnect) return;
+
+  // Bring up the Socket.IO fallback immediately — it covers the clock
+  // while the raw socket is still connecting or when /ws is blocked.
+  ensureSocketIoFallback();
 
   if (
     socket &&
@@ -148,6 +183,11 @@ export const disconnectSocket = () => {
   if (socket) {
     socket.close(1000, "Client shutdown");
     socket = null;
+  }
+
+  if (sio) {
+    sio.disconnect();
+    sio = null;
   }
 
   listeners.clear();

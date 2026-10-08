@@ -6,6 +6,9 @@ body {
   background-color: #0b040f;
 }
 
+/* trading.css loads once /trading is visited and never unloads —
+   keep every rule scoped so it can't restyle main-site pages */
+
 /* scrollbar */
 
 .hide-scrollbar::-webkit-scrollbar {
@@ -65,8 +68,10 @@ input[type="number"] {
 .no-spinner {
   -moz-appearance: textfield; /* Firefox */
 }
-@media screen and (max-width: 500px) {
-  .max-w-md {
-    width: 23rem;
-  }
+/* SCOPE to the trading app only — a global `.max-w-md` override here used
+   to leak into the MAIN site pages (wallet/deposit/withdrawal use
+   .max-w-md) and squish them after /trading was visited once, because
+   lazy-loaded CSS never unloads on route change. */
+.trade-root .max-w-md {
+  width: 23rem;
 }

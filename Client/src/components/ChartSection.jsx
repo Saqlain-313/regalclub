@@ -78,7 +78,9 @@ function ChartSection({ investment }) {
   }, [investment]);
   // WebSocket connection for time updates
   useEffect(() => {
-    const socket = io("http://localhost:8097", {
+    // Same-origin socket — a hardcoded localhost URL breaks the chart
+    // as soon as the app is served from a real domain.
+    const socket = io(window.location.origin, {
       path: "/ws",
       transports: ["polling", "websocket"],
       withCredentials: true,
@@ -299,8 +301,9 @@ function ChartSection({ investment }) {
           events: {
             // ... existing events ...
             beforeZoom: (chartContext, { xaxis, yaxis }) => {
-              // Maintain a minimum zoom level
-              const minRange = 30 * 60 * 1000; // 30 minutes in milliseconds
+              // Keep a minimum zoom level of 100s (10 candles) — a 30-minute
+              // minimum made zoom-in snap back out with 10s candles.
+              const minRange = 100 * 1000;
               if (xaxis.max - xaxis.min < minRange) {
                 return {
                   xaxis: {

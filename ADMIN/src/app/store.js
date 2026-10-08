@@ -7,6 +7,7 @@ import withdrawalReducer from "../admin/redux/withdrawalSlice";
 import withdrawalSettingsReducer from "../admin/redux/withdrawalSettingsSlice";
 import bannerReducer from "../admin/redux/bannerSlice";
 import activityBannerReducer from "../admin/redux/activityBannerSlice";
+import gameImageReducer from "../admin/redux/gameImageSlice";
 import ticketTypeReducer from "../admin/redux/ticketTypeSlice";
 
 import adminMarketReducer from "../admin/redux/adminMarketSlice";
@@ -91,6 +92,7 @@ export const store = configureStore({
     withdrawalSettings: withdrawalSettingsReducer,
     banner: bannerReducer,
     activityBannerAdmin: activityBannerReducer,
+    gameImages: gameImageReducer,
     ticketType: ticketTypeReducer,
     bettingBonus: bettingBonusReducer,
 
