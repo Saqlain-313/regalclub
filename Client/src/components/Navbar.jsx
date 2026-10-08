@@ -34,6 +34,17 @@ const Navbar = ({ children }) => {
   );
 
   // ==========================================================
+  // APK DETECT — median.co app mein custom user agent
+  // "RegalClubApp" append hota hai (App Studio → Web Overrides).
+  // APK ke andar download button ki jagah profile avatar dikhta hai.
+  // ==========================================================
+  const isInsideApk =
+    typeof navigator !== "undefined" &&
+    (navigator.userAgent.includes("RegalClubApp") ||
+      typeof window.median !== "undefined" ||
+      typeof window.Median !== "undefined");
+
+  // ==========================================================
   // LIVE WALLET — server pushes "wallet-update" to the user's
   // socket room on every credit/deduct (bet, win, deposit,
   // game transfer). The navbar refreshes instantly — no manual
@@ -506,15 +517,41 @@ const Navbar = ({ children }) => {
               {/* ================= AUTHENTICATED USER ================= */}
               {isAuthenticated ? (
                 <>
-                  {/* APK Download — white icon only, last position */}
-                  <a
-                    href="/apk/app.apk"
-                    download="RegalClub.apk"
-                    title="Download App (APK)"
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-transform duration-300 hover:scale-110"
-                  >
-                    <CloudDownload size={20} strokeWidth={2.2} />
-                  </a>
+                  {/* APK ke andar: download button ki jagah profile avatar.
+                      Browser mein: APK download button (white icon only). */}
+                  {isInsideApk ? (
+                    <Link
+                      to="/profile"
+                      title="Profile"
+                      className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#C77AFF] bg-gradient-to-br from-[#B45CFF] via-[#7418F5] to-[#3A00C9] text-white shadow-[0_0_8px_rgba(180,92,255,0.6)] transition-transform duration-300 hover:scale-110"
+                    >
+                      {user?.photo ? (
+                        <img
+                          src={user.photo}
+                          alt="Profile"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm font-black">
+                          {String(
+                            user?.name || user?.username || user?.userId || "U",
+                          )
+                            .trim()
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                      )}
+                    </Link>
+                  ) : (
+                    <a
+                      href="/apk/app.apk"
+                      download="RegalClub.apk"
+                      title="Download App (APK)"
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-transform duration-300 hover:scale-110"
+                    >
+                      <CloudDownload size={20} strokeWidth={2.2} />
+                    </a>
+                  )}
                 </>
               ) : (
                 <>

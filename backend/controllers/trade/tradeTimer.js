@@ -44,10 +44,20 @@ const getTradingClock = () => {
 const broadcastTradingClock = () => {
   const clock = getTradingClock();
 
-  websocket.broadcast({
+  const payload = {
     event: "timeUpdate_30",
     ...clock,
-  });
+  };
+
+  websocket.broadcast(payload);
+
+  // Socket.IO fallback — the raw /ws channel can be blocked by a hosting
+  // reverse proxy that does not forward WebSocket upgrades. Socket.IO
+  // (polling + websocket) reaches clients even then, so the /trading
+  // timer and live candle keep working.
+  if (global.io) {
+    global.io.emit("timeUpdate_30", payload);
+  }
 
   return clock;
 };

@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { api } from "../redux/slices/api";
 import NoticeBar from "../components/home/NoticeBar";
 import powerballAustraliaIMG from "../assets/Home/powerball-australia.png";
 import powerballIndiaIMG from "../assets/Home/powerball-india.png";
@@ -8,48 +10,77 @@ import minesIMG from "../assets/Home/mines-new.png";
 import tradingIMG from "../assets/Home/trading-new.png";
 import wingoIMG from "../assets/Home/wingo-new.png";
 
+const popularCards = [
+  {
+    id: 1,
+    key: "wingo",
+    name: "Wingo",
+    img: wingoIMG,
+    to: "/wingo",
+  },
+  {
+    id: 2,
+    key: "trading",
+    name: "Trading",
+    img: tradingIMG,
+    to: "/trading",
+    external: false,
+  },
+  {
+    id: 3,
+    key: "mines",
+    name: "Mines",
+    img: minesIMG,
+    to: "/mine-games",
+  },
+  {
+    id: 4,
+    key: "powerball_india",
+    name: "Powerball India",
+    img: powerballIndiaIMG,
+    to: "/powerhit",
+  },
+  {
+    id: 5,
+    key: "matka",
+    name: "Matka",
+    img: matkaIMG,
+    to: "/matka/markets",
+  },
+  {
+    id: 6,
+    key: "powerball_australia",
+    name: "Powerball Australia",
+    img: powerballAustraliaIMG,
+    to: "/powerhit",
+  },
+];
+
 const PopularGamesCards = () => {
   const user = useSelector((state) => state.auth.user);
 
-  const popularCards = [
-    {
-      id: 1,
-      name: "Wingo",
-      img: wingoIMG,
-      to: "/wingo",
-    },
-    {
-      id: 2,
-      name: "Trading",
-      img: tradingIMG,
-      to: "/trading",
-      external: false,
-    },
-    {
-      id: 3,
-      name: "Mines",
-      img: minesIMG,
-      to: "/mine-games",
-    },
-    {
-      id: 4,
-      name: "Powerball India",
-      img: powerballIndiaIMG,
-      to: "/powerhit",
-    },
-    {
-      id: 5,
-      name: "Matka",
-      img: matkaIMG,
-      to: "/matka/markets",
-    },
-    {
-      id: 6,
-      name: "Powerball Australia",
-      img: powerballAustraliaIMG,
-      to: "/powerhit",
-    },
-  ];
+  // Admin-changeable images — the API returns { key: imageUrl } for games
+  // the admin has customized. Missing keys keep the bundled defaults.
+  const [imgOverrides, setImgOverrides] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get("/game-images")
+      .then(({ data }) => {
+        if (!cancelled && data?.success && data.data) {
+          setImgOverrides(data.data);
+        }
+      })
+      .catch(() => {
+        // API down / not deployed yet — bundled defaults keep working
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Card: image full cover, koi text overlay nahi — images me hi
   // naam design kiya hua hai
@@ -69,10 +100,12 @@ const PopularGamesCards = () => {
             const isTrading = game.id === 2;
             const needsLogin = isTrading && !user;
 
+            const gameImage = imgOverrides[game.key] || game.img;
+
             const Tile = (
               <div className={cardClass}>
                 <img
-                  src={game.img}
+                  src={gameImage}
                   alt={game.name}
                   className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                   loading="lazy"

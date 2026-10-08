@@ -73,7 +73,9 @@ const TradeChart = () => {
   }, [times.minute, times.secondtime1, times.secondtime2]);
 
   useEffect(() => {
-    const socket = io("http://localhost:8097", {
+    // Same-origin socket — a hardcoded localhost URL breaks the chart
+    // as soon as the app is served from a real domain.
+    const socket = io(window.location.origin, {
       path: "/ws",
       transports: ["polling", "websocket"],
       withCredentials: true,
